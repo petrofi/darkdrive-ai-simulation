@@ -41,6 +41,8 @@ darkdrive-ai-simulation/
 |   |-- safety-notes.md
 |   |-- model-notes.md
 |   |-- dataset-format.md
+|   |-- simulator-setup.md
+|   |-- simulation-roadmap.md
 |   `-- reels-plan.md
 |-- simulator/
 |   |-- donkeycar/
@@ -268,6 +270,41 @@ The training script prints training and validation loss for each epoch and saves
 
 ```text
 screenshots/training_loss.png
+```
+
+## Phase 2: Simulator Data Collection
+
+The current sample road image and sample CSV were only created for pipeline testing. The next step is to collect real simulated driving data from a self-driving car simulator.
+
+In this phase, the model will learn from simulator camera images and steering values. This remains simulation-only: no real vehicle control, no public road testing, and no unsafe deployment.
+
+Expected simulator data folder:
+
+```text
+data/processed/simulator/
+|-- IMG/
+|   `-- .gitkeep
+`-- driving_log.csv
+```
+
+Generated simulator images and `driving_log.csv` are ignored by Git because they can become large. The folder placeholders are tracked so the expected structure is visible.
+
+Validate the simulator dataset:
+
+```powershell
+python scripts/validate_simulator_dataset.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
+```
+
+Train with simulator data:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/processed/simulator/driving_log.csv --format udacity --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
+```
+
+Predict with a trained model:
+
+```powershell
+python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/processed/simulator/IMG/example.jpg
 ```
 
 ## Dataset Formats

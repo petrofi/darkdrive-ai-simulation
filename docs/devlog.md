@@ -54,3 +54,21 @@ Polish the project so it can be tested cleanly from a fresh clone using Windows 
 ### Next Step
 
 Collect real simulated driving frames and labels, then train the baseline model with a larger dataset in `data/processed/`.
+
+## Day 4: Simulator Data Collection Phase
+
+### Goal
+
+Prepare the project for real simulated driving data collection using Udacity-style behavior cloning datasets.
+
+### What Was Added
+
+- Transitioned project to simulator data collection phase.
+- Added simulator dataset folder structure.
+- Added dataset validation script.
+- Added simulation setup documentation.
+- Prepared the project for real simulated driving data.
+
+### Next Step
+
+Collect a first simulator dataset with 200-500 frames, validate it, then train the baseline steering model in simulation-only mode.
