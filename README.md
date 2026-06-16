@@ -59,17 +59,17 @@ darkdrive-ai-simulation/
 `-- videos/
 ```
 
-## First Demo: Lane Detection
+## First Demo: Lane Detection with Sample Road Image
 
-The first working demo runs a simple OpenCV lane detection pipeline on a local sample image. It is a computer vision experiment only and does not control any real vehicle.
+The first working demo runs a simple OpenCV lane detection pipeline on the included sample image. This is a computer vision experiment only and does not control any real vehicle.
 
-Before running the demo, place a road or simulator camera image at:
+The default demo input is:
 
 ```text
 data/samples/road_sample.jpg
 ```
 
-The image is intentionally not included in the repository. You can use a screenshot from a driving simulator or another image that you have permission to use.
+`road_sample.jpg` is only a demo/test image for computer vision experiments. It exists so the lane detection script can produce a visible output quickly in a simulation-focused portfolio workflow.
 
 ### Windows PowerShell Setup
 
@@ -82,13 +82,13 @@ python -m venv .venv
 Activate the virtual environment:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\activate
 ```
 
 Install project requirements:
 
 ```powershell
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 Run the lane detection demo:
