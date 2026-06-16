@@ -18,3 +18,4 @@ screenshots/*
 !models/.gitkeep
 !videos/.gitkeep
 !screenshots/.gitkeep
+!screenshots/lane_detection_result.png
