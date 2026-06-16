@@ -105,6 +105,62 @@ If the input image is found and OpenCV can process it, the output image will be 
 screenshots/lane_detection_result.png
 ```
 
+## First Working Pipeline
+
+The first local pipeline has been tested end to end with the included demo image, a sample driving log, and a baseline PyTorch steering model.
+
+This is only a baseline test pipeline. The current model is not a real driving model yet, and it must not be used for real vehicle control. Real learning will require simulated driving data collected across different tracks, turns, speeds, and recovery situations.
+
+### Visual Demo
+
+![Lane detection result](screenshots/lane_detection_result.png)
+
+### 1. Lane Detection Test
+
+Command:
+
+```powershell
+python src/lane_detection/basic_lane_detection.py --image data/samples/road_sample.jpg --output screenshots/lane_detection_result.png
+```
+
+Output:
+
+```text
+Detected 13 lane-like line segment(s).
+Success: lane detection result saved to screenshots/lane_detection_result.png
+```
+
+### 2. Baseline Training Test
+
+Command:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/samples/sample_driving_log.csv --epochs 1 --batch-size 1 --output models/steering_model_v1.pt
+```
+
+Output:
+
+```text
+Simulation-only training mode.
+Starting baseline behavior cloning training...
+Epoch 1/1 - loss: 0.012405
+Model saved to models\steering_model_v1.pt
+```
+
+### 3. Single-Image Inference Test
+
+Command:
+
+```powershell
+python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/samples/road_sample.jpg
+```
+
+Output:
+
+```text
+Predicted steering angle: -0.0141
+```
+
 ## AI Training Direction: Behavior Cloning
 
 DarkDrive AI Simulation is evolving toward a baseline behavior cloning workflow for simulated driving data.
