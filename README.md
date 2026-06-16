@@ -39,6 +39,7 @@ darkdrive-ai-simulation/
 |   |-- devlog.md
 |   |-- safety-notes.md
 |   |-- model-notes.md
+|   |-- dataset-format.md
 |   `-- reels-plan.md
 |-- simulator/
 |   |-- donkeycar/
@@ -195,7 +196,7 @@ data/samples/road_sample.jpg,0.0,0.3,0.0,10.0
 Run the training skeleton:
 
 ```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/driving_log.csv --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
+python src/training/train_behavior_cloning.py --csv data/processed/driving_log.csv --format simple --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
 ```
 
 Run single-image inference after a model has been trained:
@@ -205,6 +206,35 @@ python src/inference/predict_steering.py --model models/steering_model_v1.pt --i
 ```
 
 Trained `.pt` and `.pth` model files are ignored by Git so large experiment artifacts do not get committed by accident.
+
+## Training with Simulated Driving Data
+
+The sample CSV is only for pipeline testing. Real model learning requires many simulated driving frames collected from a simulator such as DonkeyCar Simulator or CARLA.
+
+Two dataset formats are supported:
+
+- Simple format: `image_path,steering,throttle,brake,speed`
+- Udacity-style format: `center,left,right,steering,throttle,brake,speed`
+
+For the Udacity-style format, the current baseline trainer uses only the `center` camera image. Left and right camera images are reserved for future data augmentation work.
+
+Train with the simple format:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/processed/driving_log.csv --format simple --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
+```
+
+Train with the Udacity-style format:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/processed/driving_log.csv --format udacity --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
+```
+
+The training script prints training and validation loss for each epoch and saves a loss chart to:
+
+```text
+screenshots/training_loss.png
+```
 
 ## 30-Day Roadmap Summary
 

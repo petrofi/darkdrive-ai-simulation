@@ -19,3 +19,4 @@ screenshots/*
 !videos/.gitkeep
 !screenshots/.gitkeep
 !screenshots/lane_detection_result.png
+!screenshots/training_loss.png
