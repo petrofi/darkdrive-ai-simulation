@@ -59,6 +59,50 @@ darkdrive-ai-simulation/
 `-- videos/
 ```
 
+## First Demo: Lane Detection
+
+The first working demo runs a simple OpenCV lane detection pipeline on a local sample image. It is a computer vision experiment only and does not control any real vehicle.
+
+Before running the demo, place a road or simulator camera image at:
+
+```text
+data/samples/road_sample.jpg
+```
+
+The image is intentionally not included in the repository. You can use a screenshot from a driving simulator or another image that you have permission to use.
+
+### Windows PowerShell Setup
+
+Create a virtual environment:
+
+```powershell
+python -m venv .venv
+```
+
+Activate the virtual environment:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Install project requirements:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+Run the lane detection demo:
+
+```powershell
+python src/lane_detection/basic_lane_detection.py --image data/samples/road_sample.jpg --output screenshots/lane_detection_result.png
+```
+
+If the input image is found and OpenCV can process it, the output image will be saved to:
+
+```text
+screenshots/lane_detection_result.png
+```
+
 ## 30-Day Roadmap Summary
 
 - Week 1: Set up the project, connect to DonkeyCar Simulator, collect initial driving data, and build a basic OpenCV lane detection prototype.
