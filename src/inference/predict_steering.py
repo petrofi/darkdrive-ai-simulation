@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import cv2
 import torch
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from src.models.steering_model import SteeringModel
+
+
+IMAGE_WIDTH = 160
+IMAGE_HEIGHT = 80
 
 
 def preprocess_image(image_path: str | Path) -> torch.Tensor | None:
@@ -21,7 +30,7 @@ def preprocess_image(image_path: str | Path) -> torch.Tensor | None:
         return None
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, (160, 120))
+    image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
     image_tensor = torch.from_numpy(image).float().permute(2, 0, 1) / 255.0
     return image_tensor.unsqueeze(0)
 
@@ -30,7 +39,7 @@ def predict(model_path: str | Path, image_path: str | Path) -> float | None:
     model_path = Path(model_path)
     if not model_path.exists():
         print(f"Model not found: {model_path}")
-        print("Train a simulation behavior cloning model before running inference.")
+        print("No trained model found yet. Train the model after collecting simulated driving data.")
         return None
 
     image_tensor = preprocess_image(image_path)
@@ -50,8 +59,8 @@ def predict(model_path: str | Path, image_path: str | Path) -> float | None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Predict steering for one simulator image.")
-    parser.add_argument("--model", default="models/steering_model.pt", help="Path to a trained model file.")
-    parser.add_argument("--image", required=True, help="Path to a simulator frame image.")
+    parser.add_argument("--model", default="models/steering_model_v1.pt", help="Path to a trained model file.")
+    parser.add_argument("--image", default="data/samples/road_sample.jpg", help="Path to a simulator frame image.")
     return parser.parse_args()
 
 

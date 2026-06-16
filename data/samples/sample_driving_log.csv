@@ -1,0 +1,4 @@
+image_path,steering,throttle,brake,speed
+data/samples/road_sample.jpg,0.0,0.3,0.0,10.0
+data/samples/road_sample.jpg,0.1,0.3,0.0,10.5
+data/samples/road_sample.jpg,-0.1,0.3,0.0,9.8

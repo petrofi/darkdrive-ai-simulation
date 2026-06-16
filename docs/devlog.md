@@ -19,3 +19,20 @@ Create the first clean foundation for DarkDrive AI Simulation as a simulation-on
 ### Next Step
 
 Create a virtual environment, install dependencies, and test the lane detection script with a sample simulator image.
+
+## Day 2: Lane Demo and AI Training Direction
+
+### Goal
+
+Move from a standalone lane detection demo toward a simulation-based AI driving training project.
+
+### What Was Added
+
+- Added sample road image.
+- Added lane detection demo direction.
+- Added behavior cloning AI training direction.
+- Added baseline model plan.
+
+### Next Step
+
+Collect simulated driving images and control values, then train the baseline steering model using `data/processed/driving_log.csv`.

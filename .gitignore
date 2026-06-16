@@ -13,5 +13,8 @@ screenshots/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/samples/.gitkeep
+!data/samples/road_sample.jpg
+!data/samples/sample_driving_log.csv
+!models/.gitkeep
 !videos/.gitkeep
 !screenshots/.gitkeep

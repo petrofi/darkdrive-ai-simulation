@@ -2,6 +2,36 @@
 
 DarkDrive AI Simulation starts as a simulation-only learning and portfolio project. The first month focuses on building visible progress, keeping the code readable, and creating artifacts that are useful for GitHub and short progress videos.
 
+## AI Training Roadmap
+
+### Phase 1: OpenCV Lane Detection Demo
+
+Use `data/samples/road_sample.jpg` to run a visible lane detection result and verify the local computer vision workflow.
+
+### Phase 2: Driving Data Format
+
+Use simulated driving logs with the following CSV columns:
+
+```text
+image_path,steering,throttle,brake,speed
+```
+
+### Phase 3: Baseline PyTorch CNN Steering Model
+
+Train a simple `SteeringModel` that accepts RGB camera images and predicts one continuous steering value.
+
+### Phase 4: Training Script Using Simulated Driving Logs
+
+Use `src/training/train_behavior_cloning.py` to load images and steering values from simulation logs, train the baseline model, and save a local model artifact.
+
+### Phase 5: Single-Image Steering Inference
+
+Use `src/inference/predict_steering.py` to load a trained model and predict steering from one simulated camera image.
+
+### Phase 6: Simulator Integration Later
+
+Connect the data collection and model evaluation workflow to DonkeyCar Simulator or CARLA later. Evaluation remains simulation-only.
+
 ## Week 1: Project Setup, DonkeyCar Simulation, Data Collection, Lane Detection Prototype
 
 ### Goals

@@ -38,6 +38,7 @@ darkdrive-ai-simulation/
 |   |-- roadmap.md
 |   |-- devlog.md
 |   |-- safety-notes.md
+|   |-- model-notes.md
 |   `-- reels-plan.md
 |-- simulator/
 |   |-- donkeycar/
@@ -55,6 +56,7 @@ darkdrive-ai-simulation/
 |   |-- training/
 |   `-- inference/
 |-- notebooks/
+|-- models/
 |-- screenshots/
 `-- videos/
 ```
@@ -102,6 +104,51 @@ If the input image is found and OpenCV can process it, the output image will be 
 ```text
 screenshots/lane_detection_result.png
 ```
+
+## AI Training Direction: Behavior Cloning
+
+DarkDrive AI Simulation is evolving toward a baseline behavior cloning workflow for simulated driving data.
+
+- The model learns from simulated driving data.
+- Input: front camera image.
+- Output: one continuous steering angle.
+- Training data format: `image_path, steering, throttle, brake, speed`.
+- Evaluation stays inside simulation.
+- This is not real vehicle control.
+- This is a portfolio and education project.
+
+The first AI model is a small PyTorch CNN. It is intentionally simple so the data flow is easy to understand before adding larger datasets, better preprocessing, or simulator integration.
+
+## How to Run AI Skeleton
+
+The training script expects a simulated driving log at:
+
+```text
+data/processed/driving_log.csv
+```
+
+The CSV should use this format:
+
+```text
+image_path,steering,throttle,brake,speed
+data/samples/road_sample.jpg,0.0,0.3,0.0,10.0
+```
+
+`data/samples/sample_driving_log.csv` is included only to demonstrate the expected format. It is not real training data.
+
+Run the training skeleton:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/processed/driving_log.csv --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
+```
+
+Run single-image inference after a model has been trained:
+
+```powershell
+python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/samples/road_sample.jpg
+```
+
+Trained `.pt` and `.pth` model files are ignored by Git so large experiment artifacts do not get committed by accident.
 
 ## 30-Day Roadmap Summary
 
