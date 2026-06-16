@@ -36,3 +36,21 @@ Move from a standalone lane detection demo toward a simulation-based AI driving 
 ### Next Step
 
 Collect simulated driving images and control values, then train the baseline steering model using `data/processed/driving_log.csv`.
+
+## Day 3: First Working Pipeline Verified
+
+### Goal
+
+Polish the project so it can be tested cleanly from a fresh clone using Windows PowerShell commands.
+
+### What Was Verified
+
+- Verified lane detection demo.
+- Verified baseline behavior cloning training.
+- Verified steering prediction inference.
+- Added documentation for testing commands.
+- Prepared the project for simulated driving dataset collection.
+
+### Next Step
+
+Collect real simulated driving frames and labels, then train the baseline model with a larger dataset in `data/processed/`.

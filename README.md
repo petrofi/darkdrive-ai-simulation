@@ -5,6 +5,7 @@ A simulation-based autonomous driving AI project focused on computer vision, dat
 ## Safety Notice
 
 This project does not control a real vehicle. It is developed only for simulation, education, and portfolio purposes.
+No public road testing, real vehicle control, or unsafe deployment is part of this repository.
 
 ## Project Goals
 
@@ -106,60 +107,93 @@ If the input image is found and OpenCV can process it, the output image will be 
 screenshots/lane_detection_result.png
 ```
 
+## How to Install
+
+From Windows PowerShell:
+
+```powershell
+cd C:\Users\tarik\OneDrive\Ekler\Desktop\darkdrive-ai-simulation
+python -m venv .venv
+.\.venv\Scripts\activate
+python -m pip install -r requirements.txt
+```
+
+Run the basic test helper:
+
+```powershell
+python scripts/run_basic_tests.py
+```
+
+The helper checks the included sample files, runs lane detection, runs one baseline training epoch, and runs steering prediction. It does not require `pytest`.
+
 ## First Working Pipeline
 
 The first local pipeline has been tested end to end with the included demo image, a sample driving log, and a baseline PyTorch steering model.
 
 This is only a baseline test pipeline. The current model is not a real driving model yet, and it must not be used for real vehicle control. Real learning will require simulated driving data collected across different tracks, turns, speeds, and recovery situations.
 
-### Visual Demo
+The tested commands are:
 
-![Lane detection result](screenshots/lane_detection_result.png)
+```powershell
+python src/lane_detection/basic_lane_detection.py --image data/samples/road_sample.jpg --output screenshots/lane_detection_result.png
+python src/training/train_behavior_cloning.py --csv data/samples/sample_driving_log.csv --format simple --epochs 1 --batch-size 1 --output models/steering_model_v1.pt
+python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/samples/road_sample.jpg
+```
 
-### 1. Lane Detection Test
+## How to Run Lane Detection
 
-Command:
+This command uses the included test image and writes the visual result to `screenshots/lane_detection_result.png`.
+
+![Lane Detection Result](screenshots/lane_detection_result.png)
 
 ```powershell
 python src/lane_detection/basic_lane_detection.py --image data/samples/road_sample.jpg --output screenshots/lane_detection_result.png
 ```
 
-Output:
+Expected output example:
 
 ```text
+Loaded image: data\samples\road_sample.jpg
+Processing size: 960x540
 Detected 13 lane-like line segment(s).
-Success: lane detection result saved to screenshots/lane_detection_result.png
+Success: lane detection result saved to screenshots\lane_detection_result.png
 ```
 
-### 2. Baseline Training Test
+## How to Test Baseline Training
 
-Command:
+The sample CSV is only for pipeline testing. It repeats the same demo image and is not enough for real model learning.
 
 ```powershell
-python src/training/train_behavior_cloning.py --csv data/samples/sample_driving_log.csv --epochs 1 --batch-size 1 --output models/steering_model_v1.pt
+python src/training/train_behavior_cloning.py --csv data/samples/sample_driving_log.csv --format simple --epochs 1 --batch-size 1 --output models/steering_model_v1.pt
 ```
 
-Output:
+Expected output example:
 
 ```text
 Simulation-only training mode.
+Dataset format: simple
+Training rows: 2
+Validation rows: 1
 Starting baseline behavior cloning training...
-Epoch 1/1 - loss: 0.012405
+Epoch 1/1 - training loss: 0.002616 - validation loss: 0.035081
 Model saved to models\steering_model_v1.pt
+Training loss chart saved to screenshots\training_loss.png
 ```
 
-### 3. Single-Image Inference Test
+`models/steering_model_v1.pt` is generated locally and ignored by Git.
 
-Command:
+## How to Test Steering Prediction
+
+Run this after the baseline training command has created a local model file:
 
 ```powershell
 python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/samples/road_sample.jpg
 ```
 
-Output:
+Expected output example:
 
 ```text
-Predicted steering angle: -0.0141
+Predicted steering angle: -0.0873
 ```
 
 ## AI Training Direction: Behavior Cloning
@@ -236,6 +270,19 @@ The training script prints training and validation loss for each epoch and saves
 screenshots/training_loss.png
 ```
 
+## Dataset Formats
+
+See [docs/dataset-format.md](docs/dataset-format.md) for the full dataset guide.
+
+Supported formats:
+
+```text
+image_path,steering,throttle,brake,speed
+center,left,right,steering,throttle,brake,speed
+```
+
+For Udacity-style datasets, the current baseline uses only the `center` camera image. Left and right camera images are future work.
+
 ## 30-Day Roadmap Summary
 
 - Week 1: Set up the project, connect to DonkeyCar Simulator, collect initial driving data, and build a basic OpenCV lane detection prototype.
@@ -245,7 +292,12 @@ screenshots/training_loss.png
 
 ## Current Status
 
-Phase 0: Project setup and documentation
+First working simulation AI pipeline verified:
+
+- OpenCV lane detection works with the sample image.
+- Baseline PyTorch behavior cloning training works with the sample CSV.
+- Steering prediction inference works after local training.
+- Real model learning is the next phase and requires a larger simulated driving dataset.
 
 ## Future Work
 
@@ -254,3 +306,7 @@ Phase 0: Project setup and documentation
 - Lane detection improvements
 - Behavior cloning model training
 - Model evaluation dashboard
+
+## Next Phase
+
+Collect real simulated driving data into `data/processed/`, using either the simple CSV format or the Udacity-style center camera format. Then train the baseline model for more epochs and compare predictions against validation steering labels.

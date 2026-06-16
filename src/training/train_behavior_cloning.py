@@ -5,6 +5,9 @@ import sys
 from pathlib import Path
 
 import cv2
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
@@ -20,6 +23,7 @@ from src.models.steering_model import SteeringModel
 
 IMAGE_WIDTH = 160
 IMAGE_HEIGHT = 80
+RANDOM_SEED = 42
 TRAINING_CHART_PATH = Path("screenshots/training_loss.png")
 SIMPLE_REQUIRED_COLUMNS = {"image_path", "steering", "throttle", "brake", "speed"}
 UDACITY_REQUIRED_COLUMNS = {"center", "left", "right", "steering", "throttle", "brake", "speed"}
@@ -183,9 +187,16 @@ def train(
         return
 
     training_dataset, validation_dataset = split_dataset(dataset)
-    training_loader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
+    training_generator = torch.Generator().manual_seed(RANDOM_SEED)
+    training_loader = DataLoader(
+        training_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        generator=training_generator,
+    )
     validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
+    torch.manual_seed(RANDOM_SEED)
     model = SteeringModel()
     loss_function = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
