@@ -21,6 +21,8 @@ Columns:
 
 For the first baseline model, only `image_path` and `steering` are used for training. The other columns are kept because they are useful for later analysis.
 
+Standalone lane or road images are useful for OpenCV lane detection experiments, but they are not enough for steering model training unless they also have steering labels.
+
 ## Format B: Udacity-Style Format
 
 Some educational self-driving datasets use a format like this:

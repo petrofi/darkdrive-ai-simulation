@@ -72,3 +72,38 @@ Prepare the project for real simulated driving data collection using Udacity-sty
 ### Next Step
 
 Collect a first simulator dataset with 200-500 frames, validate it, then train the baseline steering model in simulation-only mode.
+
+## Day 6: Local Udacity Simulator Workflow
+
+### Goal
+
+Document the local Udacity simulator path and prepare the project for safe simulator output handling.
+
+### What Was Added
+
+- Found a working Udacity simulator executable folder.
+- Added local simulator documentation.
+- Prepared simulator output folder workflow.
+- Added dataset validation and training commands for Udacity-style data.
+- Noted that `win_sys_int` may not support behavior cloning data recording.
+
+### Next Step
+
+Launch the simulator manually, check whether it can export `IMG` frames and `driving_log.csv`, then either collect data there or move behavior cloning data collection to another simulator.
+
+## Day 7: Data Collection Plan
+
+### Goal
+
+Clarify what data is missing and where training data should come from.
+
+### What Was Added
+
+- Documented that lane images alone are not enough for behavior cloning.
+- Added a simulator data collection plan.
+- Added recommended data source order: Udacity behavior cloning simulator, local `win_sys_int` if compatible, DonkeyCar Simulator, then CARLA.
+- Added training commands for steering-labeled simulator data.
+
+### Next Step
+
+Check whether the local simulator can export `IMG` frames and `driving_log.csv`; if not, move behavior cloning data collection to DonkeyCar Simulator.

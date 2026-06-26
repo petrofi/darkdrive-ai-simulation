@@ -32,9 +32,15 @@ UDACITY_REQUIRED_COLUMNS = {"center", "left", "right", "steering", "throttle", "
 class DrivingDataset(Dataset):
     """Dataset for simulated camera frames and steering labels."""
 
-    def __init__(self, csv_path: str | Path, dataset_format: str = "simple") -> None:
+    def __init__(
+        self,
+        csv_path: str | Path,
+        dataset_format: str = "simple",
+        images_dir: str | Path | None = None,
+    ) -> None:
         self.csv_path = Path(csv_path)
         self.dataset_format = dataset_format
+        self.images_dir = Path(images_dir) if images_dir else None
         self.data = pd.read_csv(self.csv_path)
         self.data.columns = [column.strip() for column in self.data.columns]
 
@@ -72,18 +78,29 @@ class DrivingDataset(Dataset):
     def _resolve_image_path(self, row: pd.Series) -> Path:
         """Resolve image paths from either supported CSV format."""
         path_column = "image_path" if self.dataset_format == "simple" else "center"
-        raw_path = str(row[path_column]).strip()
+        raw_path = str(row[path_column]).strip().replace("\\", "/")
         image_path = Path(raw_path)
 
         if image_path.is_absolute():
+            return image_path
+
+        if image_path.exists():
             return image_path
 
         cwd_path = Path.cwd() / image_path
         if cwd_path.exists():
             return cwd_path
 
-        # Many simulator logs store image paths relative to the CSV file.
-        return self.csv_path.parent / image_path
+        csv_relative_path = self.csv_path.parent / image_path
+        if csv_relative_path.exists():
+            return csv_relative_path
+
+        if self.images_dir:
+            if image_path.parts and image_path.parts[0].lower() == "img":
+                return self.images_dir / Path(*image_path.parts[1:])
+            return self.images_dir / image_path.name
+
+        return csv_relative_path
 
 
 def split_dataset(dataset: Dataset) -> tuple[Dataset, Dataset]:
@@ -168,6 +185,7 @@ def save_loss_chart(
 def train(
     csv_path: str | Path,
     dataset_format: str = "simple",
+    images_dir: str | Path | None = None,
     epochs: int = 5,
     batch_size: int = 32,
     output_path: str | Path = "models/steering_model_v1.pt",
@@ -178,10 +196,16 @@ def train(
         print("You need simulated driving data first.")
         print("Simple format: image_path,steering,throttle,brake,speed")
         print("Udacity format: center,left,right,steering,throttle,brake,speed")
-        print("Place the real simulation training log at data/processed/driving_log.csv.")
+        print("For simulator data, place the log at data/processed/simulator/driving_log.csv.")
         return
 
-    dataset = DrivingDataset(csv_path, dataset_format=dataset_format)
+    try:
+        dataset = DrivingDataset(csv_path, dataset_format=dataset_format, images_dir=images_dir)
+    except ValueError as exc:
+        print(f"Dataset format error: {exc}")
+        print("Run scripts/validate_simulator_dataset.py before training.")
+        return
+
     if len(dataset) == 0:
         print("Driving log is empty. Add simulation driving rows before training.")
         return
@@ -209,17 +233,22 @@ def train(
 
     training_losses = []
     validation_losses = []
-    for epoch in range(epochs):
-        training_loss = train_one_epoch(model, training_loader, loss_function, optimizer)
-        validation_loss = evaluate(model, validation_loader, loss_function)
-        training_losses.append(training_loss)
-        validation_losses.append(validation_loss)
+    try:
+        for epoch in range(epochs):
+            training_loss = train_one_epoch(model, training_loader, loss_function, optimizer)
+            validation_loss = evaluate(model, validation_loader, loss_function)
+            training_losses.append(training_loss)
+            validation_losses.append(validation_loss)
 
-        print(
-            f"Epoch {epoch + 1}/{epochs} - "
-            f"training loss: {training_loss:.6f} - "
-            f"validation loss: {validation_loss:.6f}"
-        )
+            print(
+                f"Epoch {epoch + 1}/{epochs} - "
+                f"training loss: {training_loss:.6f} - "
+                f"validation loss: {validation_loss:.6f}"
+            )
+    except FileNotFoundError as exc:
+        print(f"Training stopped because an image file was missing: {exc}")
+        print("Validate the dataset and image paths before training.")
+        return
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -241,6 +270,11 @@ def parse_args() -> argparse.Namespace:
         default="simple",
         help="Driving log format to read.",
     )
+    parser.add_argument(
+        "--images-dir",
+        default=None,
+        help="Optional directory for resolving simulator image filenames.",
+    )
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs.")
     parser.add_argument("--batch-size", type=int, default=32, help="Training batch size.")
     parser.add_argument(
@@ -256,6 +290,7 @@ if __name__ == "__main__":
     train(
         args.csv,
         dataset_format=args.format,
+        images_dir=args.images_dir,
         epochs=args.epochs,
         batch_size=args.batch_size,
         output_path=args.output,

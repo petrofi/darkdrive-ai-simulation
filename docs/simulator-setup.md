@@ -8,6 +8,24 @@ Simulation keeps the project safe, repeatable, and portfolio-friendly. It lets u
 
 This project does not include real vehicle control code, public road testing instructions, or unsafe deployment steps.
 
+## Local Udacity Simulator Path
+
+The local Udacity simulator currently lives outside the repository at:
+
+```text
+C:\Users\tarik\Downloads\win_sys_int\win_sys_int
+```
+
+The project will not store the simulator executable or Unity asset files. This repository only stores scripts and documentation for validating and training from generated simulation data.
+
+The executable found in that folder is:
+
+```text
+sys_int.exe
+```
+
+Because the folder is named `win_sys_int`, this appears likely to be the Udacity System Integration simulator. If it does not produce `driving_log.csv` and `IMG` frames, use it only for manual visual testing and move behavior cloning data collection to another simulator later.
+
 ## What Data We Need
 
 For behavior cloning, each training example needs:

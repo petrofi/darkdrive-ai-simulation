@@ -41,7 +41,9 @@ darkdrive-ai-simulation/
 |   |-- safety-notes.md
 |   |-- model-notes.md
 |   |-- dataset-format.md
+|   |-- data-collection-plan.md
 |   |-- simulator-setup.md
+|   |-- udacity-simulator-notes.md
 |   |-- simulation-roadmap.md
 |   `-- reels-plan.md
 |-- simulator/
@@ -298,7 +300,7 @@ python scripts/validate_simulator_dataset.py --csv data/processed/simulator/driv
 Train with simulator data:
 
 ```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/simulator/driving_log.csv --format udacity --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
+python src/training/train_behavior_cloning.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
 ```
 
 Predict with a trained model:
@@ -306,6 +308,75 @@ Predict with a trained model:
 ```powershell
 python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/processed/simulator/IMG/example.jpg
 ```
+
+## Using the Local Udacity Simulator
+
+Local simulator folder:
+
+```text
+C:\Users\tarik\Downloads\win_sys_int\win_sys_int
+```
+
+This simulator folder stays outside the repository. Do not copy or commit `sys_int.exe`, `sys_int_Data`, simulator assets, generated simulator images, generated CSV logs, or trained model files.
+
+Prepare the project output folder:
+
+```powershell
+python scripts/prepare_simulator_output.py
+```
+
+Expected output folder:
+
+```text
+C:\Users\tarik\OneDrive\Ekler\Desktop\darkdrive-ai-simulation\data\processed\simulator
+```
+
+If the simulator asks for a recording/output folder, select that folder.
+
+Validate dataset:
+
+```powershell
+python scripts/validate_simulator_dataset.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
+```
+
+Train model:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
+```
+
+Prediction example:
+
+```powershell
+python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/processed/simulator/IMG/example.jpg
+```
+
+Important: the local folder name `win_sys_int` and executable `sys_int.exe` suggest this may be the Udacity System Integration simulator, not the behavior cloning training simulator. If it does not create `IMG` frames and `driving_log.csv`, use it only for visual/manual testing and collect behavior cloning data with another simulator later.
+
+## Data Collection Plan
+
+The missing piece is no longer just more road or lane images. For behavior cloning, every training image needs a steering label. A useful training row connects a camera frame with `steering`, `throttle`, `brake`, and `speed`.
+
+Lane detection images and steering model data are different:
+
+- Lane detection can use public road/lane image datasets for computer vision experiments.
+- Steering prediction needs simulator frames with matching steering angles.
+
+Recommended source order:
+
+1. Try a Udacity Term 1 behavior cloning simulator if available.
+2. Use the current `win_sys_int` simulator only if it can export `IMG` frames and `driving_log.csv`.
+3. If it cannot export behavior cloning data, move data collection to DonkeyCar Simulator.
+4. Use CARLA later for a more professional camera sensor workflow.
+
+Useful references:
+
+- TuSimple benchmark: https://github.com/TuSimple/tusimple-benchmark
+- BDD100K dataset information: https://arxiv.org/abs/1805.04687
+- DonkeyCar simulator docs: https://docs.donkeycar.com/guide/deep_learning/simulator/
+- CARLA docs: https://carla.readthedocs.io/en/latest/
+
+See [docs/data-collection-plan.md](docs/data-collection-plan.md) for the detailed plan.
 
 ## Dataset Formats
 

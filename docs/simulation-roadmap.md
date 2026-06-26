@@ -1,39 +1,52 @@
 # Simulation Roadmap
 
-## Step 1: Install a Self-Driving Car Simulator
+## Phase 1: First Working Pipeline
 
-Choose a simulator suitable for behavior cloning data collection, such as an educational self-driving car simulator or CARLA.
+Completed.
 
-## Step 2: Drive Manually in Training Mode
+- OpenCV lane detection works.
+- Baseline PyTorch steering prediction training works.
+- Single-image steering prediction works.
+- Dataset validation tooling exists.
 
-Use manual driving to create examples of smooth steering, stable speed, and recovery from small mistakes.
+## Phase 2: Try Local Udacity Simulator for Data Collection
 
-## Step 3: Collect Camera Frames and `driving_log.csv`
+Use the local simulator folder:
 
-Record camera frames and driving values in a simulator dataset. Keep the project simulation-only.
+```text
+C:\Users\tarik\Downloads\win_sys_int\win_sys_int
+```
 
-## Step 4: Place Data Into `data/processed/simulator/`
+Decision point:
 
-Use this structure:
+- If it produces `driving_log.csv` and `IMG` frames, use it for the first behavior cloning dataset.
+- If it does not, do not waste time trying to force it into the workflow. Move data collection to DonkeyCar Simulator.
+
+Data source priority:
+
+1. Udacity Term 1 behavior cloning simulator, if available.
+2. Current `win_sys_int` simulator, only if it exports behavior cloning data.
+3. DonkeyCar Simulator for practical behavior cloning data collection.
+4. CARLA later for richer camera sensor work.
+
+## Phase 3: Train Model on Real Simulated Driving Data
+
+Place validated simulator data under:
 
 ```text
 data/processed/simulator/
-|-- IMG/
-`-- driving_log.csv
 ```
 
-## Step 5: Validate Dataset
+Train the baseline model with the Udacity-style format.
 
-Run the validation script to check CSV columns, center image paths, row count, and steering statistics.
+Do not train the steering model on image-only lane datasets. Steering prediction requires images paired with steering labels.
 
-## Step 6: Train Behavior Cloning Model
+## Phase 4: Evaluate Predictions
 
-Train the baseline PyTorch model using the Udacity-style dataset format.
+Run inference on held-out simulator images and compare predicted steering values against logged steering values.
 
-## Step 7: Evaluate Steering Predictions
+## Phase 5: Later DonkeyCar/CARLA Integration
 
-Run inference on held-out simulator images and compare predictions against logged steering values.
+After validating the data and model workflow, expand to DonkeyCar Simulator or CARLA for richer simulator data and more professional evaluation.
 
-## Step 8: Connect Model Back to Simulator Only After Validation
-
-Only evaluate model behavior inside simulation after validating the dataset and prediction outputs. Do not add real vehicle control code.
+All phases remain simulation-only. Do not add real vehicle control code or public road testing instructions.
