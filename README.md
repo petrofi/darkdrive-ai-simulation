@@ -119,7 +119,7 @@ Additional road and lane images downloaded from open web sources are stored in:
 data/samples/web_lane_images/
 ```
 
-Current files:
+Small hand-picked files:
 
 ```text
 data/samples/web_lane_images/andre_branco_unsplash_road.jpg
@@ -141,6 +141,59 @@ Source and license notes are listed in:
 ```text
 data/samples/web_lane_images/SOURCES.md
 ```
+
+## 500-Image Web Lane Batch
+
+The repository also includes a larger open-license web image batch for lane detection experiments:
+
+```text
+data/samples/web_lane_images/wikimedia_batch/
+```
+
+Current batch status:
+
+```text
+Downloaded source images: 500
+Total processed web images: 503
+Failed processed images: 0
+Detected line segments in batch: 76467
+```
+
+Source and license metadata for the 500-image batch is tracked in:
+
+```text
+data/samples/web_lane_images/wikimedia_batch_manifest.csv
+```
+
+The batch processing report is tracked in:
+
+```text
+data/samples/web_lane_images/processing_report.csv
+```
+
+Processed visual outputs are generated locally in:
+
+```text
+screenshots/web_lane_batch/
+```
+
+That output folder is ignored by Git because it contains hundreds of generated result images. The source images and CSV reports are tracked.
+
+Download or refresh the 500-image batch:
+
+```powershell
+python scripts/download_web_lane_images.py --limit 500 --output-dir data/samples/web_lane_images/wikimedia_batch --manifest data/samples/web_lane_images/wikimedia_batch_manifest.csv --thumb-width 640 --delay 0.6
+```
+
+Process all web lane images:
+
+```powershell
+python scripts/process_web_lane_images.py --input-dir data/samples/web_lane_images --output-dir screenshots/web_lane_batch --report data/samples/web_lane_images/processing_report.csv --recursive
+```
+
+Important: these web images are useful for OpenCV experiments, but they are not driving training data. Behavior cloning still requires simulator frames with steering labels.
+
+See [docs/web-lane-image-dataset.md](docs/web-lane-image-dataset.md) for details about the 500-image batch.
 
 ## How to Install
 

@@ -107,3 +107,21 @@ Clarify what data is missing and where training data should come from.
 ### Next Step
 
 Check whether the local simulator can export `IMG` frames and `driving_log.csv`; if not, move behavior cloning data collection to DonkeyCar Simulator.
+
+## Day 8: Web Lane Image Batch
+
+### Goal
+
+Expand the OpenCV lane detection demo with a larger web image batch.
+
+### What Was Added
+
+- Added a Wikimedia Commons web image downloader for lane detection demos.
+- Downloaded 500 open-license road/lane-related web images.
+- Added a batch OpenCV lane image processing script.
+- Processed 503 web lane images with 0 failures.
+- Added source/license metadata and a processing report.
+
+### Next Step
+
+Use the web lane image batch to improve computer vision experiments, while collecting steering-labeled simulator data separately for behavior cloning.

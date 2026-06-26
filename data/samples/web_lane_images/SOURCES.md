@@ -26,6 +26,28 @@ Use simulator data with `image + steering` labels for steering model training.
   - Author: Hannah.Ferrier
   - License: CC BY 4.0
 
+## 500-Image Wikimedia Batch
+
+The folder below contains 500 additional road/lane-related images downloaded
+from Wikimedia Commons search results as resized thumbnails:
+
+```text
+data/samples/web_lane_images/wikimedia_batch/
+```
+
+Per-image source, author, license, and download metadata is stored in:
+
+```text
+data/samples/web_lane_images/wikimedia_batch_manifest.csv
+```
+
+The batch was processed with the OpenCV lane detection pipeline, and the
+processing summary is stored in:
+
+```text
+data/samples/web_lane_images/processing_report.csv
+```
+
 ## Notes
 
 The project remains simulation-only. These public web images are useful for
