@@ -20,6 +20,12 @@ image_path,steering,throttle,brake,speed
 
 Train a simple `SteeringModel` that accepts RGB camera images and predicts one continuous steering value.
 
+### Phase 3.5: Synthetic Steering Training Demo
+
+Generate a local toy dataset with synthetic road frames and known steering
+labels. Use it only to test the training pipeline before real simulator logs are
+available.
+
 ### Phase 4: Training Script Using Simulated Driving Logs
 
 Use `src/training/train_behavior_cloning.py` to load images and steering values from simulation logs, train the baseline model, and save a local model artifact.

@@ -9,10 +9,11 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import torch
 from torch import nn
-from torch.utils.data import DataLoader, Dataset, random_split
+from torch.utils.data import DataLoader, Dataset
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -37,12 +38,19 @@ class DrivingDataset(Dataset):
         csv_path: str | Path,
         dataset_format: str = "simple",
         images_dir: str | Path | None = None,
+        data_frame: pd.DataFrame | None = None,
+        augment: bool = False,
     ) -> None:
         self.csv_path = Path(csv_path)
         self.dataset_format = dataset_format
         self.images_dir = Path(images_dir) if images_dir else None
-        self.data = pd.read_csv(self.csv_path)
-        self.data.columns = [column.strip() for column in self.data.columns]
+        self.augment = augment
+
+        if data_frame is None:
+            self.data = pd.read_csv(self.csv_path)
+            self.data.columns = [column.strip() for column in self.data.columns]
+        else:
+            self.data = data_frame.copy().reset_index(drop=True)
 
         required_columns = self._required_columns()
         missing_columns = required_columns - set(self.data.columns)
@@ -69,10 +77,14 @@ class DrivingDataset(Dataset):
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
+        steering = float(row["steering"])
+
+        if self.augment:
+            image, steering = augment_training_image(image, steering)
 
         # Convert from H x W x C uint8 pixels to C x H x W float values in [0, 1].
-        image_tensor = torch.from_numpy(image).float().permute(2, 0, 1) / 255.0
-        steering_tensor = torch.tensor([float(row["steering"])], dtype=torch.float32)
+        image_tensor = torch.from_numpy(np.ascontiguousarray(image)).float().permute(2, 0, 1) / 255.0
+        steering_tensor = torch.tensor([steering], dtype=torch.float32)
         return image_tensor, steering_tensor
 
     def _resolve_image_path(self, row: pd.Series) -> Path:
@@ -103,17 +115,55 @@ class DrivingDataset(Dataset):
         return csv_relative_path
 
 
-def split_dataset(dataset: Dataset) -> tuple[Dataset, Dataset]:
-    """Create a beginner-friendly 80/20 train/validation split."""
-    total_rows = len(dataset)
-    if total_rows < 2:
-        print("Only one row found. Using the same row for training and validation.")
-        return dataset, dataset
+def augment_training_image(image: np.ndarray, steering: float) -> tuple[np.ndarray, float]:
+    """Apply small simulation-style augmentations to reduce overfitting."""
+    augmented = image.copy()
 
-    validation_size = max(1, int(total_rows * 0.2))
-    training_size = total_rows - validation_size
-    generator = torch.Generator().manual_seed(42)
-    return random_split(dataset, [training_size, validation_size], generator=generator)
+    if np.random.rand() < 0.5:
+        augmented = cv2.flip(augmented, 1)
+        steering = -steering
+
+    brightness = np.random.uniform(0.75, 1.25)
+    contrast = np.random.uniform(0.85, 1.15)
+    augmented = np.clip((augmented.astype(np.float32) - 127.5) * contrast + 127.5, 0, 255)
+    augmented = np.clip(augmented * brightness, 0, 255).astype(np.uint8)
+
+    if np.random.rand() < 0.35:
+        shadow_strength = np.random.uniform(0.65, 0.9)
+        height, width = augmented.shape[:2]
+        split_x = np.random.randint(width // 4, max(width // 4 + 1, width * 3 // 4))
+        shadow_mask = np.zeros((height, width), dtype=np.float32)
+        shadow_mask[:, :split_x] = shadow_strength
+        shadow_mask[:, split_x:] = 1.0
+        augmented = np.clip(augmented.astype(np.float32) * shadow_mask[..., None], 0, 255).astype(
+            np.uint8
+        )
+
+    return augmented, steering
+
+
+def split_data_frame(
+    data: pd.DataFrame,
+    validation_split: float,
+    seed: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Create a deterministic train/validation split."""
+    if len(data) < 2:
+        print("Only one row found. Using the same row for training and validation.")
+        return data.copy(), data.copy()
+
+    validation_split = min(max(validation_split, 0.05), 0.5)
+    shuffled = data.sample(frac=1.0, random_state=seed).reset_index(drop=True)
+    validation_size = max(1, int(len(shuffled) * validation_split))
+    validation_data = shuffled.iloc[:validation_size].reset_index(drop=True)
+    training_data = shuffled.iloc[validation_size:].reset_index(drop=True)
+    return training_data, validation_data
+
+
+def choose_device(device_name: str) -> torch.device:
+    if device_name == "auto":
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return torch.device(device_name)
 
 
 def train_one_epoch(
@@ -121,12 +171,16 @@ def train_one_epoch(
     data_loader: DataLoader,
     loss_function: nn.Module,
     optimizer: torch.optim.Optimizer,
-) -> float:
+    device: torch.device,
+) -> tuple[float, float]:
     model.train()
     total_loss = 0.0
+    total_absolute_error = 0.0
     total_samples = 0
 
     for images, steering in data_loader:
+        images = images.to(device)
+        steering = steering.to(device)
         predictions = model(images)
         loss = loss_function(predictions, steering)
 
@@ -136,26 +190,36 @@ def train_one_epoch(
 
         batch_size = images.size(0)
         total_loss += loss.item() * batch_size
+        total_absolute_error += torch.abs(predictions.detach() - steering).sum().item()
         total_samples += batch_size
 
-    return total_loss / max(total_samples, 1)
+    return total_loss / max(total_samples, 1), total_absolute_error / max(total_samples, 1)
 
 
-def evaluate(model: SteeringModel, data_loader: DataLoader, loss_function: nn.Module) -> float:
+def evaluate(
+    model: SteeringModel,
+    data_loader: DataLoader,
+    loss_function: nn.Module,
+    device: torch.device,
+) -> tuple[float, float]:
     model.eval()
     total_loss = 0.0
+    total_absolute_error = 0.0
     total_samples = 0
 
     with torch.no_grad():
         for images, steering in data_loader:
+            images = images.to(device)
+            steering = steering.to(device)
             predictions = model(images)
             loss = loss_function(predictions, steering)
 
             batch_size = images.size(0)
             total_loss += loss.item() * batch_size
+            total_absolute_error += torch.abs(predictions - steering).sum().item()
             total_samples += batch_size
 
-    return total_loss / max(total_samples, 1)
+    return total_loss / max(total_samples, 1), total_absolute_error / max(total_samples, 1)
 
 
 def save_loss_chart(
@@ -173,13 +237,40 @@ def save_loss_chart(
     plt.plot(epochs, validation_losses, marker="o", label="Validation loss")
     plt.title("Behavior Cloning Loss")
     plt.xlabel("Epoch")
-    plt.ylabel("MSE loss")
+    plt.ylabel("Loss")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
     print(f"Training loss chart saved to {output_path}")
+
+
+def save_checkpoint(
+    model: SteeringModel,
+    output_path: str | Path,
+    args: dict[str, object],
+    history: dict[str, list[float]],
+) -> None:
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint = {
+        "model_state_dict": model.state_dict(),
+        "model_class": "SteeringModel",
+        "image_width": IMAGE_WIDTH,
+        "image_height": IMAGE_HEIGHT,
+        "simulation_only": True,
+        "training_args": args,
+        "history": history,
+    }
+    torch.save(checkpoint, output_path)
+    print(f"Model checkpoint saved to {output_path}")
+
+
+def make_loss_function(loss_name: str) -> nn.Module:
+    if loss_name == "huber":
+        return nn.SmoothL1Loss()
+    return nn.MSELoss()
 
 
 def train(
@@ -189,6 +280,15 @@ def train(
     epochs: int = 5,
     batch_size: int = 32,
     output_path: str | Path = "models/steering_model_v1.pt",
+    chart_output: str | Path = TRAINING_CHART_PATH,
+    validation_split: float = 0.2,
+    learning_rate: float = 1e-3,
+    weight_decay: float = 1e-4,
+    loss_name: str = "mse",
+    augment: bool = True,
+    device_name: str = "auto",
+    num_workers: int = 0,
+    seed: int = RANDOM_SEED,
 ) -> None:
     csv_path = Path(csv_path)
     if not csv_path.exists():
@@ -200,65 +300,115 @@ def train(
         return
 
     try:
-        dataset = DrivingDataset(csv_path, dataset_format=dataset_format, images_dir=images_dir)
+        full_dataset = DrivingDataset(csv_path, dataset_format=dataset_format, images_dir=images_dir)
     except ValueError as exc:
         print(f"Dataset format error: {exc}")
         print("Run scripts/validate_simulator_dataset.py before training.")
         return
 
-    if len(dataset) == 0:
+    if len(full_dataset) == 0:
         print("Driving log is empty. Add simulation driving rows before training.")
         return
 
-    training_dataset, validation_dataset = split_dataset(dataset)
-    training_generator = torch.Generator().manual_seed(RANDOM_SEED)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    training_data, validation_data = split_data_frame(full_dataset.data, validation_split, seed)
+    training_dataset = DrivingDataset(
+        csv_path,
+        dataset_format=dataset_format,
+        images_dir=images_dir,
+        data_frame=training_data,
+        augment=augment,
+    )
+    validation_dataset = DrivingDataset(
+        csv_path,
+        dataset_format=dataset_format,
+        images_dir=images_dir,
+        data_frame=validation_data,
+        augment=False,
+    )
+
+    device = choose_device(device_name)
+    pin_memory = device.type == "cuda"
+    training_generator = torch.Generator().manual_seed(seed)
     training_loader = DataLoader(
         training_dataset,
         batch_size=batch_size,
         shuffle=True,
         generator=training_generator,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
     )
-    validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
+    validation_loader = DataLoader(
+        validation_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+    )
 
-    torch.manual_seed(RANDOM_SEED)
-    model = SteeringModel()
-    loss_function = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    model = SteeringModel().to(device)
+    loss_function = make_loss_function(loss_name)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     print("Simulation-only training mode.")
     print(f"Dataset format: {dataset_format}")
     print(f"Training rows: {len(training_dataset)}")
     print(f"Validation rows: {len(validation_dataset)}")
-    print("Starting baseline behavior cloning training...")
+    print(f"Device: {device}")
+    print(f"Augmentation: {'on' if augment else 'off'}")
+    print("Starting behavior cloning training...")
 
-    training_losses = []
-    validation_losses = []
+    history = {
+        "training_loss": [],
+        "validation_loss": [],
+        "training_mae": [],
+        "validation_mae": [],
+    }
     try:
         for epoch in range(epochs):
-            training_loss = train_one_epoch(model, training_loader, loss_function, optimizer)
-            validation_loss = evaluate(model, validation_loader, loss_function)
-            training_losses.append(training_loss)
-            validation_losses.append(validation_loss)
+            training_loss, training_mae = train_one_epoch(
+                model, training_loader, loss_function, optimizer, device
+            )
+            validation_loss, validation_mae = evaluate(model, validation_loader, loss_function, device)
+
+            history["training_loss"].append(training_loss)
+            history["validation_loss"].append(validation_loss)
+            history["training_mae"].append(training_mae)
+            history["validation_mae"].append(validation_mae)
 
             print(
                 f"Epoch {epoch + 1}/{epochs} - "
                 f"training loss: {training_loss:.6f} - "
-                f"validation loss: {validation_loss:.6f}"
+                f"validation loss: {validation_loss:.6f} - "
+                f"training MAE: {training_mae:.4f} - "
+                f"validation MAE: {validation_mae:.4f}"
             )
     except FileNotFoundError as exc:
         print(f"Training stopped because an image file was missing: {exc}")
         print("Validate the dataset and image paths before training.")
         return
 
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(model.state_dict(), output_path)
-    print(f"Model saved to {output_path}")
-    save_loss_chart(training_losses, validation_losses)
+    checkpoint_args = {
+        "csv": str(csv_path),
+        "format": dataset_format,
+        "images_dir": str(images_dir) if images_dir else "",
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "validation_split": validation_split,
+        "learning_rate": learning_rate,
+        "weight_decay": weight_decay,
+        "loss": loss_name,
+        "augment": augment,
+        "device": str(device),
+        "seed": seed,
+    }
+    save_checkpoint(model, output_path, checkpoint_args, history)
+    save_loss_chart(history["training_loss"], history["validation_loss"], chart_output)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train a baseline behavior cloning steering model.")
+    parser = argparse.ArgumentParser(description="Train a simulation-only behavior cloning steering model.")
     parser.add_argument(
         "--csv",
         default="data/processed/driving_log.csv",
@@ -277,10 +427,50 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs.")
     parser.add_argument("--batch-size", type=int, default=32, help="Training batch size.")
+    parser.add_argument("--lr", type=float, default=1e-3, help="Optimizer learning rate.")
+    parser.add_argument("--weight-decay", type=float, default=1e-4, help="AdamW weight decay.")
+    parser.add_argument(
+        "--loss",
+        choices=["mse", "huber"],
+        default="mse",
+        help="Regression loss function.",
+    )
+    parser.add_argument(
+        "--validation-split",
+        type=float,
+        default=0.2,
+        help="Fraction of rows used for validation.",
+    )
+    parser.add_argument(
+        "--device",
+        choices=["auto", "cpu", "cuda"],
+        default="auto",
+        help="Training device. Use auto for CUDA when available.",
+    )
+    parser.add_argument("--num-workers", type=int, default=0, help="DataLoader worker count.")
+    parser.add_argument("--seed", type=int, default=RANDOM_SEED, help="Random seed.")
+    parser.add_argument(
+        "--augment",
+        dest="augment",
+        action="store_true",
+        help="Enable simple image augmentation during training.",
+    )
+    parser.add_argument(
+        "--no-augment",
+        dest="augment",
+        action="store_false",
+        help="Disable image augmentation.",
+    )
+    parser.set_defaults(augment=True)
     parser.add_argument(
         "--output",
         default="models/steering_model_v1.pt",
-        help="Where to save the trained model weights.",
+        help="Where to save the trained model checkpoint.",
+    )
+    parser.add_argument(
+        "--chart-output",
+        default=str(TRAINING_CHART_PATH),
+        help="Where to save the training loss chart.",
     )
     return parser.parse_args()
 
@@ -294,4 +484,13 @@ if __name__ == "__main__":
         epochs=args.epochs,
         batch_size=args.batch_size,
         output_path=args.output,
+        chart_output=args.chart_output,
+        validation_split=args.validation_split,
+        learning_rate=args.lr,
+        weight_decay=args.weight_decay,
+        loss_name=args.loss,
+        augment=args.augment,
+        device_name=args.device,
+        num_workers=args.num_workers,
+        seed=args.seed,
     )

@@ -35,6 +35,15 @@ def preprocess_image(image_path: str | Path) -> torch.Tensor | None:
     return image_tensor.unsqueeze(0)
 
 
+def load_checkpoint(model_path: Path) -> object:
+    """Load local model checkpoints without relying on PyTorch's unsafe default."""
+    try:
+        return torch.load(model_path, map_location="cpu", weights_only=True)
+    except TypeError:
+        # Older PyTorch versions do not support weights_only yet.
+        return torch.load(model_path, map_location="cpu")
+
+
 def predict(model_path: str | Path, image_path: str | Path) -> float | None:
     model_path = Path(model_path)
     if not model_path.exists():
@@ -46,13 +55,23 @@ def predict(model_path: str | Path, image_path: str | Path) -> float | None:
     if image_tensor is None:
         return None
 
+    checkpoint = load_checkpoint(model_path)
+    state_dict = checkpoint.get("model_state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint
+
     model = SteeringModel()
-    model.load_state_dict(torch.load(model_path, map_location="cpu"))
+    try:
+        model.load_state_dict(state_dict)
+    except RuntimeError:
+        print("Model architecture does not match this checkpoint.")
+        print("Retrain the model with the current training script.")
+        return None
     model.eval()
 
     with torch.no_grad():
         prediction = model(image_tensor).item()
 
+    if isinstance(checkpoint, dict) and checkpoint.get("simulation_only"):
+        print("Loaded simulation-only steering checkpoint.")
     print(f"Predicted steering angle: {prediction:.4f}")
     return prediction
 

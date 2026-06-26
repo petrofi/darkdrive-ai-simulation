@@ -11,6 +11,8 @@ data/processed/*
 data/processed/simulator/*
 data/processed/simulator/driving_log.csv
 data/processed/simulator/IMG/*
+data/processed/synthetic_steering/driving_log.csv
+data/processed/synthetic_steering/IMG/*
 models/*.pt
 models/*.pth
 videos/*
@@ -20,6 +22,9 @@ screenshots/*
 !data/processed/simulator/
 !data/processed/simulator/IMG/
 !data/processed/simulator/IMG/.gitkeep
+!data/processed/synthetic_steering/
+!data/processed/synthetic_steering/IMG/
+!data/processed/synthetic_steering/IMG/.gitkeep
 !data/samples/.gitkeep
 !data/samples/road_sample.jpg
 !data/samples/sample_driving_log.csv
@@ -28,3 +33,4 @@ screenshots/*
 !screenshots/.gitkeep
 !screenshots/lane_detection_result.png
 !screenshots/training_loss.png
+!screenshots/synthetic_training_loss.png

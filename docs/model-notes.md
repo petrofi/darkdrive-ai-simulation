@@ -24,6 +24,38 @@ The first version is intentionally modest:
 - No real-time deployment logic.
 - No real vehicle control.
 
+## Current Baseline V2
+
+The current `SteeringModel` is still small, but it is stronger than the first
+pipeline test model:
+
+- It uses a compact NVIDIA-style convolutional stack.
+- It normalizes image tensors from `[0, 1]` to `[-1, 1]` inside the model.
+- It uses ELU activations for smoother regression training.
+- It uses dropout in the regression head to reduce overfitting.
+- It still predicts only one value: steering angle.
+
+The model remains a baseline. It is useful for learning the behavior cloning
+workflow, not for real vehicle control.
+
+## Synthetic Steering Dataset
+
+The project includes `scripts/create_synthetic_steering_dataset.py` to generate
+toy road images with known steering labels. This lets the training loop be
+tested with more than the three-row sample CSV before a real simulator dataset
+exists.
+
+Synthetic data is useful for:
+
+- testing the dataset loader
+- testing augmentation
+- testing training and validation loss reporting
+- testing checkpoint and inference flow
+
+Synthetic data is not a substitute for real simulator driving logs. Real model
+learning still needs many frames collected from a simulator with matching
+steering labels.
+
 ## Why Use Simulated Data
 
 Simulated data keeps the project safe and repeatable. It also makes it easier to collect many examples, test failures, and improve the model without any public road testing.

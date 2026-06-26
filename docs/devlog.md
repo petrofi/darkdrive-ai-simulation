@@ -125,3 +125,33 @@ Expand the OpenCV lane detection demo with a larger web image batch.
 ### Next Step
 
 Use the web lane image batch to improve computer vision experiments, while collecting steering-labeled simulator data separately for behavior cloning.
+
+## Day 9: Improved Steering Model and Synthetic Training
+
+### Goal
+
+Improve the behavior cloning model and run a larger training test without using unlabeled web images as steering data.
+
+### What Was Added
+
+- Upgraded `SteeringModel` to a compact NVIDIA-style CNN.
+- Added training augmentation, MAE reporting, device selection, AdamW, and checkpoint metadata.
+- Added a synthetic steering dataset generator for simulation-only pipeline development.
+- Generated 1000 local synthetic steering frames.
+- Trained the improved model for 8 epochs on the synthetic dataset.
+- Saved a synthetic training loss chart.
+
+### Training Result
+
+```text
+Training rows: 800
+Validation rows: 200
+Final training loss: 0.000789
+Final validation loss: 0.000405
+Final validation MAE: 0.0208
+Example predicted steering: 0.0125
+```
+
+### Next Step
+
+Replace the synthetic dataset with real simulator driving logs from DonkeyCar, Udacity behavior cloning simulator, or CARLA, then compare predictions against held-out simulator steering labels.

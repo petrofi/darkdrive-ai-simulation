@@ -262,9 +262,11 @@ Simulation-only training mode.
 Dataset format: simple
 Training rows: 2
 Validation rows: 1
-Starting baseline behavior cloning training...
-Epoch 1/1 - training loss: 0.002616 - validation loss: 0.035081
-Model saved to models\steering_model_v1.pt
+Device: cuda
+Augmentation: on
+Starting behavior cloning training...
+Epoch 1/1 - training loss: 0.037552 - validation loss: 0.003665 - training MAE: 0.1422 - validation MAE: 0.0605
+Model checkpoint saved to models\steering_model_v1.pt
 Training loss chart saved to screenshots\training_loss.png
 ```
 
@@ -281,7 +283,8 @@ python src/inference/predict_steering.py --model models/steering_model_v1.pt --i
 Expected output example:
 
 ```text
-Predicted steering angle: -0.0873
+Loaded simulation-only steering checkpoint.
+Predicted steering angle: 0.0605
 ```
 
 ## AI Training Direction: Behavior Cloning
@@ -328,6 +331,51 @@ python src/inference/predict_steering.py --model models/steering_model_v1.pt --i
 ```
 
 Trained `.pt` and `.pth` model files are ignored by Git so large experiment artifacts do not get committed by accident.
+
+## Synthetic Steering Training Demo
+
+The 500 web lane images are useful for OpenCV lane detection, but they do not have steering labels. To improve and test the steering model before real simulator data is collected, the project includes a simulation-only synthetic steering dataset generator.
+
+Generate a local synthetic dataset:
+
+```powershell
+python scripts/create_synthetic_steering_dataset.py --output-dir data/processed/synthetic_steering --samples 1000 --width 320 --height 160 --seed 42
+```
+
+Train the improved steering model:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/processed/synthetic_steering/driving_log.csv --format simple --epochs 8 --batch-size 64 --output models/steering_model_v2_synthetic.pt --chart-output screenshots/synthetic_training_loss.png --loss huber --augment --device cpu --seed 42
+```
+
+Run inference on one synthetic frame:
+
+```powershell
+python src/inference/predict_steering.py --model models/steering_model_v2_synthetic.pt --image data/processed/synthetic_steering/IMG/synthetic_00001.jpg
+```
+
+Generated synthetic images and model checkpoint files are ignored by Git. The training chart can be tracked as a small visual artifact:
+
+```text
+screenshots/synthetic_training_loss.png
+```
+
+This synthetic dataset is only for pipeline development. Real model learning still requires simulator driving data with camera frames and steering labels.
+
+Latest local synthetic training run:
+
+```text
+Generated frames: 1000
+Training rows: 800
+Validation rows: 200
+Epochs: 8
+Final training loss: 0.000789
+Final validation loss: 0.000405
+Final validation MAE: 0.0208
+Example predicted steering: 0.0125
+```
+
+![Synthetic Training Loss](screenshots/synthetic_training_loss.png)
 
 ## Training with Simulated Driving Data
 
