@@ -111,6 +111,37 @@ If the input image is found and OpenCV can process it, the output image will be 
 screenshots/lane_detection_result.png
 ```
 
+## Web Lane Demo Images
+
+Additional road and lane images downloaded from open web sources are stored in:
+
+```text
+data/samples/web_lane_images/
+```
+
+Current files:
+
+```text
+data/samples/web_lane_images/andre_branco_unsplash_road.jpg
+data/samples/web_lane_images/approaching_morrisons_roundabout.jpg
+data/samples/web_lane_images/bike_lane_painted_buffer.jpg
+data/samples/web_lane_images/SOURCES.md
+```
+
+These images are for OpenCV lane detection experiments only. They do not include steering labels, throttle, brake, or speed values, so they are not suitable for behavior cloning training.
+
+Example lane detection test with a web image:
+
+```powershell
+python src/lane_detection/basic_lane_detection.py --image data/samples/web_lane_images/andre_branco_unsplash_road.jpg --output screenshots/lane_detection_web_result.png
+```
+
+Source and license notes are listed in:
+
+```text
+data/samples/web_lane_images/SOURCES.md
+```
+
 ## How to Install
 
 From Windows PowerShell:
