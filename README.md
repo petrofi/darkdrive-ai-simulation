@@ -60,7 +60,8 @@ darkdrive-ai-simulation/
 |   |-- lane_detection/
 |   |-- models/
 |   |-- training/
-|   `-- inference/
+|   |-- inference/
+|   `-- simulator/
 |-- notebooks/
 |-- models/
 |-- screenshots/
@@ -484,6 +485,41 @@ python src/inference/predict_steering.py --model models/steering_model_v1.pt --i
 ```
 
 Important: the local folder name `win_sys_int` and executable `sys_int.exe` suggest this may be the Udacity System Integration simulator, not the behavior cloning training simulator. If it does not create `IMG` frames and `driving_log.csv`, use it only for visual/manual testing and collect behavior cloning data with another simulator later.
+
+## Udacity Behavioral Cloning Reference
+
+DarkDrive uses the official Udacity Behavioral Cloning project only as an educational reference:
+
+```text
+https://github.com/udacity/CarND-Behavioral-Cloning-P3
+```
+
+The shared concept is:
+
+```text
+camera image -> steering angle
+```
+
+Udacity's original project used a Keras model, `model.h5`, and a simulator `drive.py` loop. DarkDrive keeps the same learning idea but uses a PyTorch implementation:
+
+- PyTorch `SteeringModel`
+- `.pt` checkpoints
+- `src/training/train_behavior_cloning.py`
+- `src/inference/predict_steering.py`
+- future simulator-only drive loop under `src/simulator/`
+
+The future simulator drive loop is not implemented yet. The current placeholder file documents the planned architecture without sending simulator commands:
+
+```powershell
+python src/simulator/udacity_drive_pytorch.py --model models/steering_model_v1.pt
+```
+
+DarkDrive does not copy the old Keras code, does not convert the project to Keras, and does not add real vehicle control. Simulator integration will come only after real simulator dataset validation and PyTorch model training.
+
+See:
+
+- [docs/behavioral-cloning-reference.md](docs/behavioral-cloning-reference.md)
+- [docs/udacity-to-darkdrive-adaptation-plan.md](docs/udacity-to-darkdrive-adaptation-plan.md)
 
 ## Data Collection Plan
 

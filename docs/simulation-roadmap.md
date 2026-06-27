@@ -49,4 +49,26 @@ Run inference on held-out simulator images and compare predicted steering values
 
 After validating the data and model workflow, expand to DonkeyCar Simulator or CARLA for richer simulator data and more professional evaluation.
 
+## Next Technical Target
+
+Implement a PyTorch simulator drive loop inspired by Udacity's `drive.py`, but
+only after real simulator dataset validation and PyTorch model training.
+
+Planned future file:
+
+```text
+src/simulator/udacity_drive_pytorch.py
+```
+
+This future loop should:
+
+- connect only to a simulator in autonomous mode
+- receive simulator camera images
+- run PyTorch `SteeringModel` inference
+- send predicted steering back to the simulator only
+- record simulator frames and predictions for evaluation
+
+It must not add real vehicle control, public road testing instructions, or unsafe
+deployment steps.
+
 All phases remain simulation-only. Do not add real vehicle control code or public road testing instructions.

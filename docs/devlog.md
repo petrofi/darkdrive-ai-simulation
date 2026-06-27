@@ -103,6 +103,10 @@ Clarify what data is missing and where training data should come from.
 - Added a simulator data collection plan.
 - Added recommended data source order: Udacity behavior cloning simulator, local `win_sys_int` if compatible, DonkeyCar Simulator, then CARLA.
 - Added training commands for steering-labeled simulator data.
+- Reviewed Udacity Behavioral Cloning reference project.
+- Identified the `drive.py` websocket loop as a future integration reference.
+- Decided to keep DarkDrive PyTorch-based.
+- Added an adaptation plan for a PyTorch simulator-only driving loop.
 
 ### Next Step
 
