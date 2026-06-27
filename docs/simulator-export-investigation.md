@@ -12,9 +12,11 @@ Current finding:
 
 - No evidence was found that this installed simulator can export a behavior
   cloning dataset with `driving_log.csv` and an `IMG/` image folder.
+- A manual UI check also showed only `Manual` and `Camera` options, with no
+  visible recording, training data, save-folder, or dataset export control.
 - The simulator may still be useful for visual/manual simulator testing.
-- It should not be treated as the main dataset collection tool unless a
-  recording/export screen is manually confirmed inside the running simulator.
+- It should not be treated as the main dataset collection tool for behavior
+  cloning.
 
 DarkDrive should stay simulation-only. This investigation does not add real
 vehicle control code, public road instructions, or unsafe deployment steps.
@@ -57,6 +59,25 @@ output structure:
 - No obvious recording/export folder
 - No clear local file names indicating behavior cloning data recording
 
+## Manual UI Check
+
+The simulator was also opened manually. The visible interface showed:
+
+- `Manual`
+- `Camera`
+- live telemetry values such as throttle, steer, brake, acceleration, and speed
+
+The visible interface did **not** show:
+
+- a recording button
+- a training mode recorder
+- a save folder selector
+- an `IMG/` export option
+- a `driving_log.csv` export option
+
+This supports the conclusion that the installed `sys_int.exe` simulator is not
+the correct tool for collecting Udacity-style behavior cloning datasets.
+
 ## Can This Version Export `driving_log.csv` and `IMG/`?
 
 Based on the local file inspection and Udacity simulator naming, this installed
@@ -69,12 +90,11 @@ No, this installed System Integration simulator is probably not the correct
 Udacity simulator for exporting driving_log.csv and IMG/ behavior cloning data.
 ```
 
-Confidence level: medium-high.
+Confidence level: high.
 
-This is not an absolute statement until the simulator UI is checked manually,
-because some Unity simulators expose features only inside the running
-application. However, the installed folder name `win_sys_int` and executable
-name `sys_int.exe` strongly indicate the System Integration / Capstone build.
+The installed folder name `win_sys_int`, executable name `sys_int.exe`, local
+file inspection, and manual UI check all point to the System Integration /
+Capstone build rather than the Term 1 Behavior Cloning simulator.
 
 ## How Behavior Cloning Recordings Are Normally Created
 
@@ -172,13 +192,11 @@ simulator.
 
 ## Recommended Next Action
 
-1. Open `sys_int.exe` manually.
-2. Check whether the simulator UI has any recording/export option.
-3. If no recording option is visible, stop using `sys_int` for behavior cloning
-   dataset collection.
-4. Use the Udacity Term 1 Behavior Cloning simulator if available.
-5. If that is not practical, move to DonkeyCar Simulator.
-6. Put collected simulator data here:
+1. Stop using the installed `sys_int.exe` as the behavior cloning data
+   collection path.
+2. Use the Udacity Term 1 Behavior Cloning simulator if available.
+3. If that is not practical, move to DonkeyCar Simulator.
+4. Put collected simulator data here:
 
 ```text
 data/processed/simulator/
@@ -186,13 +204,13 @@ data/processed/simulator/
 `-- driving_log.csv
 ```
 
-7. Validate the dataset:
+5. Validate the dataset:
 
 ```powershell
 python scripts/validate_simulator_dataset.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
 ```
 
-8. Train only after validation passes:
+6. Train only after validation passes:
 
 ```powershell
 python src/training/train_behavior_cloning.py --csv data/processed/simulator/driving_log.csv --format udacity --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
