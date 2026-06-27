@@ -9,41 +9,57 @@ Completed.
 - Single-image steering prediction works.
 - Dataset validation tooling exists.
 
-## Phase 2: Try Local Udacity Simulator for Data Collection
+## Phase 2: Simulator Dataset Collection
 
-Use the local simulator folder:
+Completed for the first local dataset.
 
-```text
-C:\Users\tarik\Downloads\win_sys_int\win_sys_int
-```
-
-Decision point:
-
-- If it produces `driving_log.csv` and `IMG` frames, use it for the first behavior cloning dataset.
-- If it does not, do not waste time trying to force it into the workflow. Move data collection to DonkeyCar Simulator.
-
-Data source priority:
-
-1. Udacity Term 1 behavior cloning simulator, if available.
-2. Current `win_sys_int` simulator, only if it exports behavior cloning data.
-3. DonkeyCar Simulator for practical behavior cloning data collection.
-4. CARLA later for richer camera sensor work.
-
-## Phase 3: Train Model on Real Simulated Driving Data
-
-Place validated simulator data under:
+The Udacity simulator successfully recorded a real simulator dataset:
 
 ```text
 data/processed/simulator/
+|-- IMG/
+`-- driving_log.csv
 ```
 
-Train the baseline model with the Udacity-style format.
+Current validation result:
+
+- Rows: 3706
+- Center images found: 3706
+- Left images found: 3706
+- Right images found: 3706
+- Missing center images: 0
+- Steering range: -1.000000 to 1.000000
+- Dataset validation: PASS
+
+## Phase 3: Train Model on Real Simulated Driving Data
+
+In progress.
+
+The baseline PyTorch model has completed a first training run on the validated Udacity-style simulator dataset.
 
 Do not train the steering model on image-only lane datasets. Steering prediction requires images paired with steering labels.
 
+Next training improvements:
+
+- collect more balanced recovery driving data
+- use left/right camera images for augmentation
+- compare multiple validation splits
+- track MAE/RMSE over repeated runs
+- keep trained checkpoints ignored by Git
+
 ## Phase 4: Evaluate Predictions
 
-Run inference on held-out simulator images and compare predicted steering values against logged steering values.
+Started.
+
+The first offline evaluation on held-out simulator images produced:
+
+```text
+Rows evaluated: 741
+MAE: 0.174045
+RMSE: 0.246529
+```
+
+Continue improving offline evaluation before attempting any simulator drive loop.
 
 ## Phase 5: Later DonkeyCar/CARLA Integration
 

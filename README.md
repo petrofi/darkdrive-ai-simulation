@@ -409,7 +409,7 @@ screenshots/training_loss.png
 
 ## Phase 2: Simulator Data Collection
 
-The current sample road image and sample CSV were only created for pipeline testing. The next step is to collect real simulated driving data from a self-driving car simulator.
+The current sample road image and sample CSV were only created for pipeline testing. The project now also supports a real local simulator dataset recorded from the Udacity simulator.
 
 In this phase, the model will learn from simulator camera images and steering values. This remains simulation-only: no real vehicle control, no public road testing, and no unsafe deployment.
 
@@ -485,6 +485,94 @@ python src/inference/predict_steering.py --model models/steering_model_v1.pt --i
 ```
 
 Important: the local folder name `win_sys_int` and executable `sys_int.exe` suggest this may be the Udacity System Integration simulator, not the behavior cloning training simulator. If it does not create `IMG` frames and `driving_log.csv`, use it only for visual/manual testing and collect behavior cloning data with another simulator later.
+
+## First Real Simulator Dataset
+
+A first real simulator driving dataset has been recorded from the Udacity simulator. This is no longer only sample or synthetic data: it contains simulator camera frames and steering labels.
+
+The generated dataset is local and ignored by Git:
+
+```text
+data/processed/simulator/
+|-- IMG/
+`-- driving_log.csv
+```
+
+The current simulator log uses Udacity-style columns:
+
+```text
+center,left,right,steering,throttle,brake,speed
+```
+
+The project reads only the `center` camera for the first baseline training run. Left and right camera images are available for future augmentation work.
+
+Latest local dataset summary:
+
+```text
+Rows: 3706
+Center images: 3706 found, 0 missing
+Left images: 3706 found, 0 missing
+Right images: 3706 found, 0 missing
+Steering range: -1.000000 to 1.000000
+Steering mean/std: -0.013526 / 0.350406
+Speed range: 0.000037 to 30.489510
+Speed mean/std: 23.557869 / 9.844598
+```
+
+Validate the simulator dataset:
+
+```powershell
+python scripts/validate_simulator_dataset.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
+```
+
+Analyze the driving log and generate small report screenshots:
+
+```powershell
+python scripts/analyze_driving_log.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
+```
+
+Train the baseline model on real simulator data:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity --epochs 10 --batch-size 32 --output models/steering_model_sim_v1.pt
+```
+
+Evaluate the trained model:
+
+```powershell
+python scripts/evaluate_steering_model.py --model models/steering_model_sim_v1.pt --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
+```
+
+Latest local training result:
+
+```text
+Training rows: 2965
+Validation rows: 741
+Best epoch: 10
+Best validation loss: 0.060776
+Validation MAE during training: 0.1740
+Evaluation MAE: 0.174045
+Evaluation RMSE: 0.246529
+```
+
+Generated local artifacts:
+
+```text
+screenshots/steering_distribution.png
+screenshots/speed_distribution.png
+screenshots/simulator_sample_frames.png
+screenshots/training_loss_sim_v1.png
+screenshots/prediction_vs_actual.png
+screenshots/prediction_samples.png
+```
+
+The trained checkpoint is generated locally and ignored by Git:
+
+```text
+models/steering_model_sim_v1.pt
+```
+
+This is a first simulator training baseline. It does not mean the model already drives in the simulator. Simulator autonomous driving integration remains future work.
 
 ## Udacity Behavioral Cloning Reference
 
@@ -568,12 +656,16 @@ For Udacity-style datasets, the current baseline uses only the `center` camera i
 
 ## Current Status
 
-First working simulation AI pipeline verified:
+First real simulator training workflow verified:
 
 - OpenCV lane detection works with the sample image.
 - Baseline PyTorch behavior cloning training works with the sample CSV.
 - Steering prediction inference works after local training.
-- Real model learning is the next phase and requires a larger simulated driving dataset.
+- Real Udacity simulator dataset validation works.
+- Real simulator driving log analysis works.
+- Baseline PyTorch training runs on 3706 simulator frames.
+- Offline steering model evaluation works on held-out simulator frames.
+- Simulator autonomous driving integration is not implemented yet.
 
 ## Future Work
 
@@ -585,4 +677,4 @@ First working simulation AI pipeline verified:
 
 ## Next Phase
 
-Collect real simulated driving data into `data/processed/`, using either the simple CSV format or the Udacity-style center camera format. Then train the baseline model for more epochs and compare predictions against validation steering labels.
+Improve the real simulator model with better data balance, recovery driving, left/right camera augmentation, and offline evaluation before implementing any simulator-only autonomous drive loop.

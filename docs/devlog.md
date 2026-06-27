@@ -159,3 +159,45 @@ Example predicted steering: 0.0125
 ### Next Step
 
 Replace the synthetic dataset with real simulator driving logs from DonkeyCar, Udacity behavior cloning simulator, or CARLA, then compare predictions against held-out simulator steering labels.
+
+## Day 10: First Real Simulator Dataset
+
+### Goal
+
+Move the project from simulator dataset collection ready to simulator training ready.
+
+### What Was Added
+
+- Confirmed Udacity simulator recording works.
+- Collected the first real simulator driving dataset.
+- Prepared dataset analysis, validation, training, and evaluation workflow.
+- Added robust handling for headerless Udacity CSV logs and moved Windows image paths.
+- Trained the baseline PyTorch steering model on real simulator frames.
+- Evaluated predictions on held-out simulator frames.
+- Moved the project toward Simulator Training Ready level.
+
+### Dataset Result
+
+```text
+Rows: 3706
+Center images found: 3706
+Left images found: 3706
+Right images found: 3706
+Steering min/max/mean/std: -1.000000 / 1.000000 / -0.013526 / 0.350406
+Validation: PASS
+```
+
+### Training Result
+
+```text
+Training rows: 2965
+Validation rows: 741
+Best epoch: 10
+Best validation loss: 0.060776
+Evaluation MAE: 0.174045
+Evaluation RMSE: 0.246529
+```
+
+### Next Step
+
+Collect more balanced simulator driving data with recovery examples, then improve evaluation and only later implement a simulator-only autonomous drive loop.

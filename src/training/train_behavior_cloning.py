@@ -20,14 +20,19 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.models.steering_model import SteeringModel
+from src.utils.driving_log import (
+    filter_rows_with_existing_images,
+    load_driving_log,
+    primary_image_column,
+    required_columns,
+    resolve_image_path,
+)
 
 
 IMAGE_WIDTH = 160
 IMAGE_HEIGHT = 80
 RANDOM_SEED = 42
 TRAINING_CHART_PATH = Path("screenshots/training_loss.png")
-SIMPLE_REQUIRED_COLUMNS = {"image_path", "steering", "throttle", "brake", "speed"}
-UDACITY_REQUIRED_COLUMNS = {"center", "left", "right", "steering", "throttle", "brake", "speed"}
 
 
 class DrivingDataset(Dataset):
@@ -47,8 +52,7 @@ class DrivingDataset(Dataset):
         self.augment = augment
 
         if data_frame is None:
-            self.data = pd.read_csv(self.csv_path)
-            self.data.columns = [column.strip() for column in self.data.columns]
+            self.data = load_driving_log(self.csv_path, self.dataset_format)
         else:
             self.data = data_frame.copy().reset_index(drop=True)
 
@@ -59,11 +63,7 @@ class DrivingDataset(Dataset):
             raise ValueError(f"Driving log is missing required columns: {missing}")
 
     def _required_columns(self) -> set[str]:
-        if self.dataset_format == "simple":
-            return SIMPLE_REQUIRED_COLUMNS
-        if self.dataset_format == "udacity":
-            return UDACITY_REQUIRED_COLUMNS
-        raise ValueError("dataset_format must be either 'simple' or 'udacity'")
+        return set(required_columns(self.dataset_format))
 
     def __len__(self) -> int:
         return len(self.data)
@@ -89,30 +89,8 @@ class DrivingDataset(Dataset):
 
     def _resolve_image_path(self, row: pd.Series) -> Path:
         """Resolve image paths from either supported CSV format."""
-        path_column = "image_path" if self.dataset_format == "simple" else "center"
-        raw_path = str(row[path_column]).strip().replace("\\", "/")
-        image_path = Path(raw_path)
-
-        if image_path.is_absolute():
-            return image_path
-
-        if image_path.exists():
-            return image_path
-
-        cwd_path = Path.cwd() / image_path
-        if cwd_path.exists():
-            return cwd_path
-
-        csv_relative_path = self.csv_path.parent / image_path
-        if csv_relative_path.exists():
-            return csv_relative_path
-
-        if self.images_dir:
-            if image_path.parts and image_path.parts[0].lower() == "img":
-                return self.images_dir / Path(*image_path.parts[1:])
-            return self.images_dir / image_path.name
-
-        return csv_relative_path
+        path_column = primary_image_column(self.dataset_format)
+        return resolve_image_path(row[path_column], self.csv_path, self.images_dir)
 
 
 def augment_training_image(image: np.ndarray, steering: float) -> tuple[np.ndarray, float]:
@@ -267,6 +245,21 @@ def save_checkpoint(
     print(f"Model checkpoint saved to {output_path}")
 
 
+def default_chart_output(
+    output_path: str | Path,
+    csv_path: str | Path,
+    dataset_format: str,
+) -> Path:
+    """Choose a beginner-friendly default chart name for simulator training."""
+    output_stem = Path(output_path).stem
+    csv_text = str(csv_path).replace("\\", "/").lower()
+    if output_stem == "steering_model_sim_v1" or (
+        dataset_format == "udacity" and "data/processed/simulator" in csv_text
+    ):
+        return Path("screenshots/training_loss_sim_v1.png")
+    return TRAINING_CHART_PATH
+
+
 def make_loss_function(loss_name: str) -> nn.Module:
     if loss_name == "huber":
         return nn.SmoothL1Loss()
@@ -280,7 +273,7 @@ def train(
     epochs: int = 5,
     batch_size: int = 32,
     output_path: str | Path = "models/steering_model_v1.pt",
-    chart_output: str | Path = TRAINING_CHART_PATH,
+    chart_output: str | Path | None = None,
     validation_split: float = 0.2,
     learning_rate: float = 1e-3,
     weight_decay: float = 1e-4,
@@ -300,19 +293,43 @@ def train(
         return
 
     try:
-        full_dataset = DrivingDataset(csv_path, dataset_format=dataset_format, images_dir=images_dir)
+        full_data = load_driving_log(csv_path, dataset_format)
     except ValueError as exc:
         print(f"Dataset format error: {exc}")
         print("Run scripts/validate_simulator_dataset.py before training.")
         return
+    except Exception as exc:
+        print(f"Could not read driving log: {exc}")
+        return
 
-    if len(full_dataset) == 0:
+    if len(full_data) == 0:
         print("Driving log is empty. Add simulation driving rows before training.")
         return
 
+    invalid_steering = int(full_data["steering"].isna().sum())
+    if invalid_steering:
+        print(f"Skipping rows with invalid steering values: {invalid_steering}")
+        full_data = full_data.dropna(subset=["steering"]).reset_index(drop=True)
+
+    full_data, missing_image_count = filter_rows_with_existing_images(
+        full_data,
+        csv_path,
+        images_dir,
+        dataset_format,
+    )
+    if missing_image_count:
+        print(f"Skipping rows with missing center images: {missing_image_count}")
+
+    if len(full_data) == 0:
+        print("No usable rows remain after checking steering values and image paths.")
+        return
+
+    if chart_output is None:
+        chart_output = default_chart_output(output_path, csv_path, dataset_format)
+
     np.random.seed(seed)
     torch.manual_seed(seed)
-    training_data, validation_data = split_data_frame(full_dataset.data, validation_split, seed)
+    training_data, validation_data = split_data_frame(full_data, validation_split, seed)
     training_dataset = DrivingDataset(
         csv_path,
         dataset_format=dataset_format,
@@ -365,6 +382,10 @@ def train(
         "training_mae": [],
         "validation_mae": [],
     }
+    best_validation_loss = float("inf")
+    best_epoch = 0
+    best_state_dict: dict[str, torch.Tensor] | None = None
+
     try:
         for epoch in range(epochs):
             training_loss, training_mae = train_one_epoch(
@@ -377,12 +398,24 @@ def train(
             history["training_mae"].append(training_mae)
             history["validation_mae"].append(validation_mae)
 
+            if validation_loss < best_validation_loss:
+                best_validation_loss = validation_loss
+                best_epoch = epoch + 1
+                best_state_dict = {
+                    name: value.detach().cpu().clone()
+                    for name, value in model.state_dict().items()
+                }
+                best_note = " - best checkpoint updated"
+            else:
+                best_note = ""
+
             print(
                 f"Epoch {epoch + 1}/{epochs} - "
                 f"training loss: {training_loss:.6f} - "
                 f"validation loss: {validation_loss:.6f} - "
                 f"training MAE: {training_mae:.4f} - "
                 f"validation MAE: {validation_mae:.4f}"
+                f"{best_note}"
             )
     except FileNotFoundError as exc:
         print(f"Training stopped because an image file was missing: {exc}")
@@ -402,9 +435,24 @@ def train(
         "augment": augment,
         "device": str(device),
         "seed": seed,
+        "best_epoch": best_epoch,
+        "best_validation_loss": best_validation_loss,
+        "usable_rows": len(full_data),
+        "skipped_missing_images": missing_image_count,
+        "skipped_invalid_steering": invalid_steering,
     }
+
+    if best_state_dict is not None:
+        model.load_state_dict(best_state_dict)
+
     save_checkpoint(model, output_path, checkpoint_args, history)
     save_loss_chart(history["training_loss"], history["validation_loss"], chart_output)
+    print("Training summary:")
+    print(f"- Usable rows: {len(full_data)}")
+    print(f"- Best epoch: {best_epoch}")
+    print(f"- Best validation loss: {best_validation_loss:.6f}")
+    print(f"- Output checkpoint: {output_path}")
+    print(f"- Loss chart: {chart_output}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -469,8 +517,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--chart-output",
-        default=str(TRAINING_CHART_PATH),
-        help="Where to save the training loss chart.",
+        default=None,
+        help="Where to save the training loss chart. Defaults to a simulator-specific chart for simulator data.",
     )
     return parser.parse_args()
 

@@ -1,51 +1,22 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import pandas as pd
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-SIMPLE_REQUIRED_COLUMNS = ["image_path", "steering", "throttle", "brake", "speed"]
-UDACITY_REQUIRED_COLUMNS = ["center", "left", "right", "steering", "throttle", "brake", "speed"]
-
-
-def resolve_image_path(raw_path: str, csv_path: Path, images_dir: Path) -> Path:
-    """Resolve common simulator image paths without assuming one exact exporter."""
-    normalized_path = str(raw_path).strip().replace("\\", "/")
-    image_path = Path(normalized_path)
-
-    if image_path.is_absolute():
-        return image_path
-
-    if image_path.exists():
-        return image_path
-
-    cwd_path = Path.cwd() / image_path
-    if cwd_path.exists():
-        return cwd_path
-
-    csv_relative_path = csv_path.parent / image_path
-    if csv_relative_path.exists():
-        return csv_relative_path
-
-    # Udacity-style logs often store paths as IMG/file.jpg.
-    if image_path.parts and image_path.parts[0].lower() == "img":
-        return images_dir / Path(*image_path.parts[1:])
-
-    return images_dir / image_path.name
-
-
-def required_columns(dataset_format: str) -> list[str]:
-    if dataset_format == "simple":
-        return SIMPLE_REQUIRED_COLUMNS
-    if dataset_format == "udacity":
-        return UDACITY_REQUIRED_COLUMNS
-    raise ValueError(f"Unsupported dataset format: {dataset_format}")
-
-
-def image_column(dataset_format: str) -> str:
-    return "image_path" if dataset_format == "simple" else "center"
+from src.utils.driving_log import (
+    image_columns,
+    load_driving_log,
+    primary_image_column,
+    required_columns,
+    resolve_image_path,
+)
 
 
 def validate_dataset(csv_path: Path, images_dir: Path, dataset_format: str) -> bool:
@@ -63,12 +34,11 @@ def validate_dataset(csv_path: Path, images_dir: Path, dataset_format: str) -> b
         return False
 
     try:
-        data = pd.read_csv(csv_path)
+        data = load_driving_log(csv_path, dataset_format)
     except Exception as exc:
         print(f"FAIL could not read CSV: {exc}")
         return False
 
-    data.columns = [column.strip() for column in data.columns]
     expected_columns = required_columns(dataset_format)
     missing_columns = [column for column in expected_columns if column not in data.columns]
     if missing_columns:
@@ -82,15 +52,28 @@ def validate_dataset(csv_path: Path, images_dir: Path, dataset_format: str) -> b
         print("FAIL CSV has no rows.")
         return False
 
-    missing_images = []
+    path_column = primary_image_column(dataset_format)
+    missing_images: list[tuple[int, str, Path]] = []
     found_images = 0
-    path_column = image_column(dataset_format)
     for row_index, row in data.iterrows():
         image_path = resolve_image_path(row[path_column], csv_path, images_dir)
         if not image_path.exists():
-            missing_images.append((row_index, image_path))
+            missing_images.append((row_index, path_column, image_path))
         else:
             found_images += 1
+
+    if dataset_format == "udacity":
+        for camera_column in image_columns(dataset_format):
+            camera_found = 0
+            camera_missing = 0
+            for _, row in data.iterrows():
+                image_path = resolve_image_path(row[camera_column], csv_path, images_dir)
+                if image_path.exists():
+                    camera_found += 1
+                else:
+                    camera_missing += 1
+            print(f"{camera_column} images found: {camera_found}")
+            print(f"{camera_column} images missing: {camera_missing}")
 
     steering = pd.to_numeric(data["steering"], errors="coerce")
     invalid_steering = int(steering.isna().sum())
@@ -101,19 +84,20 @@ def validate_dataset(csv_path: Path, images_dir: Path, dataset_format: str) -> b
     print(f"Found images: {found_images}")
     print(f"Missing images: {len(missing_images)}")
     if missing_images:
-        row_index, image_path = missing_images[0]
-        print(f"Example missing path: row {row_index}: {image_path}")
+        row_index, column_name, image_path = missing_images[0]
+        print(f"Example missing path: row {row_index}, column {column_name}: {image_path}")
 
     print(f"Steering min: {steering.min():.6f}")
     print(f"Steering max: {steering.max():.6f}")
     print(f"Steering mean: {steering.mean():.6f}")
 
-    if "speed" in data.columns:
-        speed = pd.to_numeric(data["speed"], errors="coerce").dropna()
-        if len(speed) > 0:
-            print(f"Speed min: {speed.min():.6f}")
-            print(f"Speed max: {speed.max():.6f}")
-            print(f"Speed mean: {speed.mean():.6f}")
+    for column in ["throttle", "brake", "speed"]:
+        if column in data.columns:
+            values = pd.to_numeric(data[column], errors="coerce").dropna()
+            if len(values) > 0:
+                print(f"{column.title()} min: {values.min():.6f}")
+                print(f"{column.title()} max: {values.max():.6f}")
+                print(f"{column.title()} mean: {values.mean():.6f}")
 
     passed = len(missing_images) == 0
     print(f"{'PASS' if passed else 'FAIL'} dataset validation summary")

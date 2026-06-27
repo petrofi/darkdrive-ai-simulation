@@ -34,3 +34,9 @@ screenshots/*
 !screenshots/lane_detection_result.png
 !screenshots/training_loss.png
 !screenshots/synthetic_training_loss.png
+!screenshots/steering_distribution.png
+!screenshots/speed_distribution.png
+!screenshots/simulator_sample_frames.png
+!screenshots/training_loss_sim_v1.png
+!screenshots/prediction_vs_actual.png
+!screenshots/prediction_samples.png
