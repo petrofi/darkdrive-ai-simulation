@@ -393,3 +393,27 @@ Verify the Ubuntu WSL environment and prepare the isolated DonkeyCar workspace o
 ### Next Step
 
 Run the documented workspace and venv commands inside the same Ubuntu terminal that reports Ubuntu 24.04.3, then report the output before installing DonkeyCar.
+
+## Day 18: DonkeyCar WSL Install Attempt Preparation
+
+### Goal
+
+Prepare the safest DonkeyCar installation attempt inside the isolated WSL `donkey-env`.
+
+### What Was Found
+
+- User confirmed Ubuntu 24.04.3, Python 3.12.3, DarkDrive WSL path access, and an isolated `~/donkeycar-workspace/donkey-env`.
+- User confirmed the active pip path is inside `/home/darklove/donkeycar-workspace/donkey-env/`.
+- Codex still cannot see an installed WSL distro from this PowerShell session, so it cannot safely run the install inside `donkey-env`.
+
+### What Was Added
+
+- Documented the planned `pip install "donkeycar[pc]"` command.
+- Documented Python 3.12 compatibility risks.
+- Documented fallback options if DonkeyCar installation fails.
+- Kept DarkDrive Windows `.venv` untouched.
+- No training, merging, dataset download, or control code was added.
+
+### Next Step
+
+Run the documented `python --version`, `pip --version`, `which python`, and `which pip` checks inside Ubuntu. If they point into `~/donkeycar-workspace/donkey-env`, run the DonkeyCar install command manually and report the result.
