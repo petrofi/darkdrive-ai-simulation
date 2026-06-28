@@ -7,6 +7,7 @@ venv/
 env/
 .ipynb_checkpoints/
 veriler/
+yeni eğitim/
 data/raw/*
 data/processed/*
 data/processed/simulator/*

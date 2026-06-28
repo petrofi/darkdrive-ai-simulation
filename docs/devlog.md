@@ -233,3 +233,35 @@ Validation: PASS
 ### Next Step
 
 Collect recovery-focused Dataset v2 sessions, especially right recovery and right-turn examples, because Session A is valid but does not reduce the near-zero steering problem.
+
+## Day 12: Dataset V2 New Training Session Organization
+
+### Goal
+
+Move the new simulator recording from `yeni eğitim/` into the Dataset v2 structure and analyze it safely.
+
+### What Was Added
+
+- Organized the new simulator recording as `data/processed/simulator_v2/session_b_new_training/`.
+- Ran session-level dataset analysis after the move.
+- Confirmed generated simulator data remains ignored by Git.
+- Added a session report documenting that the data is valid but not recovery-heavy.
+
+### Dataset Result
+
+```text
+Rows: 1126
+Total simulator images: 3378
+Center images found: 1126
+Missing center images: 0
+Steering min/max/mean/std: -0.983591 / 0.932523 / -0.030387 / 0.244779
+Near-zero steering: 55.24%
+Left steering: 25.84%
+Right steering: 18.92%
+Strong turns: 8.17%
+Validation: PASS
+```
+
+### Next Step
+
+Collect a deliberate right-recovery and curve-focused session. The new session is valid, but it does not materially reduce the near-zero steering issue.

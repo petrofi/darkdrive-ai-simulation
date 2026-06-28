@@ -729,6 +729,14 @@ data/processed/simulator_v2/session_a_normal/
 
 Session A is valid, but it does not yet improve the near-zero steering imbalance. Recovery-focused sessions are still required before training a local v2 model.
 
+A second local recording was organized under:
+
+```text
+data/processed/simulator_v2/session_b_new_training/
+```
+
+This session is valid for offline analysis, but it also remains near-zero heavy. It should be treated as additional local simulator data, not as proof of model improvement.
+
 Read the full plan:
 
 ```text
@@ -805,6 +813,8 @@ Research artifacts:
 
 - [External Dataset Research](docs/external-dataset-research.md)
 - [Dataset V2 Collection Plan](docs/dataset-v2-collection-plan.md)
+- [Dataset V2 Session A Report](docs/dataset-v2-session-a-report.md)
+- [Dataset V2 Session B Report](docs/dataset-v2-session-b-report.md)
 - [Model Analysis V1](docs/model-analysis-v1.md)
 - [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
 - [Research Roadmap](docs/research-roadmap.md)
