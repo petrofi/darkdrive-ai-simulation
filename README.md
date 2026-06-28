@@ -735,7 +735,7 @@ A second local recording was organized under:
 data/processed/simulator_v2/session_b_new_training/
 ```
 
-This session is valid for offline analysis, but it also remains near-zero heavy. It should be treated as additional local simulator data, not as proof of model improvement.
+This session is valid for offline analysis, but it also remains near-zero heavy. Re-analysis classified it as weak mixed/normal training data, not Session C Right Recovery. It should be treated as additional local simulator data, not as proof of model improvement.
 
 Read the full plan:
 
@@ -815,6 +815,7 @@ Research artifacts:
 - [Dataset V2 Collection Plan](docs/dataset-v2-collection-plan.md)
 - [Dataset V2 Session A Report](docs/dataset-v2-session-a-report.md)
 - [Dataset V2 Session B Report](docs/dataset-v2-session-b-report.md)
+- [Dataset V2 Session B New Training Report](docs/dataset-v2-session-b-new-training-report.md)
 - [Model Analysis V1](docs/model-analysis-v1.md)
 - [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
 - [Research Roadmap](docs/research-roadmap.md)

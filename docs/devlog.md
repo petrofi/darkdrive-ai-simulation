@@ -265,3 +265,36 @@ Validation: PASS
 ### Next Step
 
 Collect a deliberate right-recovery and curve-focused session. The new session is valid, but it does not materially reduce the near-zero steering issue.
+
+## Day 13: Dataset V2 Session Classification Review
+
+### Goal
+
+Re-analyze `session_b_new_training` and decide whether it should be treated as Session C Right Recovery.
+
+### What Was Found
+
+- `session_b_new_training` contains `IMG/` and `driving_log.csv`.
+- Session analysis passed with 1126 rows and 0 missing center images.
+- Right steering improved compared with Session A, but not enough to classify the data as right recovery.
+- Strong-turn coverage was weaker than Session A.
+- Generated simulator data remained ignored by Git.
+
+### Dataset Result
+
+```text
+Rows: 1126
+Center images found: 1126
+Missing center images: 0
+Steering min/max/mean/std: -0.983591 / 0.932523 / -0.030387 / 0.244779
+Near-zero steering: 55.24%
+Left steering: 25.84%
+Right steering: 18.92%
+Strong turns: 8.17%
+Validation: PASS
+Classification: weak mixed/normal training data
+```
+
+### Next Step
+
+Collect a true Session C right-recovery recording with more right steering, fewer straight-driving frames, and stronger correction examples.
