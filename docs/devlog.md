@@ -369,3 +369,27 @@ WSL Python/pip/git status: unavailable until a distro is installed
 ### Next Step
 
 Install Ubuntu for WSL manually, create an isolated DonkeyCar workspace, collect one small simulator tub, then copy it into `data/external/donkeycar/sample_tub/`.
+
+## Day 17: DonkeyCar WSL Environment Verification
+
+### Goal
+
+Verify the Ubuntu WSL environment and prepare the isolated DonkeyCar workspace outside DarkDrive.
+
+### What Was Found
+
+- User-provided Ubuntu terminal status reports Ubuntu 24.04.3 LTS, Python 3.12.3, pip 24.0, and git 2.43.0.
+- The DarkDrive Windows project path exists.
+- The Codex PowerShell WSL session reports WSL version 2 but no visible installed distro.
+- WSL-side DarkDrive path access and `donkey-env` creation could not be completed from this Codex session.
+
+### What Was Added
+
+- Added a DonkeyCar WSL setup status report.
+- Documented the exact manual commands to create `~/donkeycar-workspace/donkey-env` from the working Ubuntu terminal.
+- Kept DarkDrive Windows `.venv` untouched.
+- No training, merging, dataset download, or control code was added.
+
+### Next Step
+
+Run the documented workspace and venv commands inside the same Ubuntu terminal that reports Ubuntu 24.04.3, then report the output before installing DonkeyCar.
