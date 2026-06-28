@@ -22,7 +22,7 @@ Each future experiment must record:
 | Experiment ID | Dataset | Epochs | Learning Rate | Architecture | Validation Loss | MAE | RMSE | Observations | Next Action |
 | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | --- | --- |
 | EXP-001-baseline-sim-v1 | `data/processed/simulator/driving_log.csv`, 3706 samples, center camera only | 10 | 0.001 | Compact PyTorch CNN, ELU, dropout | 0.060776 | 0.174045 | 0.246529 | Learned real steering signal, but labels are 55.42% near zero and MAE improves only 9.95% over zero baseline. | Collect balanced recovery dataset before simulator control. |
-| EXP-002-balanced-recovery-dataset | Planned: 12000 to 16000 total samples, session-level split | TBD | 0.001 initial | Same as EXP-001 | TBD | TBD | TBD | Isolate data-quality impact before changing architecture. | Train same CNN on better dataset. |
+| EXP-002-merged-dataset-bc-v1 | Local Udacity simulator data + external behavior cloning dataset | 15 planned | 0.001 initial | Same as EXP-001 | TBD | TBD | TBD | Goal: reduce always-zero steering bias and improve turning prediction. Record rows, near-zero percentage, validation loss, MAE, RMSE, and notes. | Build merged dataset with `scripts/build_merged_training_dataset.py`, then train `steering_model_merged_v1.pt`. |
 | EXP-003-left-right-camera-correction | Planned: EXP-002 dataset plus side-camera correction | TBD | 0.001 initial | Same as EXP-001 | TBD | TBD | TBD | Test correction magnitude around 0.15 to 0.25 after verifying steering sign convention. | Compare against EXP-002. |
 | EXP-004-nvidia-bc-cnn | Planned: fixed EXP-002 dataset and split | TBD | TBD | NVIDIA Behavioral Cloning style CNN | TBD | TBD | TBD | Architecture comparison after data improvement. | Compare against same-data compact CNN. |
 | EXP-005-temporal-stability | Planned: held-out validation videos | TBD | TBD | Best single-frame model plus smoothing/frame stacking candidate | TBD | TBD | TBD | Measure oscillation, steering delta, and lag. | Decide if model can enter simulator-only closed-loop test. |
@@ -75,4 +75,3 @@ Reasons:
 - It does not have recovery-heavy training data.
 - It does not have session-level validation.
 - It does not have temporal stability evaluation.
-

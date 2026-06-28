@@ -135,6 +135,20 @@ def save_prediction_samples(
     print(f"Saved prediction sample grid: {output_path}")
 
 
+def default_output_paths(model_path: Path, csv_path: Path) -> tuple[Path, Path]:
+    model_stem = model_path.stem
+    csv_text = str(csv_path).replace("\\", "/").lower()
+    if model_stem == "steering_model_merged_v1" or "data/processed/merged_training" in csv_text:
+        return (
+            Path("screenshots/prediction_vs_actual_merged_v1.png"),
+            Path("screenshots/prediction_samples_merged_v1.png"),
+        )
+    return (
+        Path("screenshots/prediction_vs_actual.png"),
+        Path("screenshots/prediction_samples.png"),
+    )
+
+
 def evaluate_model(
     model_path: Path,
     csv_path: Path,
@@ -187,15 +201,16 @@ def evaluate_model(
     errors = predictions - actuals
     mae = float(np.mean(np.abs(errors)))
     rmse = float(np.sqrt(np.mean(errors**2)))
+    prediction_plot_path, prediction_samples_path = default_output_paths(model_path, csv_path)
 
-    save_prediction_plot(predictions, actuals, Path("screenshots/prediction_vs_actual.png"))
+    save_prediction_plot(predictions, actuals, prediction_plot_path)
     save_prediction_samples(
         validation_data,
         predictions,
         actuals,
         csv_path,
         images_dir,
-        Path("screenshots/prediction_samples.png"),
+        prediction_samples_path,
     )
 
     print("Evaluation summary:")

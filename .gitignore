@@ -11,6 +11,8 @@ data/processed/*
 data/processed/simulator/*
 data/processed/simulator/driving_log.csv
 data/processed/simulator/IMG/*
+data/external/*
+data/processed/external/*
 data/processed/synthetic_steering/driving_log.csv
 data/processed/synthetic_steering/IMG/*
 models/*.pt
@@ -19,6 +21,9 @@ videos/*
 screenshots/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/external/.gitkeep
+!data/processed/external/
+!data/processed/external/.gitkeep
 !data/processed/simulator/
 !data/processed/simulator/IMG/
 !data/processed/simulator/IMG/.gitkeep

@@ -647,6 +647,66 @@ center,left,right,steering,throttle,brake,speed
 
 For Udacity-style datasets, the current baseline uses only the `center` camera image. Left and right camera images are future work.
 
+## External Dataset Workflow
+
+External datasets are used only to improve steering-label diversity for offline simulator-model research. Real-time simulator control is not implemented yet.
+
+Research datasets:
+
+```text
+docs/external-dataset-research.md
+```
+
+Dry run download:
+
+```powershell
+python scripts/download_external_dataset.py --dataset <dataset_name> --dry-run
+```
+
+Download, only when license and size are acceptable:
+
+```powershell
+python scripts/download_external_dataset.py --dataset <dataset_name> --output-dir data/external
+```
+
+Convert:
+
+```powershell
+python scripts/convert_external_dataset.py --dataset <dataset_name> --input-dir data/external/<dataset_name> --output-dir data/processed/external/<dataset_name>
+```
+
+Validate:
+
+```powershell
+python scripts/validate_darkdrive_dataset.py --csv data/processed/external/<dataset_name>/driving_log.csv
+```
+
+Analyze:
+
+```powershell
+python scripts/analyze_dataset_balance.py --csv data/processed/external/<dataset_name>/driving_log.csv
+```
+
+Build merged dataset:
+
+```powershell
+python scripts/build_merged_training_dataset.py --local-csv data/processed/simulator/driving_log.csv --local-images-dir data/processed/simulator/IMG --external-csv data/processed/external/<dataset_name>/driving_log.csv --output-csv data/processed/merged_training/driving_log.csv --max-near-zero-ratio 0.35
+```
+
+Train:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/processed/merged_training/driving_log.csv --format simple --epochs 15 --batch-size 32 --output models/steering_model_merged_v1.pt
+```
+
+Evaluate:
+
+```powershell
+python scripts/evaluate_steering_model.py --model models/steering_model_merged_v1.pt --csv data/processed/merged_training/driving_log.csv --format simple
+```
+
+The current model has been trained offline on simulator data. External datasets are not committed and trained model files remain ignored.
+
 ## 30-Day Roadmap Summary
 
 - Week 1: Set up the project, connect to DonkeyCar Simulator, collect initial driving data, and build a basic OpenCV lane detection prototype.
@@ -685,6 +745,7 @@ The project is now in model-quality research mode. Simulator control is intentio
 
 Research artifacts:
 
+- [External Dataset Research](docs/external-dataset-research.md)
 - [Model Analysis V1](docs/model-analysis-v1.md)
 - [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
 - [Research Roadmap](docs/research-roadmap.md)
