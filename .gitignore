@@ -18,7 +18,10 @@ data/processed/simulator_v2/**/IMG/*
 data/processed/simulator_v2/**/driving_log.csv
 data/processed/local_v2_training/*
 data/external/*
+data/external/donkeycar/**
 data/processed/external/*
+data/processed/donkeycar/**
+data/processed/merged_datasets/**
 data/processed/synthetic_steering/driving_log.csv
 data/processed/synthetic_steering/IMG/*
 models/*.pt
@@ -28,8 +31,14 @@ screenshots/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/external/.gitkeep
+!data/external/donkeycar/
+!data/external/donkeycar/.gitkeep
 !data/processed/external/
 !data/processed/external/.gitkeep
+!data/processed/donkeycar/
+!data/processed/donkeycar/.gitkeep
+!data/processed/merged_datasets/
+!data/processed/merged_datasets/.gitkeep
 !data/processed/simulator/
 !data/processed/simulator/IMG/
 !data/processed/simulator/IMG/.gitkeep

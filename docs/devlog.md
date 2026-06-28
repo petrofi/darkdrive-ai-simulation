@@ -298,3 +298,21 @@ Classification: weak mixed/normal training data
 ### Next Step
 
 Collect a true Session C right-recovery recording with more right steering, fewer straight-driving frames, and stronger correction examples.
+
+## Day 14: DonkeyCar Dataset Integration Workflow
+
+### Goal
+
+Prepare a safe external dataset path for DonkeyCar simulator tub data without downloading datasets, training, or adding simulator control.
+
+### What Was Added
+
+- Added ignored folders for manually placed DonkeyCar source data and converted outputs.
+- Added `scripts/convert_donkey_tub_to_darkdrive.py` for best-effort DonkeyCar tub conversion into DarkDrive unified CSV format.
+- Added `scripts/validate_donkeycar_conversion.py` for converted dataset validation.
+- Documented DonkeyCar tub risks, format differences, and merge gates.
+- Confirmed the workflow stays simulation-only and generated data remains ignored by Git.
+
+### Next Step
+
+Manually collect a small DonkeyCar simulator tub, convert it, validate missing images and steering distribution, then compare it against local Udacity Session A and `session_b_new_training` before any merge or training decision.

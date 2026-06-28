@@ -687,11 +687,37 @@ Analyze:
 python scripts/analyze_dataset_balance.py --csv data/processed/external/<dataset_name>/driving_log.csv
 ```
 
+### DonkeyCar Dataset Integration (Experimental)
+
+DonkeyCar tub integration is experimental and offline-only. Source tubs are placed manually, generated conversion outputs are ignored, and training is not done until conversion validation and source-specific metrics pass review.
+
+Manual DonkeyCar tub placement:
+
+```text
+data/external/donkeycar/<tub_name>/
+```
+
+Convert a tub to DarkDrive's unified CSV format:
+
+```powershell
+python scripts/convert_donkey_tub_to_darkdrive.py --input data/external/donkeycar/sample_tub --output data/processed/donkeycar/donkeycar_unified.csv --images-output data/processed/donkeycar/IMG --source-name donkeycar_sample
+```
+
+Validate the converted DonkeyCar dataset:
+
+```powershell
+python scripts/validate_donkeycar_conversion.py --csv data/processed/donkeycar/donkeycar_unified.csv --images-dir data/processed/donkeycar/IMG
+```
+
+See [docs/donkeycar-dataset-integration.md](docs/donkeycar-dataset-integration.md) and [docs/external-dataset-plan.md](docs/external-dataset-plan.md).
+
 Build merged dataset:
 
 ```powershell
 python scripts/build_merged_training_dataset.py --local-csv data/processed/simulator/driving_log.csv --local-images-dir data/processed/simulator/IMG --external-csv data/processed/external/<dataset_name>/driving_log.csv --output-csv data/processed/merged_training/driving_log.csv --max-near-zero-ratio 0.35
 ```
+
+Training on external or merged data remains gated by validation, distribution review, and the model release checklist.
 
 Train:
 
@@ -812,6 +838,8 @@ The project is now in model-quality research mode. Simulator control is intentio
 Research artifacts:
 
 - [External Dataset Research](docs/external-dataset-research.md)
+- [External Dataset Plan](docs/external-dataset-plan.md)
+- [DonkeyCar Dataset Integration](docs/donkeycar-dataset-integration.md)
 - [Dataset V2 Collection Plan](docs/dataset-v2-collection-plan.md)
 - [Dataset V2 Session A Report](docs/dataset-v2-session-a-report.md)
 - [Dataset V2 Session B Report](docs/dataset-v2-session-b-report.md)
