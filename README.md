@@ -711,7 +711,7 @@ python scripts/validate_donkeycar_conversion.py --csv data/processed/donkeycar/d
 
 See [docs/donkeycar-dataset-integration.md](docs/donkeycar-dataset-integration.md) and [docs/external-dataset-plan.md](docs/external-dataset-plan.md).
 
-DonkeyCar data acquisition is planned as a manual, license-aware step. Source tubs should be collected or obtained outside the DarkDrive training environment, placed under `data/external/donkeycar/sample_tub/`, and kept ignored by Git. See [docs/donkeycar-data-acquisition-plan.md](docs/donkeycar-data-acquisition-plan.md) and [docs/donkeycar-manual-checklist.md](docs/donkeycar-manual-checklist.md).
+DonkeyCar data acquisition is planned as a manual, license-aware step. Source tubs should be collected or obtained outside the DarkDrive training environment, placed under `data/external/donkeycar/sample_tub/`, and kept ignored by Git. See [docs/donkeycar-data-acquisition-plan.md](docs/donkeycar-data-acquisition-plan.md), [docs/donkeycar-manual-checklist.md](docs/donkeycar-manual-checklist.md), [docs/donkeycar-wsl-setup-plan.md](docs/donkeycar-wsl-setup-plan.md), and [docs/donkeycar-wsl-manual-checklist.md](docs/donkeycar-wsl-manual-checklist.md).
 
 Build merged dataset:
 

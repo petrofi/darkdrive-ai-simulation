@@ -342,3 +342,30 @@ Project .venv pip: 26.1.2
 ### Next Step
 
 Use WSL/Ubuntu or a separate DonkeyCar environment to manually collect one small tub, then place it under `data/external/donkeycar/sample_tub/` for conversion and validation.
+
+## Day 16: DonkeyCar WSL Setup Plan
+
+### Goal
+
+Check whether WSL/Ubuntu is available and prepare a safe setup path for DonkeyCar simulator tub collection.
+
+### What Was Added
+
+- Prepared a DonkeyCar WSL setup plan.
+- Added a WSL manual checklist for collecting one small simulator tub.
+- Kept DonkeyCar separate from the DarkDrive Windows `.venv`.
+- No training, merging, or control code was added.
+
+### Environment Finding
+
+```text
+WSL status: installed
+WSL default version: 2
+Installed Linux distributions: none
+Ubuntu status: not installed
+WSL Python/pip/git status: unavailable until a distro is installed
+```
+
+### Next Step
+
+Install Ubuntu for WSL manually, create an isolated DonkeyCar workspace, collect one small simulator tub, then copy it into `data/external/donkeycar/sample_tub/`.
