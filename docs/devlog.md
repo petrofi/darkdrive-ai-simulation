@@ -316,3 +316,29 @@ Prepare a safe external dataset path for DonkeyCar simulator tub data without do
 ### Next Step
 
 Manually collect a small DonkeyCar simulator tub, convert it, validate missing images and steering distribution, then compare it against local Udacity Session A and `session_b_new_training` before any merge or training decision.
+
+## Day 15: DonkeyCar Data Acquisition Plan
+
+### Goal
+
+Choose the safest way to obtain a small DonkeyCar simulator tub without disrupting the existing DarkDrive environment.
+
+### What Was Added
+
+- Added a DonkeyCar data acquisition plan.
+- Compared WSL/Ubuntu collection, public tub reuse, and continuing Udacity Session C2.
+- Kept the project simulation-only and dataset-only.
+- No training or control code was added.
+
+### Environment Finding
+
+```text
+Global python on PATH: not found
+Global pip on PATH: not found
+Project .venv Python: 3.13.12
+Project .venv pip: 26.1.2
+```
+
+### Next Step
+
+Use WSL/Ubuntu or a separate DonkeyCar environment to manually collect one small tub, then place it under `data/external/donkeycar/sample_tub/` for conversion and validation.
