@@ -707,6 +707,56 @@ python scripts/evaluate_steering_model.py --model models/steering_model_merged_v
 
 The current model has been trained offline on simulator data. External datasets are not committed and trained model files remain ignored.
 
+## Dataset v2: Recovery Driving Plan
+
+External datasets were not automatically downloaded because license and usage terms were not clear enough for safe automated download. The next dataset improvement will come from locally collected simulator data.
+
+Dataset v2 focuses on recovery driving and steering balance:
+
+- Session A: normal lane following, target 2000 frames.
+- Session B: left recovery driving, target 2000 frames.
+- Session C: right recovery driving, target 2000 frames.
+- Session D: curve-focused driving, target 3000 frames.
+- Session E: sharp turns and correction, target 2000 frames.
+
+Real-time simulator control is still not implemented. Dataset v2 is only for offline model-quality research.
+
+Read the full plan:
+
+```text
+docs/dataset-v2-collection-plan.md
+```
+
+Analyze one recording session:
+
+```powershell
+python scripts/session_dataset_report.py --csv data/processed/simulator_v2/session_a_normal/driving_log.csv --images-dir data/processed/simulator_v2/session_a_normal/IMG --format udacity --session-name session_a_normal
+```
+
+Compare Dataset v1 and Dataset v2:
+
+```powershell
+python scripts/compare_datasets.py --csv-a data/processed/simulator/driving_log.csv --images-dir-a data/processed/simulator/IMG --name-a dataset_v1 --csv-b data/processed/simulator_v2/session_a_normal/driving_log.csv --images-dir-b data/processed/simulator_v2/session_a_normal/IMG --name-b dataset_v2_session_a --format-a udacity --format-b udacity
+```
+
+Build local v2 training dataset:
+
+```powershell
+python scripts/build_local_v2_training_dataset.py --session dataset_v1,data/processed/simulator/driving_log.csv,data/processed/simulator/IMG --session session_a_normal,data/processed/simulator_v2/session_a_normal/driving_log.csv,data/processed/simulator_v2/session_a_normal/IMG --session session_b_left_recovery,data/processed/simulator_v2/session_b_left_recovery/driving_log.csv,data/processed/simulator_v2/session_b_left_recovery/IMG --session session_c_right_recovery,data/processed/simulator_v2/session_c_right_recovery/driving_log.csv,data/processed/simulator_v2/session_c_right_recovery/IMG --session session_d_curves,data/processed/simulator_v2/session_d_curves/driving_log.csv,data/processed/simulator_v2/session_d_curves/IMG --session session_e_sharp_turns,data/processed/simulator_v2/session_e_sharp_turns/driving_log.csv,data/processed/simulator_v2/session_e_sharp_turns/IMG --output-csv data/processed/local_v2_training/driving_log.csv --max-near-zero-ratio 0.35
+```
+
+Train local v2 model:
+
+```powershell
+python src/training/train_behavior_cloning.py --csv data/processed/local_v2_training/driving_log.csv --format simple --epochs 15 --batch-size 32 --output models/steering_model_local_v2.pt
+```
+
+Evaluate local v2 model:
+
+```powershell
+python scripts/evaluate_steering_model.py --model models/steering_model_local_v2.pt --csv data/processed/local_v2_training/driving_log.csv --format simple
+```
+
 ## 30-Day Roadmap Summary
 
 - Week 1: Set up the project, connect to DonkeyCar Simulator, collect initial driving data, and build a basic OpenCV lane detection prototype.
@@ -746,6 +796,7 @@ The project is now in model-quality research mode. Simulator control is intentio
 Research artifacts:
 
 - [External Dataset Research](docs/external-dataset-research.md)
+- [Dataset V2 Collection Plan](docs/dataset-v2-collection-plan.md)
 - [Model Analysis V1](docs/model-analysis-v1.md)
 - [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
 - [Research Roadmap](docs/research-roadmap.md)

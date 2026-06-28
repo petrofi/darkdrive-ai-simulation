@@ -138,6 +138,11 @@ def save_prediction_samples(
 def default_output_paths(model_path: Path, csv_path: Path) -> tuple[Path, Path]:
     model_stem = model_path.stem
     csv_text = str(csv_path).replace("\\", "/").lower()
+    if model_stem == "steering_model_local_v2" or "data/processed/local_v2_training" in csv_text:
+        return (
+            Path("screenshots/prediction_vs_actual_local_v2.png"),
+            Path("screenshots/prediction_samples_local_v2.png"),
+        )
     if model_stem == "steering_model_merged_v1" or "data/processed/merged_training" in csv_text:
         return (
             Path("screenshots/prediction_vs_actual_merged_v1.png"),

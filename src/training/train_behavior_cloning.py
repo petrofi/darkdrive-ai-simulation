@@ -253,6 +253,8 @@ def default_chart_output(
     """Choose a beginner-friendly default chart name for simulator training."""
     output_stem = Path(output_path).stem
     csv_text = str(csv_path).replace("\\", "/").lower()
+    if output_stem == "steering_model_local_v2" or "data/processed/local_v2_training" in csv_text:
+        return Path("screenshots/training_loss_local_v2.png")
     if output_stem == "steering_model_merged_v1" or "data/processed/merged_training" in csv_text:
         return Path("screenshots/training_loss_merged_v1.png")
     if output_stem == "steering_model_sim_v1" or (

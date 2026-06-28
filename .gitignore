@@ -11,6 +11,8 @@ data/processed/*
 data/processed/simulator/*
 data/processed/simulator/driving_log.csv
 data/processed/simulator/IMG/*
+data/processed/simulator_v2/*
+data/processed/local_v2_training/*
 data/external/*
 data/processed/external/*
 data/processed/synthetic_steering/driving_log.csv
@@ -27,6 +29,10 @@ screenshots/*
 !data/processed/simulator/
 !data/processed/simulator/IMG/
 !data/processed/simulator/IMG/.gitkeep
+!data/processed/simulator_v2/
+!data/processed/simulator_v2/.gitkeep
+!data/processed/local_v2_training/
+!data/processed/local_v2_training/.gitkeep
 !data/processed/synthetic_steering/
 !data/processed/synthetic_steering/IMG/
 !data/processed/synthetic_steering/IMG/.gitkeep
