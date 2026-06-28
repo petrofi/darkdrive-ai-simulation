@@ -1,6 +1,15 @@
 # DarkDrive AI Simulation
 
+![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.11-ee4c2c?logo=pytorch&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5C3EE8?logo=opencv&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Stars](https://img.shields.io/github/stars/petrofi/darkdrive-ai-simulation?style=social)
+
+> 🚗 Simulation-based autonomous driving AI — Computer vision, lane detection, and behavior cloning.
+
 A simulation-based autonomous driving AI project focused on computer vision, data collection, lane detection, and behavior cloning.
+
 
 ## Safety Notice
 
