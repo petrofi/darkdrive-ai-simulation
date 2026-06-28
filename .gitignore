@@ -6,12 +6,15 @@ __pycache__/
 venv/
 env/
 .ipynb_checkpoints/
+veriler/
 data/raw/*
 data/processed/*
 data/processed/simulator/*
 data/processed/simulator/driving_log.csv
 data/processed/simulator/IMG/*
 data/processed/simulator_v2/*
+data/processed/simulator_v2/**/IMG/*
+data/processed/simulator_v2/**/driving_log.csv
 data/processed/local_v2_training/*
 data/external/*
 data/processed/external/*

@@ -721,6 +721,14 @@ Dataset v2 focuses on recovery driving and steering balance:
 
 Real-time simulator control is still not implemented. Dataset v2 is only for offline model-quality research.
 
+Dataset v2 collection has started. Session A normal driving was organized under:
+
+```text
+data/processed/simulator_v2/session_a_normal/
+```
+
+Session A is valid, but it does not yet improve the near-zero steering imbalance. Recovery-focused sessions are still required before training a local v2 model.
+
 Read the full plan:
 
 ```text

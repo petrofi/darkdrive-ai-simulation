@@ -201,3 +201,35 @@ Evaluation RMSE: 0.246529
 ### Next Step
 
 Collect more balanced simulator driving data with recovery examples, then improve evaluation and only later implement a simulator-only autonomous drive loop.
+
+## Day 11: Dataset V2 Session A Organization
+
+### Goal
+
+Move the new simulator recording into the Dataset v2 workflow and verify that generated simulator files stay out of Git.
+
+### What Was Added
+
+- Organized the new simulator recording from `veriler/`.
+- Integrated it as Dataset v2 Session A: `data/processed/simulator_v2/session_a_normal/`.
+- Ran session-level dataset analysis with `scripts/session_dataset_report.py`.
+- Confirmed generated simulator images and `driving_log.csv` remain ignored by Git.
+
+### Dataset Result
+
+```text
+Rows: 2400
+Total simulator images: 7200
+Center images found: 2400
+Missing center images: 0
+Steering min/max/mean/std: -1.000000 / 1.000000 / -0.012757 / 0.356202
+Near-zero steering: 57.42%
+Left steering: 28.17%
+Right steering: 14.42%
+Strong turns: 14.12%
+Validation: PASS
+```
+
+### Next Step
+
+Collect recovery-focused Dataset v2 sessions, especially right recovery and right-turn examples, because Session A is valid but does not reduce the near-zero steering problem.
