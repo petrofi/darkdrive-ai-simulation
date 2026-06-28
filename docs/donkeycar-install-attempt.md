@@ -115,30 +115,29 @@ If this fails, document the error before attempting fixes.
 ## Current Install Result
 
 ```text
-DonkeyCar install attempted by Codex: no
-Reason: Ubuntu distro is not visible from the Codex WSL session, so the active isolated environment could not be verified.
-DonkeyCar installed: not confirmed
-Import test run by Codex: no
+DonkeyCar install attempted by user: yes
+Install command: pip install "donkeycar[pc]"
+Installed DonkeyCar version: 2.5.8
+Packaging fix: python -m pip install "setuptools==80.9.0"
+Import test: donkeycar import works
+CLI test: donkey --help fails
+CLI error: AttributeError: module 'collections' has no attribute 'MutableMapping'
+Current status: partially successful, not usable for CLI/data collection yet
 Training run: no
 Dataset merge run: no
 Simulator launched: no
 Control code added: no
 ```
 
-## Exact Next Command For User
+## Python 3.12 Compatibility Result
 
-Run inside the Ubuntu terminal where `donkey-env` exists:
+The Python 3.12 install is not a clean data-collection environment yet. DonkeyCar imports, but the CLI fails because DonkeyCar 2.5.8 imports `tornado.web`, and the resolved `tornado 4.5.3` uses the removed `collections.MutableMapping` API.
 
-```bash
-source ~/donkeycar-workspace/donkey-env/bin/activate
-python --version
-pip --version
-which python
-which pip
-```
+Do not patch this randomly. The cleaner path is a fresh Python 3.11 or Python 3.10 DonkeyCar environment outside DarkDrive.
 
-If the paths point into `~/donkeycar-workspace/donkey-env`, the next install attempt is:
+## Exact Next Decision For User
 
-```bash
-pip install "donkeycar[pc]"
-```
+Choose one:
+
+- Create a clean Python 3.11/3.10 DonkeyCar environment and retry the install.
+- Pause DonkeyCar and continue Udacity Session C2 right-recovery data collection.

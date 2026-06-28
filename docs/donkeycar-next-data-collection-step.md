@@ -1,17 +1,53 @@
 # DonkeyCar Next Data Collection Step
 
-DonkeyCar is installed in the isolated WSL environment, but DarkDrive should not train, merge, or add control code yet. The next step is to inspect the installed DonkeyCar CLI and identify the correct workflow for this version.
+DonkeyCar 2.5.8 is installed in the isolated WSL Python 3.12 environment, but the CLI currently fails. DarkDrive should not train, merge, collect DonkeyCar data, or add control code until the CLI issue is resolved or a fallback path is selected.
+
+## Current Blocker
+
+`donkey --help` fails on Python 3.12 with:
+
+```text
+AttributeError: module 'collections' has no attribute 'MutableMapping'
+```
+
+Root cause: old `tornado 4.5.3` dependency is incompatible with Python 3.12.
 
 ## First Command
 
-Run inside Ubuntu with `donkey-env` active:
+Run inside Ubuntu only after creating a clean compatible DonkeyCar environment:
 
 ```bash
-source ~/donkeycar-workspace/donkey-env/bin/activate
 donkey --help
 ```
 
 Read the help output before running project creation or simulator commands. Do not assume old DonkeyCar commands match the installed version.
+
+## Next-Step Options
+
+### Option A: Clean Python 3.11/3.10 DonkeyCar Environment
+
+Create a fresh DonkeyCar environment with Python 3.11 or Python 3.10, isolated from DarkDrive and isolated from the current broken Python 3.12 `donkey-env`.
+
+Goal:
+
+- reinstall DonkeyCar cleanly.
+- verify `import donkeycar`.
+- verify `donkey --help`.
+- only then identify the project/tub workflow.
+
+This is the recommended path if DonkeyCar remains important for Dataset v2 research.
+
+### Option B: Pause DonkeyCar And Continue Udacity Session C2
+
+Pause DonkeyCar setup and return to the already working Udacity simulator workflow.
+
+Goal:
+
+- collect Session C2 right-recovery data.
+- reduce near-zero steering bias.
+- increase right steering and strong-turn coverage.
+
+This is the fastest path toward improving the current DarkDrive model bottleneck.
 
 ## Identify The Installed Workflow
 

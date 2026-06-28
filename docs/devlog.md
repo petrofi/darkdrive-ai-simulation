@@ -436,3 +436,24 @@ Document the successful DonkeyCar installation inside the isolated WSL `donkey-e
 ### Next Step
 
 Run `donkey --help` inside the active WSL `donkey-env`, identify the installed version's project/tub workflow, then collect only a small simulator tub for conversion into DarkDrive.
+
+## Day 20: DonkeyCar Python 3.12 Compatibility Review
+
+### Goal
+
+Determine whether the isolated WSL DonkeyCar install is usable for CLI-based data collection.
+
+### What Was Found
+
+- DonkeyCar 2.5.8 installed inside the isolated Python 3.12 `donkey-env`.
+- `import donkeycar` works after pinning `setuptools==80.9.0`.
+- `donkey --help` fails with `AttributeError: module 'collections' has no attribute 'MutableMapping'`.
+- The failure comes from old `tornado 4.5.3` usage under Python 3.12.
+
+### Decision
+
+Do not patch randomly. Use a clean Python 3.11/3.10 DonkeyCar environment, or pause DonkeyCar and continue Udacity Session C2 right-recovery data collection.
+
+### Safety
+
+DarkDrive Windows `.venv` remains untouched. No training, merging, dataset download, or control code was added.
