@@ -678,3 +678,18 @@ First real simulator training workflow verified:
 ## Next Phase
 
 Improve the real simulator model with better data balance, recovery driving, left/right camera augmentation, and offline evaluation before implementing any simulator-only autonomous drive loop.
+
+## Machine Learning Research Phase
+
+The project is now in model-quality research mode. Simulator control is intentionally blocked until the model release checklist passes.
+
+Research artifacts:
+
+- [Model Analysis V1](docs/model-analysis-v1.md)
+- [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
+- [Research Roadmap](docs/research-roadmap.md)
+- [CNN Architecture Review V1](docs/cnn-architecture-review-v1.md)
+- [Experiment Tracking](docs/experiments.md)
+- [Model Release Checklist](docs/model-release-checklist.md)
+- [Repository Professionalization Review](docs/repository-review.md)
+- [DarkDrive AI Research Report](docs/darkdrive-ai-research-report.md)
