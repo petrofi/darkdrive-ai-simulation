@@ -417,3 +417,22 @@ Prepare the safest DonkeyCar installation attempt inside the isolated WSL `donke
 ### Next Step
 
 Run the documented `python --version`, `pip --version`, `which python`, and `which pip` checks inside Ubuntu. If they point into `~/donkeycar-workspace/donkey-env`, run the DonkeyCar install command manually and report the result.
+
+## Day 19: DonkeyCar WSL Install Success
+
+### Goal
+
+Document the successful DonkeyCar installation inside the isolated WSL `donkey-env`.
+
+### What Was Added
+
+- Documented DonkeyCar installation inside `~/donkeycar-workspace/donkey-env`.
+- Documented the `pkg_resources` compatibility issue.
+- Documented the fix using `python -m pip install "setuptools==80.9.0"` inside `donkey-env`.
+- Added the next safe data collection step: inspect `donkey --help` before creating a car/project or tub.
+- Confirmed DarkDrive Windows `.venv` remains untouched.
+- No training, merging, dataset download, or control code was added.
+
+### Next Step
+
+Run `donkey --help` inside the active WSL `donkey-env`, identify the installed version's project/tub workflow, then collect only a small simulator tub for conversion into DarkDrive.
