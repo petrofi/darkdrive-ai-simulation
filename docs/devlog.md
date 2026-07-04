@@ -538,3 +538,62 @@ Raw simulator sessions, the merged local v2 CSV, model checkpoints, and generate
 ### Next Step
 
 Collect Session D curve-focused data before another local v2 training run.
+
+## Day 22: Dataset V2 Session D Curve-Focused Validation
+
+### Goal
+
+Validate the new `session_d_curve_focused` Udacity simulator recording and decide whether it is strong enough to support a future Local V3 training dataset.
+
+### What Was Found
+
+- Repository started clean on `main` and synchronized with `origin/main`.
+- Generated Session D data, future Local V3 data, and model checkpoint paths are ignored by Git.
+- Session D contained `IMG/` and `driving_log.csv`.
+- Session D had 7721 CSV rows and 23163 image files.
+- Center, left, and right image references all resolved with 0 missing images.
+- All 23163 images were readable at 160x320x3.
+- Duplicate CSV rows, duplicate image filenames, duplicate image references, invalid steering labels, corrupt images, and steering values outside `[-1, 1]` were all 0.
+- Timestamp parsing found 0 failures, 0 non-positive deltas, and no gaps above 0.25s.
+
+### Session D Result
+
+```text
+Rows: 7721
+Center / left / right images found: 7721 / 7721 / 7721
+Missing center / left / right images: 0 / 0 / 0
+Steering min/max/mean/std: -1.000000 / 1.000000 / -0.035870 / 0.441348
+Near-zero steering: 22.00%
+Left steering: 47.07%
+Right steering: 30.93%
+Strong turns: 24.83%
+Verdict: A) Strong curve-focused session
+```
+
+Temporal curve analysis found sustained curve behavior, not only isolated steering spikes:
+
+```text
+Sustained medium steering runs, length >= 5: 210
+Sustained left medium curve runs: 129
+Sustained right medium curve runs: 81
+Sustained strong steering runs, length >= 5: 80
+Longest near-zero run: 30 frames
+Largest timestamp gap: 0.115s
+```
+
+Session D is useful for Local V3 training, but it is left-heavy and should be balanced with Session C2/right-turn coverage during dataset construction.
+
+### Training Decision
+
+Training was intentionally deferred. No Local V3 dataset was built and no checkpoint was created.
+
+### Documentation Added
+
+- Added `docs/dataset-v2-session-d-curve-focused-report.md`.
+- Added `docs/local-v3-training-plan.md`.
+- Updated `docs/experiments.md` with `EXP-004-session-d-curve-focused-data`.
+- Refreshed the relevant research roadmap, release checklist, and Dataset v2 collection notes.
+
+### Git Safety
+
+Raw simulator images, `driving_log.csv`, generated screenshots, and model checkpoints remained ignored. Only documentation files were prepared for commit.

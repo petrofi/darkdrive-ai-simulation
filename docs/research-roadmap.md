@@ -34,12 +34,14 @@ Exit criteria already met:
 
 Goal: improve the data distribution before changing the architecture.
 
+Status: in progress. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1, so the next step is a Local V3 dataset with a session-aware validation strategy.
+
 Actions:
 
-- Collect 8000 to 12000 more center-labeled driving samples.
-- Add recovery driving from left and right lane offsets.
-- Add off-center correction sequences.
-- Add more curve-heavy and sharp-turn samples.
+- Preserve validated Dataset v1 and Sessions A/B/C2/D.
+- Use Session C2 for right-recovery/right-turn coverage.
+- Use Session D for sustained curve and strong-turn coverage.
+- Downsample near-zero-heavy v1/A/B rows.
 - Use session-level or lap-level validation splits.
 - Keep a clean held-out validation session.
 - Test left/right camera correction as a separate experiment.
@@ -56,9 +58,10 @@ Metrics:
 
 Exit criteria:
 
-- Near-zero steering no longer dominates the dataset.
-- Recovery behavior is visibly present.
-- The same baseline CNN improves materially without architecture changes.
+- Near-zero steering no longer dominates the Local V3 training set.
+- Recovery and curve behavior are visibly present.
+- The same baseline CNN improves materially over both v1 and local v2 without architecture changes.
+- Session-aware validation is reported, not only a random row split.
 
 ## Research Iteration 3: Better CNN
 
@@ -136,4 +139,3 @@ Exit criteria:
 - Vehicle can remain in lane for short controlled simulator segments.
 - Failure cases are recorded and categorized.
 - New recovery data is collected from failures.
-

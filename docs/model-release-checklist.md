@@ -13,9 +13,9 @@ Current release status: not approved for simulator control.
 - [x] Right images found.
 - [x] Steering labels are numeric.
 - [x] Steering distribution has been analyzed.
-- [ ] Dataset includes documented recovery driving.
-- [ ] Dataset includes documented off-center correction.
-- [ ] Near-zero steering concentration is acceptable.
+- [x] Dataset includes documented recovery driving.
+- [x] Dataset includes documented curve-focused driving.
+- [ ] Final training dataset near-zero concentration is acceptable.
 - [ ] Validation split is by session, lap, or track segment.
 - [ ] Low-speed parked frames are reviewed or filtered.
 
@@ -26,10 +26,10 @@ Current release status: not approved for simulator control.
 - [x] RMSE is reported.
 - [x] Prediction-vs-actual plot is generated.
 - [x] Prediction sample grid is generated.
-- [ ] Evaluation includes zero-steering baseline comparison in the official report.
+- [x] Evaluation includes zero-steering baseline comparison in the official report.
 - [ ] Evaluation includes held-out session results.
-- [ ] Evaluation includes left/right/curve-specific metrics.
-- [ ] Evaluation includes recovery-case metrics.
+- [x] Evaluation includes left/right/strong-turn metrics in the local v2 report.
+- [ ] Evaluation includes recovery-case metrics for a release candidate.
 - [ ] Evaluation has been repeated with at least two random seeds or fixed held-out sessions.
 
 ## Prediction Stability Gate
@@ -51,7 +51,7 @@ These are initial research thresholds, not final safety claims.
 - Non-zero steering sign accuracy should remain above 90%.
 - Sharp-turn and recovery errors should be reviewed separately.
 
-The current model meets the RMSE improvement target but does not meet the MAE improvement target.
+The v1 model met the RMSE improvement target but did not meet the MAE improvement target. The local v2 model underperformed v1 and is not a release candidate.
 
 ## Simulator-Control Gate
 
@@ -70,9 +70,7 @@ Do not connect the current model to simulator control.
 
 Blocking issues:
 
-- Dataset is too centered around zero steering.
-- Recovery behavior is not documented.
-- Validation split is random row-based, not session-based.
+- Local v2 underperformed v1 on MAE and RMSE.
+- Session-aware Local V3 validation has not been run.
 - Temporal prediction stability has not been measured.
-- Offline MAE only improves 9.95% over the zero-steering baseline.
-
+- No current checkpoint has passed release gates.

@@ -4,9 +4,9 @@
 
 DarkDrive is at Simulator Training Baseline maturity.
 
-The project has moved beyond infrastructure. It has real simulator data, a trained behavior cloning model, and offline evaluation. It has not reached simulator-driving readiness.
+The project has moved beyond infrastructure. It has real simulator data, trained behavior cloning checkpoints, validated Dataset v2 sessions, and offline evaluation. It has not reached simulator-driving readiness.
 
-Research verdict: accept as a baseline, reject as a control model.
+Research verdict: accept the pipeline and v1 baseline as valid offline research, reject the current local v2 model as a control model.
 
 ## Current Strengths
 
@@ -14,6 +14,7 @@ Research verdict: accept as a baseline, reject as a control model.
 - Simulator data collection works.
 - Dataset validation works.
 - Real Udacity-style simulator data exists.
+- Dataset v2 now includes validated recovery and curve-focused sessions.
 - Training pipeline is functional.
 - Evaluation pipeline is functional.
 - The model learns real steering signal.
@@ -22,35 +23,34 @@ Research verdict: accept as a baseline, reject as a control model.
 
 ## Current Weaknesses
 
-- Dataset is too centered around zero steering.
-- 55.42% of labels have abs(steering) <= 0.05.
-- p25, median, and p75 steering are all exactly 0.0.
-- Recovery driving is not documented.
-- Off-center correction behavior is not documented.
+- The original Dataset v1 is too centered around zero steering.
+- The local Dataset v2 model underperformed v1 despite improved aggregate label balance.
+- Session D is left-heavy and must be balanced carefully in Local V3.
 - Current model uses only the center camera.
 - Validation split is random row-based, which may leak adjacent-frame similarity.
-- Offline MAE improves only 9.95% over always predicting zero.
-- Prediction variance is lower than actual variance, suggesting conservative steering.
+- Local v2 MAE/RMSE are worse than v1: 0.211307 / 0.303382 versus 0.174045 / 0.246529.
+- Local v2 prediction variance is lower than actual variance, suggesting conservative steering.
 - Temporal stability and oscillation have not been measured.
 
 ## Biggest ML Bottleneck
 
 The biggest bottleneck is dataset coverage, not CNN size.
 
-The current dataset mostly teaches normal centered driving. A closed-loop model will inevitably drift into off-center states, and the current training data does not sufficiently teach recovery behavior. A larger model cannot reliably fix missing supervision.
+The immediate bottleneck is now converting the stronger raw sessions into a leak-resistant Local V3 dataset and evaluation protocol. Session C2 adds right-recovery coverage and Session D adds sustained curve/strong-turn coverage, but the next training run must avoid random adjacent-frame validation optimism.
 
 ## Highest Impact Next Experiment
 
-Run `EXP-002-balanced-recovery-dataset`.
+Run the Local V3 training dataset build and evaluation plan after review.
 
 Plan:
 
-- Collect 8000 to 12000 more center-labeled simulator samples.
-- Include left-offset and right-offset recovery.
-- Include curve-heavy sections.
-- Hold out a full session for validation.
+- Preserve all raw sessions.
+- Include Session C2 and Session D.
+- Downsample near-zero-heavy v1/A/B rows.
+- Preserve `source_session` metadata.
+- Hold out a complete session for validation where practical.
 - Train the same current CNN first.
-- Compare against EXP-001 before changing architecture.
+- Compare against both v1 and local v2 before changing architecture.
 
 This isolates the effect of data quality.
 
@@ -92,4 +92,3 @@ Deliverables:
 ```text
 docs: add ML research analysis and release gates
 ```
-

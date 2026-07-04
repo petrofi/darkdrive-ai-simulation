@@ -86,6 +86,18 @@ Collection guidance:
 - Maintain moderate speed so labels are stable.
 - Do not collect only straight-road cruising.
 
+Actual Session D result:
+
+- Folder: `data/processed/simulator_v2/session_d_curve_focused/`
+- Rows: 7721.
+- Images: 23163.
+- Missing/corrupt images: 0.
+- Near-zero steering: 22.00%.
+- Left steering: 47.07%.
+- Right steering: 30.93%.
+- Strong turns: 24.83%.
+- Verdict: strong curve-focused session, with left-heavy distribution to manage in Local V3.
+
 ## Session E: Sharp Turns and Correction
 
 Target: 2000 frames.
@@ -140,13 +152,13 @@ data/processed/simulator_v2/
 |-- session_a_normal/
 |   |-- IMG/
 |   `-- driving_log.csv
-|-- session_b_left_recovery/
+|-- session_b_new_training/
 |   |-- IMG/
 |   `-- driving_log.csv
-|-- session_c_right_recovery/
+|-- session_c2_right_recovery/
 |   |-- IMG/
 |   `-- driving_log.csv
-|-- session_d_curves/
+|-- session_d_curve_focused/
 |   |-- IMG/
 |   `-- driving_log.csv
 `-- session_e_sharp_turns/
@@ -170,9 +182,8 @@ Compare Dataset v1 and Dataset v2:
 python scripts/compare_datasets.py --csv-a data/processed/simulator/driving_log.csv --images-dir-a data/processed/simulator/IMG --name-a dataset_v1 --csv-b data/processed/simulator_v2/session_a_normal/driving_log.csv --images-dir-b data/processed/simulator_v2/session_a_normal/IMG --name-b dataset_v2_session_a --format-a udacity --format-b udacity
 ```
 
-Build local v2 training data:
+The historical local v2 build used Dataset v1 plus Sessions A/B/C2. The next build should be a new Local V3 output under `data/processed/local_v3_training/` and should include Session D only after preserving source-session metadata and choosing a session-aware validation split.
 
 ```powershell
-python scripts/build_local_v2_training_dataset.py --session dataset_v1,data/processed/simulator/driving_log.csv,data/processed/simulator/IMG --session session_a_normal,data/processed/simulator_v2/session_a_normal/driving_log.csv,data/processed/simulator_v2/session_a_normal/IMG --session session_b_left_recovery,data/processed/simulator_v2/session_b_left_recovery/driving_log.csv,data/processed/simulator_v2/session_b_left_recovery/IMG --session session_c_right_recovery,data/processed/simulator_v2/session_c_right_recovery/driving_log.csv,data/processed/simulator_v2/session_c_right_recovery/IMG --session session_d_curves,data/processed/simulator_v2/session_d_curves/driving_log.csv,data/processed/simulator_v2/session_d_curves/IMG --session session_e_sharp_turns,data/processed/simulator_v2/session_e_sharp_turns/driving_log.csv,data/processed/simulator_v2/session_e_sharp_turns/IMG --output-csv data/processed/local_v2_training/driving_log.csv --max-near-zero-ratio 0.35
+python scripts/build_local_v2_training_dataset.py --session dataset_v1,data/processed/simulator/driving_log.csv,data/processed/simulator/IMG --session session_a_normal,data/processed/simulator_v2/session_a_normal/driving_log.csv,data/processed/simulator_v2/session_a_normal/IMG --session session_b_new_training,data/processed/simulator_v2/session_b_new_training/driving_log.csv,data/processed/simulator_v2/session_b_new_training/IMG --session session_c2_right_recovery,data/processed/simulator_v2/session_c2_right_recovery/driving_log.csv,data/processed/simulator_v2/session_c2_right_recovery/IMG --session session_d_curve_focused,data/processed/simulator_v2/session_d_curve_focused/driving_log.csv,data/processed/simulator_v2/session_d_curve_focused/IMG --output-csv data/processed/local_v3_training/driving_log.csv --max-near-zero-ratio 0.30
 ```
-
