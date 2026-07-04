@@ -457,3 +457,84 @@ Do not patch randomly. Use a clean Python 3.11/3.10 DonkeyCar environment, or pa
 ### Safety
 
 DarkDrive Windows `.venv` remains untouched. No training, merging, dataset download, or control code was added.
+
+## Day 21: Dataset V2 Session C2 And Local V2 Model Review
+
+### Goal
+
+Validate the new `session_c2_right_recovery` Udacity simulator recording, build a local Dataset v2 only if it passed, train a new offline model, and document the result without committing raw data or model checkpoints.
+
+### What Was Found
+
+- Repository started clean on `main`.
+- Session C2 contained `IMG/` and `driving_log.csv`.
+- Session C2 had 4163 CSV rows and 12489 image files.
+- Center, left, and right image references all resolved with 0 missing images.
+- All 12489 images were readable at 320x160x3.
+- Duplicate CSV rows, duplicate image references, corrupt images, invalid labels, and steering values outside `[-1, 1]` were all 0.
+- A few recording timestamp gaps were found, including one 27.250s pause, but no missing files or malformed rows resulted.
+
+### Session C2 Result
+
+```text
+Rows: 4163
+Center / left / right images found: 4163 / 4163 / 4163
+Missing center / left / right images: 0 / 0 / 0
+Steering min/max/mean/std: -1.000000 / 1.000000 / -0.017837 / 0.347744
+Near-zero steering: 41.32%
+Left steering: 30.22%
+Right steering: 28.47%
+Strong turns: 14.89%
+Verdict: B) Usable but imperfect
+```
+
+Session C2 passed the missing-image, near-zero, and right-steering gates. It missed the strong-turn target by 0.11 percentage points and still had slightly more left than right steering.
+
+### Dataset V2 Result
+
+Built `data/processed/local_v2_training/driving_log.csv` from Dataset v1, Session A, `session_b_new_training`, and Session C2 with a 35% near-zero cap.
+
+```text
+Rows: 8647
+Missing images: 0
+Duplicate rows: 0
+Near-zero steering: 34.99%
+Left steering: 35.27%
+Right steering: 29.73%
+Strong turns: 18.53%
+Steering min/max/mean/std: -1.000000 / 1.000000 / -0.021734 / 0.392077
+```
+
+### Training And Evaluation Result
+
+Trained `models/steering_model_local_v2.pt` for 15 epochs with seed 42, batch size 32, augmentation on, and a deterministic random 80/20 row split.
+
+```text
+Training rows: 6918
+Validation rows: 1729
+Device: cpu
+Best epoch: 15
+Best validation loss: 0.092040
+Final training loss: 0.080739
+Final validation loss: 0.092040
+Evaluation MAE: 0.211307
+Evaluation RMSE: 0.303382
+Zero-steering baseline MAE: 0.261022
+```
+
+Compared with v1, the model result is worse:
+
+```text
+V1 MAE/RMSE: 0.174045 / 0.246529
+Local v2 MAE/RMSE: 0.211307 / 0.303382
+```
+
+The local v2 model beats the zero-steering baseline by 19.05%, but it under-predicts right and strong turns. Final release verdict: R1, not ready.
+
+### Git Safety
+
+Raw simulator sessions, the merged local v2 CSV, model checkpoints, and generated screenshots remained ignored. No simulator control code was added.
+
+### Next Step
+
+Collect Session D curve-focused data before another local v2 training run.

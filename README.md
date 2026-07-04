@@ -764,7 +764,7 @@ Dataset v2 collection has started. Session A normal driving was organized under:
 data/processed/simulator_v2/session_a_normal/
 ```
 
-Session A is valid, but it does not yet improve the near-zero steering imbalance. Recovery-focused sessions are still required before training a local v2 model.
+Session A is valid, but it does not improve the near-zero steering imbalance by itself.
 
 A second local recording was organized under:
 
@@ -773,6 +773,31 @@ data/processed/simulator_v2/session_b_new_training/
 ```
 
 This session is valid for offline analysis, but it also remains near-zero heavy. Re-analysis classified it as weak mixed/normal training data, not Session C Right Recovery. It should be treated as additional local simulator data, not as proof of model improvement.
+
+A deliberate right-recovery recording was then collected under:
+
+```text
+data/processed/simulator_v2/session_c2_right_recovery/
+```
+
+Session C2 is valid and useful, but imperfect: 4163 rows, 0 missing images, 41.32% near-zero steering, 28.47% right steering, and 14.89% strong turns. It was included in the merged local Dataset v2.
+
+The merged local Dataset v2 was built under:
+
+```text
+data/processed/local_v2_training/driving_log.csv
+```
+
+It contains 8647 rows after near-zero balancing: 34.99% near-zero steering, 29.73% right steering, and 18.53% strong turns, with 0 missing images. A new behavior-cloning model was trained and evaluated offline as `models/steering_model_local_v2.pt`; the checkpoint remains ignored by Git.
+
+Offline evaluation did not improve over v1:
+
+```text
+V1 MAE/RMSE: 0.174045 / 0.246529
+Local v2 MAE/RMSE: 0.211307 / 0.303382
+```
+
+The local v2 model is not release-ready and is not approved for closed-loop simulator testing.
 
 Read the full plan:
 
@@ -795,7 +820,7 @@ python scripts/compare_datasets.py --csv-a data/processed/simulator/driving_log.
 Build local v2 training dataset:
 
 ```powershell
-python scripts/build_local_v2_training_dataset.py --session dataset_v1,data/processed/simulator/driving_log.csv,data/processed/simulator/IMG --session session_a_normal,data/processed/simulator_v2/session_a_normal/driving_log.csv,data/processed/simulator_v2/session_a_normal/IMG --session session_b_left_recovery,data/processed/simulator_v2/session_b_left_recovery/driving_log.csv,data/processed/simulator_v2/session_b_left_recovery/IMG --session session_c_right_recovery,data/processed/simulator_v2/session_c_right_recovery/driving_log.csv,data/processed/simulator_v2/session_c_right_recovery/IMG --session session_d_curves,data/processed/simulator_v2/session_d_curves/driving_log.csv,data/processed/simulator_v2/session_d_curves/IMG --session session_e_sharp_turns,data/processed/simulator_v2/session_e_sharp_turns/driving_log.csv,data/processed/simulator_v2/session_e_sharp_turns/IMG --output-csv data/processed/local_v2_training/driving_log.csv --max-near-zero-ratio 0.35
+python scripts/build_local_v2_training_dataset.py --output-csv data/processed/local_v2_training/driving_log.csv --max-near-zero-ratio 0.35 --seed 42 --session v1,data/processed/simulator/driving_log.csv,data/processed/simulator/IMG --session session_a_normal,data/processed/simulator_v2/session_a_normal/driving_log.csv,data/processed/simulator_v2/session_a_normal/IMG --session session_b_new_training,data/processed/simulator_v2/session_b_new_training/driving_log.csv,data/processed/simulator_v2/session_b_new_training/IMG --session session_c2_right_recovery,data/processed/simulator_v2/session_c2_right_recovery/driving_log.csv,data/processed/simulator_v2/session_c2_right_recovery/IMG
 ```
 
 Train local v2 model:
@@ -828,6 +853,8 @@ First real simulator training workflow verified:
 - Real simulator driving log analysis works.
 - Baseline PyTorch training runs on 3706 simulator frames.
 - Offline steering model evaluation works on held-out simulator frames.
+- Dataset v2 includes targeted recovery-driving data and can be built as an ignored local training CSV.
+- A local v2 behavior-cloning model was trained and evaluated offline, but it did not improve over v1.
 - Simulator autonomous driving integration is not implemented yet.
 
 ## Future Work
@@ -855,6 +882,9 @@ Research artifacts:
 - [Dataset V2 Session A Report](docs/dataset-v2-session-a-report.md)
 - [Dataset V2 Session B Report](docs/dataset-v2-session-b-report.md)
 - [Dataset V2 Session B New Training Report](docs/dataset-v2-session-b-new-training-report.md)
+- [Dataset V2 Session C2 Right Recovery Report](docs/dataset-v2-session-c2-right-recovery-report.md)
+- [Dataset V2 Merged Training Report](docs/dataset-v2-merged-training-report.md)
+- [Local V2 Model Evaluation Report](docs/model-local-v2-evaluation-report.md)
 - [Model Analysis V1](docs/model-analysis-v1.md)
 - [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
 - [Research Roadmap](docs/research-roadmap.md)
