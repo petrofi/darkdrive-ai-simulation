@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
+from pandas.api.types import is_object_dtype, is_string_dtype
 
 
 SIMPLE_REQUIRED_COLUMNS = ["image_path", "steering", "throttle", "brake", "speed"]
@@ -59,8 +60,9 @@ def normalize_driving_log(data: pd.DataFrame) -> pd.DataFrame:
     data.columns = [str(column).strip() for column in data.columns]
     data = data.dropna(how="all").reset_index(drop=True)
 
-    for column in data.select_dtypes(include=["object"]).columns:
-        data[column] = data[column].astype(str).str.strip()
+    for column in data.columns:
+        if is_object_dtype(data[column]) or is_string_dtype(data[column]):
+            data[column] = data[column].astype(str).str.strip()
 
     for column in NUMERIC_COLUMNS:
         if column in data.columns:

@@ -1,134 +1,155 @@
 # Local V3 Training Plan
 
-This plan proposes the next simulation-only training dataset and evaluation workflow after validating Session D curve-focused data. It does not build a dataset and does not train a model.
+This plan records the Local V3 session-aware dataset build and the next training requirement. It is simulation-only. No model was trained and no simulator control code was added.
 
-## Goal
+## Final Dataset Structure
 
-Build a Local V3 training dataset that directly targets the current model failure mode:
-
-- Steering magnitude under-prediction.
-- Weak right-steering and strong-turn prediction.
-- Local Dataset v2 model performing worse than the Dataset v1 baseline.
-- Random row split optimism from adjacent simulator frames.
-
-## Raw Data Preservation
-
-Preserve all existing raw simulator recordings exactly as collected:
-
-- `data/processed/simulator/`
-- `data/processed/simulator_v2/session_a_normal/`
-- `data/processed/simulator_v2/session_b_new_training/`
-- `data/processed/simulator_v2/session_c2_right_recovery/`
-- `data/processed/simulator_v2/session_d_curve_focused/`
-
-Do not overwrite previous checkpoints:
-
-- `models/steering_model_v1.pt`
-- `models/steering_model_v2_synthetic.pt`
-- `models/steering_model_sim_v1.pt`
-- `models/steering_model_local_v2.pt`
-
-Future output path:
+Generated manifests:
 
 ```text
-data/processed/local_v3_training/
+data/processed/local_v3_training/train.csv
+data/processed/local_v3_training/validation.csv
+data/processed/local_v3_training/dataset_summary.json
+data/processed/local_v3_training/source_distribution.csv
 ```
 
-Future model path:
+These files are generated artifacts and remain ignored by Git through `data/processed/*`.
 
-```text
-models/steering_model_local_v3.pt
-```
-
-Both paths are ignored by Git.
-
-## Proposed Training Composition
-
-Use a unified simple-format CSV with at least these fields:
+CSV schema:
 
 ```text
 image_path,steering,throttle,brake,speed,source_dataset,source_session
 ```
 
-Recommended composition:
+The current training dataset uses center-camera rows only. Extra source fields are intentionally retained so future training and evaluation can report source/session-level metrics.
 
-| Source | Proposed use |
-| --- | --- |
-| Dataset v1 | Keep a reduced sample for normal driving and baseline continuity |
-| Session A normal | Downsample heavily because near-zero is high and right steering is weak |
-| Session B new training | Downsample; keep only useful non-zero coverage |
-| Session C2 right recovery | Include strongly because it improves right steering and recovery coverage |
-| Session D curve focused | Include strongly because it improves sustained curve and strong-turn coverage |
+## Training Sources
+
+| Source session | Source path | Raw rows | Retained rows |
+| --- | --- | ---: | ---: |
+| Dataset v1, `v1` | `data/processed/simulator/` | 3706 | 2360 |
+| Session A, `session_a_normal` | `data/processed/simulator_v2/session_a_normal/` | 2400 | 1460 |
+| Session B, `session_b_new_training` | `data/processed/simulator_v2/session_b_new_training/` | 1126 | 720 |
+| Session D, `session_d_curve_focused` | `data/processed/simulator_v2/session_d_curve_focused/` | 7721 | 6117 |
+
+Training total: 10657 rows.
+
+## Validation Holdout
+
+The complete `session_c2_right_recovery` session is reserved for validation:
+
+| Source session | Source path | Raw rows | Validation rows |
+| --- | --- | ---: | ---: |
+| Session C2, `session_c2_right_recovery` | `data/processed/simulator_v2/session_c2_right_recovery/` | 4163 | 4163 |
+
+No Session C2 rows or image paths are present in training.
 
 ## Balancing Strategy
 
-Recommended first-pass policy:
+Build seed: `42`.
 
-- Cap near-zero rows at about 25% to 30% of Local V3.
-- Preserve all or most strong-turn rows from Sessions C2 and D.
-- Preserve enough normal driving rows to avoid creating a curve-only model.
-- Avoid letting Session D's left-heavy distribution dominate the final dataset.
-- Prefer source/session-aware sampling over blind global shuffling.
+Rules:
 
-Session D is strong but left-heavy:
+- Dataset v1, Session A, and Session B keep all non-zero steering rows.
+- Dataset v1, Session A, and Session B cap near-zero steering rows at 30% per retained source session.
+- Session D keeps all near-zero rows, all right-steering rows, and all strong-left rows.
+- Session D downsamples softer left-steering rows to target a retained left/right ratio of 0.85 inside Session D.
+- Final training rows are shuffled deterministically after sampling.
+- No images are copied; manifests reference the resolved source image files.
+
+Retained near-zero rows:
+
+| Source session | Near-zero before | Near-zero after |
+| --- | ---: | ---: |
+| `v1` | 2054 | 708 |
+| `session_a_normal` | 1378 | 438 |
+| `session_b_new_training` | 622 | 216 |
+
+Session D left balancing:
+
+| Metric | Rows |
+| --- | ---: |
+| Left rows before | 3634 |
+| Left rows after | 2030 |
+| Right rows retained | 2388 |
+| Strong-left rows retained | 1021 |
+| Softer-left rows before | 2613 |
+| Softer-left rows after | 1009 |
+
+## Final Distributions
+
+| Split | Rows | Near-zero | Left | Right | Strong turns | Steering mean | Steering std |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Train | 10657 | 28.72% | 35.86% | 35.41% | 27.20% | -0.004052 | 0.459112 |
+| Validation, complete C2 | 4163 | 41.32% | 30.22% | 28.47% | 14.89% | -0.017837 | 0.347744 |
+
+Training source-session rows:
+
+| Source session | Rows |
+| --- | ---: |
+| `v1` | 2360 |
+| `session_a_normal` | 1460 |
+| `session_b_new_training` | 720 |
+| `session_d_curve_focused` | 6117 |
+
+Validation source-session rows:
+
+| Source session | Rows |
+| --- | ---: |
+| `session_c2_right_recovery` | 4163 |
+
+## Leakage Checks
+
+| Check | Result |
+| --- | ---: |
+| Overlapping source sessions | 0 |
+| Overlapping image paths | 0 |
+| Overlapping CSV rows | 0 |
+| Overlapping image filenames | 0 |
+| Session C2 rows in training | 0 |
+| Session D rows in validation | 0 |
+| Missing output images | 0 |
+| Corrupt output images | 0 |
+| Invalid steering labels | 0 |
+| Duplicate train rows / paths | 0 / 0 |
+| Duplicate validation rows / paths | 0 / 0 |
+
+## Side-Camera Policy
+
+Local V3 is center-camera only. The project has not yet implemented or tested side-camera steering correction labels, so left/right camera rows were not expanded into training examples. Side-camera correction should remain a separate experiment after the center-camera Local V3 model is evaluated.
+
+## Training Readiness
+
+Dataset verdict: **A) Local V3 dataset ready for session-aware training**.
+
+Training must still wait for the training CLI to accept explicit manifests. The current `src/training/train_behavior_cloning.py` pipeline reads one CSV and performs its own deterministic random row split, which would defeat the complete-session C2 holdout.
+
+Required next training support:
 
 ```text
-Left steering: 47.07%
-Right steering: 30.93%
-Strong turns: 24.83%
-Near-zero: 22.00%
+--train-csv data/processed/local_v3_training/train.csv
+--validation-csv data/processed/local_v3_training/validation.csv
 ```
 
-Local V3 should use C2 and right-turn rows to keep right-side coverage competitive.
+Future intended command after the CLI supports explicit manifests:
 
-## Validation Split
+```powershell
+python src/training/train_behavior_cloning.py --train-csv data/processed/local_v3_training/train.csv --validation-csv data/processed/local_v3_training/validation.csv --format simple --epochs 15 --batch-size 32 --seed 42 --output models/steering_model_local_v3.pt --chart-output screenshots/training_loss_local_v3.png
+```
 
-Do not use a random row split as the primary validation result.
+Validation requirements for that future run:
 
-Use a complete session-aware holdout where practical:
-
-- Candidate validation holdout: Session D if testing curve generalization from v1/A/B/C2.
-- Candidate alternative: hold out Session C2 if training includes Session D and the goal is right-recovery validation.
-- Best research option: collect a smaller independent Session E or D2 and use it as an untouched test session.
-
-Avoid placing adjacent frames from the same recording into both training and validation when possible.
-
-## Camera Usage
-
-Start with center-camera training for the first Local V3 comparison so the data effect can be isolated against v1 and local v2.
-
-Do not introduce side-camera correction labels in the same experiment unless it is explicitly tracked as a separate experiment. If side cameras are used later, document:
-
-- steering correction magnitude,
-- sign convention,
-- source sessions,
-- whether side-camera rows are training-only or also evaluated separately.
-
-## Evaluation Requirements
-
-Report at minimum:
-
-- Best validation loss.
-- MAE and RMSE.
-- Zero-steering baseline MAE and improvement percentage.
-- Prediction standard deviation versus actual steering standard deviation.
-- Near-zero error.
-- Left-steering error.
-- Right-steering error.
-- Strong-turn error.
-- Source/session-level metrics.
-- Held-out-session metrics.
-
-Recommended subgroup thresholds:
-
-- Near-zero: `abs(steering) <= 0.05`
-- Left: `steering < -0.05`
-- Right: `steering > 0.05`
-- Strong turns: `abs(steering) >= 0.5`
+- Use `train.csv` only for optimization.
+- Use `validation.csv` only for validation.
+- Do not perform a random row re-split.
+- Keep augmentation training-only.
+- Select the best checkpoint by validation loss.
+- Report overall MAE/RMSE, near-zero MAE, left MAE, right MAE, strong-turn MAE, zero-steering baseline, and prediction-vs-actual standard deviation.
+- Report metrics by `source_session`.
 
 ## Acceptance Criteria
 
-Local V3 should not be promoted unless it improves materially over both v1 and local v2:
+Local V3 model promotion will require material improvement over both prior baselines:
 
 | Metric | Minimum expectation |
 | --- | --- |
@@ -136,25 +157,9 @@ Local V3 should not be promoted unless it improves materially over both v1 and l
 | Overall RMSE | Better than v1 RMSE 0.246529 |
 | Strong-turn MAE | Clearly better than local v2 strong-turn MAE 0.469480 |
 | Right-steering MAE | Clearly better than local v2 right-steering MAE 0.256633 |
-| Prediction std | Closer to actual steering std than local v2's compressed predictions |
-| Validation split | Session-aware result reported, not only random row split |
-
-If Local V3 improves only on the random row split, do not approve simulator-control work.
-
-## Follow-up Options
-
-If Local V3 improves:
-
-- Add side-camera correction as a separate experiment.
-- Compare the compact CNN against an NVIDIA-style behavior cloning CNN on the same fixed split.
-- Add temporal prediction stability metrics before any simulator-only closed-loop work.
-
-If Local V3 does not improve:
-
-- Collect a more balanced Session D2 or Session E focused on right curves and strong corrections.
-- Revisit image crop/normalization before scaling architecture.
-- Review prediction samples to identify whether failures are visual, label-distribution, or split-policy related.
+| Prediction std | Closer to actual steering std than local v2 compressed predictions |
+| Validation split | Complete-session C2 validation reported, not a random row split |
 
 ## Safety Boundary
 
-Local V3 remains simulation-only. It must not be presented as real vehicle readiness or public-road capability. Simulator control remains blocked until the release checklist and held-out evaluation gates pass.
+Local V3 remains simulation-only. It must not be presented as real vehicle readiness or public-road capability. Simulator control remains blocked until model evaluation, held-out-session metrics, and prediction stability gates pass.

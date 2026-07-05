@@ -15,8 +15,8 @@ Current release status: not approved for simulator control.
 - [x] Steering distribution has been analyzed.
 - [x] Dataset includes documented recovery driving.
 - [x] Dataset includes documented curve-focused driving.
-- [ ] Final training dataset near-zero concentration is acceptable.
-- [ ] Validation split is by session, lap, or track segment.
+- [x] Final training dataset near-zero concentration is acceptable.
+- [x] Validation split is by session, lap, or track segment.
 - [ ] Low-speed parked frames are reviewed or filtered.
 
 ## Evaluation Gate
@@ -68,9 +68,17 @@ Simulator control is blocked until:
 
 Do not connect the current model to simulator control.
 
+Current dataset progress:
+
+- Local V3 train/validation manifests are built and validated.
+- Local V3 training near-zero concentration is 28.72%.
+- Local V3 validation uses complete `session_c2_right_recovery` holdout.
+- Local V3 leakage checks found 0 source-session, image-path, filename, and CSV-row overlap.
+
 Blocking issues:
 
 - Local v2 underperformed v1 on MAE and RMSE.
-- Session-aware Local V3 validation has not been run.
+- Local V3 model training has not been run.
+- Training and evaluation CLIs must accept explicit `train.csv` and `validation.csv` files before Local V3 training.
 - Temporal prediction stability has not been measured.
 - No current checkpoint has passed release gates.

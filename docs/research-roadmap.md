@@ -34,16 +34,17 @@ Exit criteria already met:
 
 Goal: improve the data distribution before changing the architecture.
 
-Status: in progress. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1, so the next step is a Local V3 dataset with a session-aware validation strategy.
+Status: dataset build complete; model training not started. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1. Local V3 now provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation.
 
 Actions:
 
 - Preserve validated Dataset v1 and Sessions A/B/C2/D.
-- Use Session C2 for right-recovery/right-turn coverage.
+- Use Dataset v1, Session A, Session B, and Session D for Local V3 training.
+- Keep Session C2 as the complete-session validation holdout.
 - Use Session D for sustained curve and strong-turn coverage.
 - Downsample near-zero-heavy v1/A/B rows.
-- Use session-level or lap-level validation splits.
-- Keep a clean held-out validation session.
+- Downsample Session D softer-left rows to avoid left dominance.
+- Keep the explicit Local V3 session-aware validation split fixed for the next model run.
 - Test left/right camera correction as a separate experiment.
 
 Metrics:
@@ -58,10 +59,10 @@ Metrics:
 
 Exit criteria:
 
-- Near-zero steering no longer dominates the Local V3 training set.
-- Recovery and curve behavior are visibly present.
+- Near-zero steering no longer dominates the Local V3 training set. Met by Local V3 train at 28.72%.
+- Recovery and curve behavior are visibly present. Session D supplies curve/strong-turn coverage; Session C2 is held out for right-recovery validation.
 - The same baseline CNN improves materially over both v1 and local v2 without architecture changes.
-- Session-aware validation is reported, not only a random row split.
+- Session-aware validation is reported, not only a random row split. The dataset split is ready; model training must still be extended to consume explicit train/validation CSV files.
 
 ## Research Iteration 3: Better CNN
 

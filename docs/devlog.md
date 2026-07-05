@@ -597,3 +597,43 @@ Training was intentionally deferred. No Local V3 dataset was built and no checkp
 ### Git Safety
 
 Raw simulator images, `driving_log.csv`, generated screenshots, and model checkpoints remained ignored. Only documentation files were prepared for commit.
+
+## Day 23: Local V3 Session-Aware Dataset Build
+
+### Goal
+
+Build a Local V3 dataset structure with explicit train and validation manifests, preserving session identity and avoiding adjacent-frame leakage from random row splitting.
+
+### What Was Added
+
+- Added `scripts/build_local_v3_training_dataset.py`.
+- Built `data/processed/local_v3_training/train.csv` from Dataset v1, Session A, Session B, and Session D.
+- Reserved the complete `session_c2_right_recovery` recording as `validation.csv`.
+- Preserved `source_session` and `source_dataset` in every manifest row.
+- Used center-camera rows only; side-camera correction labels remain a future separate experiment.
+- Added focused unit tests for deterministic sampling, holdout isolation, missing-image failure, duplicate-path detection, and steering distribution metrics.
+
+### Dataset Result
+
+```text
+Train rows: 10657
+Validation rows: 4163
+Train near-zero / left / right / strong: 28.72% / 35.86% / 35.41% / 27.20%
+Validation near-zero / left / right / strong: 41.32% / 30.22% / 28.47% / 14.89%
+Missing images: 0
+Corrupt images: 0
+Invalid steering labels: 0
+Train/validation source overlap: 0
+Train/validation image-path overlap: 0
+Train/validation CSV-row overlap: 0
+Train/validation image-filename overlap: 0
+Verdict: A) Local V3 dataset ready for session-aware training
+```
+
+### Training Decision
+
+Training was intentionally deferred. The current training script still performs its own random row split, so the next task is to extend training and evaluation to accept explicit `train.csv` and `validation.csv` manifests before training `models/steering_model_local_v3.pt`.
+
+### Git Safety
+
+Generated Local V3 manifests, raw simulator datasets, model checkpoints, and generated plots remained ignored by Git. No raw data or model files were staged.
