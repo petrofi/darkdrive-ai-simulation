@@ -34,7 +34,7 @@ Exit criteria already met:
 
 Goal: improve the data distribution before changing the architecture.
 
-Status: dataset build complete; model training not started. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1. Local V3 now provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation.
+Status: first session-aware model experiment complete, not promoted. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1 historically. Local V3 provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation. The first Local V3 model trained successfully but did not outperform Local V2 on the fair Session C2 holdout.
 
 Actions:
 
@@ -45,6 +45,7 @@ Actions:
 - Downsample near-zero-heavy v1/A/B rows.
 - Downsample Session D softer-left rows to avoid left dominance.
 - Keep the explicit Local V3 session-aware validation split fixed for the next model run.
+- Review Local V3 strong-turn and right-recovery failure samples before changing architecture.
 - Test left/right camera correction as a separate experiment.
 
 Metrics:
@@ -61,8 +62,16 @@ Exit criteria:
 
 - Near-zero steering no longer dominates the Local V3 training set. Met by Local V3 train at 28.72%.
 - Recovery and curve behavior are visibly present. Session D supplies curve/strong-turn coverage; Session C2 is held out for right-recovery validation.
-- The same baseline CNN improves materially over both v1 and local v2 without architecture changes.
-- Session-aware validation is reported, not only a random row split. The dataset split is ready; model training must still be extended to consume explicit train/validation CSV files.
+- The same baseline CNN improves materially over both v1 and local v2 without architecture changes. Not met by the first Local V3 run.
+- Session-aware validation is reported, not only a random row split. Met for Local V3.
+
+First Local V3 result:
+
+- Session C2 MAE/RMSE: 0.215618 / 0.316627.
+- Right MAE: 0.249182.
+- Strong-turn MAE: 0.598862.
+- Prediction/actual std ratio: 0.656937.
+- Verdict: R2, valid offline experiment, not promoted.
 
 ## Research Iteration 3: Better CNN
 

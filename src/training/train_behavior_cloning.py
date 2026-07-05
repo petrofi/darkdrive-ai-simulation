@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
@@ -33,6 +34,31 @@ IMAGE_WIDTH = 160
 IMAGE_HEIGHT = 80
 RANDOM_SEED = 42
 TRAINING_CHART_PATH = Path("screenshots/training_loss.png")
+
+
+@dataclass(frozen=True)
+class ManifestValidation:
+    role: str
+    csv_path: Path
+    input_rows: int
+    usable_rows: int
+    missing_images: int
+    invalid_steering: int
+    nan_labels: int
+    source_sessions: list[str]
+
+
+@dataclass(frozen=True)
+class TrainingFrames:
+    training_data: pd.DataFrame
+    validation_data: pd.DataFrame
+    training_csv: Path
+    validation_csv: Path
+    explicit_manifests: bool
+    training_validation: ManifestValidation
+    validation_validation: ManifestValidation
+    skipped_invalid_steering: int
+    skipped_missing_images: int
 
 
 class DrivingDataset(Dataset):
@@ -138,10 +164,271 @@ def split_data_frame(
     return training_data, validation_data
 
 
+def source_sessions(data: pd.DataFrame) -> list[str]:
+    if "source_session" not in data.columns:
+        return []
+    return sorted(str(value) for value in data["source_session"].dropna().unique())
+
+
+def resolved_image_paths(
+    data: pd.DataFrame,
+    csv_path: str | Path,
+    images_dir: str | Path | None,
+    dataset_format: str,
+) -> list[str]:
+    path_column = primary_image_column(dataset_format)
+    return [
+        str(resolve_image_path(row[path_column], csv_path, images_dir))
+        for _, row in data.iterrows()
+    ]
+
+
+def validate_manifest(
+    csv_path: str | Path,
+    dataset_format: str,
+    images_dir: str | Path | None,
+    role: str,
+    *,
+    fail_on_missing_images: bool,
+    fail_on_invalid_labels: bool,
+) -> tuple[pd.DataFrame | None, ManifestValidation]:
+    csv_path = Path(csv_path)
+    if not csv_path.exists():
+        print(f"{role.capitalize()} manifest not found: {csv_path}")
+        return None, ManifestValidation(role, csv_path, 0, 0, 0, 0, 0, [])
+
+    try:
+        data = load_driving_log(csv_path, dataset_format)
+    except ValueError as exc:
+        print(f"{role.capitalize()} manifest format error: {exc}")
+        return None, ManifestValidation(role, csv_path, 0, 0, 0, 0, 0, [])
+    except Exception as exc:
+        print(f"Could not read {role} manifest: {exc}")
+        return None, ManifestValidation(role, csv_path, 0, 0, 0, 0, 0, [])
+
+    if len(data) == 0:
+        print(f"{role.capitalize()} manifest is empty: {csv_path}")
+        return None, ManifestValidation(role, csv_path, 0, 0, 0, 0, 0, [])
+
+    if "steering" not in data.columns:
+        print(f"{role.capitalize()} manifest is missing required steering column: {csv_path}")
+        return None, ManifestValidation(role, csv_path, len(data), 0, 0, len(data), len(data), [])
+
+    steering = pd.to_numeric(data["steering"], errors="coerce")
+    invalid_steering = int(steering.isna().sum())
+    nan_labels = int(steering.isna().sum())
+    if invalid_steering:
+        message = f"{role.capitalize()} manifest has invalid steering labels: {invalid_steering}"
+        if fail_on_invalid_labels:
+            print(message)
+            return None, ManifestValidation(
+                role,
+                csv_path,
+                len(data),
+                0,
+                0,
+                invalid_steering,
+                nan_labels,
+                source_sessions(data),
+            )
+        print(f"Skipping rows with invalid steering values in {role}: {invalid_steering}")
+        data = data.dropna(subset=["steering"]).reset_index(drop=True)
+
+    filtered_data, missing_images = filter_rows_with_existing_images(
+        data,
+        csv_path,
+        images_dir,
+        dataset_format,
+    )
+    if missing_images:
+        message = f"{role.capitalize()} manifest has missing center images: {missing_images}"
+        if fail_on_missing_images:
+            print(message)
+            return None, ManifestValidation(
+                role,
+                csv_path,
+                len(data),
+                0,
+                missing_images,
+                invalid_steering,
+                nan_labels,
+                source_sessions(data),
+            )
+        print(f"Skipping rows with missing center images in {role}: {missing_images}")
+
+    if len(filtered_data) == 0:
+        print(f"No usable rows remain in {role} manifest after validation.")
+        return None, ManifestValidation(
+            role,
+            csv_path,
+            len(data),
+            0,
+            missing_images,
+            invalid_steering,
+            nan_labels,
+            source_sessions(data),
+        )
+
+    validation = ManifestValidation(
+        role=role,
+        csv_path=csv_path,
+        input_rows=len(data),
+        usable_rows=len(filtered_data),
+        missing_images=missing_images,
+        invalid_steering=invalid_steering,
+        nan_labels=nan_labels,
+        source_sessions=source_sessions(filtered_data),
+    )
+    return filtered_data, validation
+
+
+def validate_explicit_split(
+    training_data: pd.DataFrame,
+    validation_data: pd.DataFrame,
+    training_csv: str | Path,
+    validation_csv: str | Path,
+    images_dir: str | Path | None,
+    dataset_format: str,
+) -> dict[str, object]:
+    training_paths = set(resolved_image_paths(training_data, training_csv, images_dir, dataset_format))
+    validation_paths = set(
+        resolved_image_paths(validation_data, validation_csv, images_dir, dataset_format)
+    )
+    overlapping_paths = training_paths & validation_paths
+
+    training_sessions = set(source_sessions(training_data))
+    validation_sessions = set(source_sessions(validation_data))
+    overlapping_sessions = (
+        training_sessions & validation_sessions
+        if training_sessions and validation_sessions
+        else set()
+    )
+
+    return {
+        "overlapping_image_paths": sorted(overlapping_paths),
+        "overlapping_image_path_count": len(overlapping_paths),
+        "overlapping_source_sessions": sorted(overlapping_sessions),
+        "overlapping_source_session_count": len(overlapping_sessions),
+    }
+
+
+def prepare_training_frames(
+    csv_path: str | Path,
+    dataset_format: str,
+    images_dir: str | Path | None,
+    validation_split: float,
+    seed: int,
+    train_csv_path: str | Path | None = None,
+    validation_csv_path: str | Path | None = None,
+) -> TrainingFrames | None:
+    if bool(train_csv_path) != bool(validation_csv_path):
+        print("Explicit training requires both --train-csv and --validation-csv.")
+        return None
+
+    if train_csv_path and validation_csv_path:
+        training_data, training_validation = validate_manifest(
+            train_csv_path,
+            dataset_format,
+            images_dir,
+            "training",
+            fail_on_missing_images=True,
+            fail_on_invalid_labels=True,
+        )
+        validation_data, validation_validation = validate_manifest(
+            validation_csv_path,
+            dataset_format,
+            images_dir,
+            "validation",
+            fail_on_missing_images=True,
+            fail_on_invalid_labels=True,
+        )
+        if training_data is None or validation_data is None:
+            return None
+
+        split_check = validate_explicit_split(
+            training_data,
+            validation_data,
+            train_csv_path,
+            validation_csv_path,
+            images_dir,
+            dataset_format,
+        )
+        if split_check["overlapping_image_path_count"]:
+            print(
+                "Training and validation manifests overlap by image path: "
+                f"{split_check['overlapping_image_path_count']}"
+            )
+            return None
+        if split_check["overlapping_source_session_count"]:
+            print(
+                "Training and validation manifests overlap by source_session: "
+                f"{split_check['overlapping_source_sessions']}"
+            )
+            return None
+
+        return TrainingFrames(
+            training_data=training_data.reset_index(drop=True),
+            validation_data=validation_data.reset_index(drop=True),
+            training_csv=Path(train_csv_path),
+            validation_csv=Path(validation_csv_path),
+            explicit_manifests=True,
+            training_validation=training_validation,
+            validation_validation=validation_validation,
+            skipped_invalid_steering=0,
+            skipped_missing_images=0,
+        )
+
+    full_data, full_validation = validate_manifest(
+        csv_path,
+        dataset_format,
+        images_dir,
+        "dataset",
+        fail_on_missing_images=False,
+        fail_on_invalid_labels=False,
+    )
+    if full_data is None:
+        return None
+
+    training_data, validation_data = split_data_frame(full_data, validation_split, seed)
+    return TrainingFrames(
+        training_data=training_data,
+        validation_data=validation_data,
+        training_csv=Path(csv_path),
+        validation_csv=Path(csv_path),
+        explicit_manifests=False,
+        training_validation=ManifestValidation(
+            role="training",
+            csv_path=Path(csv_path),
+            input_rows=len(training_data),
+            usable_rows=len(training_data),
+            missing_images=0,
+            invalid_steering=0,
+            nan_labels=0,
+            source_sessions=source_sessions(training_data),
+        ),
+        validation_validation=ManifestValidation(
+            role="validation",
+            csv_path=Path(csv_path),
+            input_rows=len(validation_data),
+            usable_rows=len(validation_data),
+            missing_images=0,
+            invalid_steering=0,
+            nan_labels=0,
+            source_sessions=source_sessions(validation_data),
+        ),
+        skipped_invalid_steering=full_validation.invalid_steering,
+        skipped_missing_images=full_validation.missing_images,
+    )
+
+
 def choose_device(device_name: str) -> torch.device:
     if device_name == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return torch.device(device_name)
+
+
+def count_parameters(model: nn.Module) -> int:
+    return sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
 
 
 def train_one_epoch(
@@ -235,6 +522,8 @@ def save_checkpoint(
     checkpoint = {
         "model_state_dict": model.state_dict(),
         "model_class": "SteeringModel",
+        "model_architecture": "SteeringModel",
+        "parameter_count": count_parameters(model),
         "image_width": IMAGE_WIDTH,
         "image_height": IMAGE_HEIGHT,
         "simulation_only": True,
@@ -255,6 +544,8 @@ def default_chart_output(
     csv_text = str(csv_path).replace("\\", "/").lower()
     if output_stem == "steering_model_local_v2" or "data/processed/local_v2_training" in csv_text:
         return Path("screenshots/training_loss_local_v2.png")
+    if output_stem.startswith("steering_model_local_v3") or "data/processed/local_v3_training" in csv_text:
+        return Path("screenshots/training_loss_local_v3.png")
     if output_stem == "steering_model_merged_v1" or "data/processed/merged_training" in csv_text:
         return Path("screenshots/training_loss_merged_v1.png")
     if output_stem == "steering_model_sim_v1" or (
@@ -274,6 +565,8 @@ def train(
     csv_path: str | Path,
     dataset_format: str = "simple",
     images_dir: str | Path | None = None,
+    train_csv_path: str | Path | None = None,
+    validation_csv_path: str | Path | None = None,
     epochs: int = 5,
     batch_size: int = 32,
     output_path: str | Path = "models/steering_model_v1.pt",
@@ -286,66 +579,39 @@ def train(
     device_name: str = "auto",
     num_workers: int = 0,
     seed: int = RANDOM_SEED,
-) -> None:
+) -> bool:
     csv_path = Path(csv_path)
-    if not csv_path.exists():
-        print(f"Driving log not found: {csv_path}")
-        print("You need simulated driving data first.")
-        print("Simple format: image_path,steering,throttle,brake,speed")
-        print("Udacity format: center,left,right,steering,throttle,brake,speed")
-        print("For simulator data, place the log at data/processed/simulator/driving_log.csv.")
-        return
-
-    try:
-        full_data = load_driving_log(csv_path, dataset_format)
-    except ValueError as exc:
-        print(f"Dataset format error: {exc}")
-        print("Run scripts/validate_simulator_dataset.py before training.")
-        return
-    except Exception as exc:
-        print(f"Could not read driving log: {exc}")
-        return
-
-    if len(full_data) == 0:
-        print("Driving log is empty. Add simulation driving rows before training.")
-        return
-
-    invalid_steering = int(full_data["steering"].isna().sum())
-    if invalid_steering:
-        print(f"Skipping rows with invalid steering values: {invalid_steering}")
-        full_data = full_data.dropna(subset=["steering"]).reset_index(drop=True)
-
-    full_data, missing_image_count = filter_rows_with_existing_images(
-        full_data,
+    frames = prepare_training_frames(
         csv_path,
-        images_dir,
         dataset_format,
+        images_dir,
+        validation_split,
+        seed,
+        train_csv_path=train_csv_path,
+        validation_csv_path=validation_csv_path,
     )
-    if missing_image_count:
-        print(f"Skipping rows with missing center images: {missing_image_count}")
-
-    if len(full_data) == 0:
-        print("No usable rows remain after checking steering values and image paths.")
-        return
+    if frames is None:
+        print("Training stopped before model initialization.")
+        return False
 
     if chart_output is None:
-        chart_output = default_chart_output(output_path, csv_path, dataset_format)
+        chart_reference = validation_csv_path or train_csv_path or csv_path
+        chart_output = default_chart_output(output_path, chart_reference, dataset_format)
 
     np.random.seed(seed)
     torch.manual_seed(seed)
-    training_data, validation_data = split_data_frame(full_data, validation_split, seed)
     training_dataset = DrivingDataset(
-        csv_path,
+        frames.training_csv,
         dataset_format=dataset_format,
         images_dir=images_dir,
-        data_frame=training_data,
+        data_frame=frames.training_data,
         augment=augment,
     )
     validation_dataset = DrivingDataset(
-        csv_path,
+        frames.validation_csv,
         dataset_format=dataset_format,
         images_dir=images_dir,
-        data_frame=validation_data,
+        data_frame=frames.validation_data,
         augment=False,
     )
 
@@ -369,15 +635,20 @@ def train(
     )
 
     model = SteeringModel().to(device)
+    parameter_count = count_parameters(model)
     loss_function = make_loss_function(loss_name)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     print("Simulation-only training mode.")
     print(f"Dataset format: {dataset_format}")
+    print(f"Split mode: {'explicit manifests' if frames.explicit_manifests else 'random row split'}")
     print(f"Training rows: {len(training_dataset)}")
     print(f"Validation rows: {len(validation_dataset)}")
+    print(f"Training source sessions: {frames.training_validation.source_sessions or ['not recorded']}")
+    print(f"Validation source sessions: {frames.validation_validation.source_sessions or ['not recorded']}")
     print(f"Device: {device}")
     print(f"Augmentation: {'on' if augment else 'off'}")
+    print(f"Model parameters: {parameter_count}")
     print("Starting behavior cloning training...")
 
     history = {
@@ -424,10 +695,13 @@ def train(
     except FileNotFoundError as exc:
         print(f"Training stopped because an image file was missing: {exc}")
         print("Validate the dataset and image paths before training.")
-        return
+        return False
 
     checkpoint_args = {
         "csv": str(csv_path),
+        "train_csv": str(frames.training_csv),
+        "validation_csv": str(frames.validation_csv),
+        "explicit_manifests": frames.explicit_manifests,
         "format": dataset_format,
         "images_dir": str(images_dir) if images_dir else "",
         "epochs": epochs,
@@ -439,11 +713,19 @@ def train(
         "augment": augment,
         "device": str(device),
         "seed": seed,
+        "model_architecture": "SteeringModel",
+        "input_image_width": IMAGE_WIDTH,
+        "input_image_height": IMAGE_HEIGHT,
+        "parameter_count": parameter_count,
         "best_epoch": best_epoch,
         "best_validation_loss": best_validation_loss,
-        "usable_rows": len(full_data),
-        "skipped_missing_images": missing_image_count,
-        "skipped_invalid_steering": invalid_steering,
+        "train_row_count": len(training_dataset),
+        "validation_row_count": len(validation_dataset),
+        "training_source_sessions": frames.training_validation.source_sessions,
+        "validation_source_sessions": frames.validation_validation.source_sessions,
+        "usable_rows": len(training_dataset) + len(validation_dataset),
+        "skipped_missing_images": frames.skipped_missing_images,
+        "skipped_invalid_steering": frames.skipped_invalid_steering,
     }
 
     if best_state_dict is not None:
@@ -452,11 +734,15 @@ def train(
     save_checkpoint(model, output_path, checkpoint_args, history)
     save_loss_chart(history["training_loss"], history["validation_loss"], chart_output)
     print("Training summary:")
-    print(f"- Usable rows: {len(full_data)}")
+    print(f"- Training rows: {len(training_dataset)}")
+    print(f"- Validation rows: {len(validation_dataset)}")
     print(f"- Best epoch: {best_epoch}")
     print(f"- Best validation loss: {best_validation_loss:.6f}")
+    print(f"- Final training loss: {history['training_loss'][-1]:.6f}")
+    print(f"- Final validation loss: {history['validation_loss'][-1]:.6f}")
     print(f"- Output checkpoint: {output_path}")
     print(f"- Loss chart: {chart_output}")
+    return True
 
 
 def parse_args() -> argparse.Namespace:
@@ -465,6 +751,16 @@ def parse_args() -> argparse.Namespace:
         "--csv",
         default="data/processed/driving_log.csv",
         help="CSV file with a simple or Udacity-style simulated driving log.",
+    )
+    parser.add_argument(
+        "--train-csv",
+        default=None,
+        help="Explicit training manifest. Must be supplied together with --validation-csv.",
+    )
+    parser.add_argument(
+        "--validation-csv",
+        default=None,
+        help="Explicit validation manifest. Must be supplied together with --train-csv.",
     )
     parser.add_argument(
         "--format",
@@ -529,10 +825,12 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     args = parse_args()
-    train(
+    success = train(
         args.csv,
         dataset_format=args.format,
         images_dir=args.images_dir,
+        train_csv_path=args.train_csv,
+        validation_csv_path=args.validation_csv,
         epochs=args.epochs,
         batch_size=args.batch_size,
         output_path=args.output,
@@ -546,3 +844,4 @@ if __name__ == "__main__":
         num_workers=args.num_workers,
         seed=args.seed,
     )
+    raise SystemExit(0 if success else 1)

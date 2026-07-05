@@ -1,7 +1,7 @@
 # DarkDrive AI Simulation
 
 ![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.11-ee4c2c?logo=pytorch&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.12-ee4c2c?logo=pytorch&logoColor=white)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5C3EE8?logo=opencv&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Stars](https://img.shields.io/github/stars/petrofi/darkdrive-ai-simulation?style=social)
@@ -835,6 +835,59 @@ Evaluate local v2 model:
 python scripts/evaluate_steering_model.py --model models/steering_model_local_v2.pt --csv data/processed/local_v2_training/driving_log.csv --format simple
 ```
 
+## Local V3 Session-Aware Training Result
+
+Local V3 adds explicit session-aware manifests:
+
+```text
+data/processed/local_v3_training/train.csv
+data/processed/local_v3_training/validation.csv
+```
+
+The generated CSV and JSON files are ignored by Git.
+
+Training split:
+
+```text
+Rows: 10657
+Sources: v1, session_a_normal, session_b_new_training, session_d_curve_focused
+Near-zero / left / right / strong: 28.72% / 35.86% / 35.41% / 27.20%
+```
+
+Validation holdout:
+
+```text
+Rows: 4163
+Source: session_c2_right_recovery only
+Near-zero / left / right / strong: 41.32% / 30.22% / 28.47% / 14.89%
+```
+
+The trainer now supports explicit manifests:
+
+```powershell
+python src/training/train_behavior_cloning.py --train-csv data/processed/local_v3_training/train.csv --validation-csv data/processed/local_v3_training/validation.csv --format simple --epochs 15 --batch-size 32 --seed 42 --output models/steering_model_local_v3.pt --chart-output screenshots/training_loss_local_v3.png
+```
+
+The first Local V3 model trained successfully and was evaluated offline against the complete Session C2 simulator session:
+
+```text
+Best validation loss: 0.100252
+Session C2 MAE/RMSE: 0.215618 / 0.316627
+Right MAE: 0.249182
+Strong-turn MAE: 0.598862
+Prediction/actual std ratio: 0.656937
+Release verdict: R2, valid offline experiment, not promoted
+```
+
+On the same Session C2 validation manifest, Local V2 still performs better:
+
+```text
+Local V2 Session C2 MAE/RMSE: 0.193998 / 0.267838
+Local V3 Session C2 MAE/RMSE: 0.215618 / 0.316627
+```
+
+Closed-loop simulator control remains unimplemented and blocked.
+
 ## 30-Day Roadmap Summary
 
 - Week 1: Set up the project, connect to DonkeyCar Simulator, collect initial driving data, and build a basic OpenCV lane detection prototype.
@@ -855,6 +908,8 @@ First real simulator training workflow verified:
 - Offline steering model evaluation works on held-out simulator frames.
 - Dataset v2 includes targeted recovery-driving data and can be built as an ignored local training CSV.
 - A local v2 behavior-cloning model was trained and evaluated offline, but it did not improve over v1.
+- Local V3 uses explicit session-aware train/validation manifests with Session C2 held out.
+- A Local V3 model was trained and evaluated offline on the complete Session C2 simulator session, but it did not improve over Local V2 on that holdout.
 - Simulator autonomous driving integration is not implemented yet.
 
 ## Future Work
@@ -885,6 +940,7 @@ Research artifacts:
 - [Dataset V2 Session C2 Right Recovery Report](docs/dataset-v2-session-c2-right-recovery-report.md)
 - [Dataset V2 Merged Training Report](docs/dataset-v2-merged-training-report.md)
 - [Local V2 Model Evaluation Report](docs/model-local-v2-evaluation-report.md)
+- [Local V3 Model Evaluation Report](docs/model-local-v3-evaluation-report.md)
 - [Model Analysis V1](docs/model-analysis-v1.md)
 - [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
 - [Research Roadmap](docs/research-roadmap.md)

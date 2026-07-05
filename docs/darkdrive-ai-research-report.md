@@ -2,11 +2,11 @@
 
 ## Current Maturity Level
 
-DarkDrive is at Simulator Training Baseline maturity.
+DarkDrive is at Simulator Training Baseline maturity with a session-aware Local V3 evaluation workflow.
 
 The project has moved beyond infrastructure. It has real simulator data, trained behavior cloning checkpoints, validated Dataset v2 sessions, and offline evaluation. It has not reached simulator-driving readiness.
 
-Research verdict: accept the pipeline and v1 baseline as valid offline research, reject the current local v2 model as a control model.
+Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, and Local V3 session-aware workflow as valid offline research artifacts. Reject the current Local V3 model as a release/control candidate because it did not beat Local V2 on the fair Session C2 holdout.
 
 ## Current Strengths
 
@@ -15,8 +15,8 @@ Research verdict: accept the pipeline and v1 baseline as valid offline research,
 - Dataset validation works.
 - Real Udacity-style simulator data exists.
 - Dataset v2 now includes validated recovery and curve-focused sessions.
-- Training pipeline is functional.
-- Evaluation pipeline is functional.
+- Training pipeline is functional and now supports explicit train/validation manifests.
+- Evaluation pipeline is functional and now supports complete-session validation manifests.
 - The model learns real steering signal.
 - Repository safety boundaries are clear.
 - Checkpoints and generated datasets are not committed.
@@ -25,9 +25,11 @@ Research verdict: accept the pipeline and v1 baseline as valid offline research,
 
 - The original Dataset v1 is too centered around zero steering.
 - The local Dataset v2 model underperformed v1 despite improved aggregate label balance.
-- Session D is left-heavy and must be balanced carefully in Local V3.
+- The first Local V3 model did not improve over Local V2 on the fair Session C2 holdout.
+- Local V3 strong-turn MAE is high at 0.598862.
+- Local V3 prediction variance remains compressed: prediction/actual std ratio 0.656937.
 - Current model uses only the center camera.
-- Validation split is random row-based, which may leak adjacent-frame similarity.
+- Older v1 and Local V2 headline evaluations used random row-based splits, which may leak adjacent-frame similarity.
 - Local v2 MAE/RMSE are worse than v1: 0.211307 / 0.303382 versus 0.174045 / 0.246529.
 - Local v2 prediction variance is lower than actual variance, suggesting conservative steering.
 - Temporal stability and oscillation have not been measured.
@@ -36,21 +38,19 @@ Research verdict: accept the pipeline and v1 baseline as valid offline research,
 
 The biggest bottleneck is dataset coverage, not CNN size.
 
-The immediate bottleneck is now converting the stronger raw sessions into a leak-resistant Local V3 dataset and evaluation protocol. Session C2 adds right-recovery coverage and Session D adds sustained curve/strong-turn coverage, but the next training run must avoid random adjacent-frame validation optimism.
+The immediate bottleneck is now model/data generalization on the fixed Session C2 holdout. Local V3 solved the split-leakage problem, but the compact center-camera CNN still under-predicts steering magnitude and performs poorly on strong turns.
 
 ## Highest Impact Next Experiment
 
-Run the Local V3 training dataset build and evaluation plan after review.
+Review Local V3 strong-turn failures and run one controlled fixed-split model-quality experiment.
 
 Plan:
 
-- Preserve all raw sessions.
-- Include Session C2 and Session D.
-- Downsample near-zero-heavy v1/A/B rows.
-- Preserve `source_session` metadata.
-- Hold out a complete session for validation where practical.
-- Train the same current CNN first.
-- Compare against both v1 and local v2 before changing architecture.
+- Preserve the Local V3 train/validation split.
+- Do not tune repeatedly against Session C2.
+- Compare one change at a time against the current Local V3 checkpoint.
+- Candidate changes: crop/normalization, Huber loss, or a slightly stronger behavior-cloning CNN.
+- Keep side-camera correction as a separate tracked experiment.
 
 This isolates the effect of data quality.
 
@@ -75,14 +75,12 @@ This estimate is intentionally conservative because offline MAE/RMSE does not pr
 
 ## Recommended Next Sprint
 
-Sprint goal: improve the dataset before improving the model.
+Sprint goal: improve model generalization on the fixed Local V3 split without changing multiple factors at once.
 
 Deliverables:
 
-- New balanced simulator dataset.
-- Dataset analysis report.
-- Session-level validation split.
-- Retrained compact CNN baseline.
+- Failure-sample review for Local V3.
+- One fixed-split training experiment with a single planned change.
 - Updated experiment table.
 - Updated release checklist.
 - Decision on whether NVIDIA-style CNN is justified.

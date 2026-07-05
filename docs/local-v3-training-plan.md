@@ -122,22 +122,34 @@ Local V3 is center-camera only. The project has not yet implemented or tested si
 
 Dataset verdict: **A) Local V3 dataset ready for session-aware training**.
 
-Training must still wait for the training CLI to accept explicit manifests. The current `src/training/train_behavior_cloning.py` pipeline reads one CSV and performs its own deterministic random row split, which would defeat the complete-session C2 holdout.
+Explicit manifest support is now implemented in `src/training/train_behavior_cloning.py`.
 
-Required next training support:
+Supported explicit split arguments:
 
 ```text
 --train-csv data/processed/local_v3_training/train.csv
 --validation-csv data/processed/local_v3_training/validation.csv
 ```
 
-Future intended command after the CLI supports explicit manifests:
+Command used for the first Local V3 run:
 
 ```powershell
 python src/training/train_behavior_cloning.py --train-csv data/processed/local_v3_training/train.csv --validation-csv data/processed/local_v3_training/validation.csv --format simple --epochs 15 --batch-size 32 --seed 42 --output models/steering_model_local_v3.pt --chart-output screenshots/training_loss_local_v3.png
 ```
 
-Validation requirements for that future run:
+First Local V3 result:
+
+| Metric | Value |
+| --- | ---: |
+| Best validation loss | 0.100252 |
+| Session C2 MAE | 0.215618 |
+| Session C2 RMSE | 0.316627 |
+| Right MAE | 0.249182 |
+| Strong-turn MAE | 0.598862 |
+| Prediction/actual std ratio | 0.656937 |
+| Release verdict | R2, valid offline experiment, not promoted |
+
+Validation requirements for future Local V3-family runs:
 
 - Use `train.csv` only for optimization.
 - Use `validation.csv` only for validation.
@@ -146,6 +158,7 @@ Validation requirements for that future run:
 - Select the best checkpoint by validation loss.
 - Report overall MAE/RMSE, near-zero MAE, left MAE, right MAE, strong-turn MAE, zero-steering baseline, and prediction-vs-actual standard deviation.
 - Report metrics by `source_session`.
+- Track each rerun as a separate experiment rather than repeatedly tuning against Session C2.
 
 ## Acceptance Criteria
 

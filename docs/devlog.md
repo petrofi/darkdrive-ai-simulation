@@ -637,3 +637,81 @@ Training was intentionally deferred. The current training script still performs 
 ### Git Safety
 
 Generated Local V3 manifests, raw simulator datasets, model checkpoints, and generated plots remained ignored by Git. No raw data or model files were staged.
+
+## Day 24: Local V3 Session-Aware Training And Evaluation
+
+### Goal
+
+Extend the trainer and evaluator to use explicit Local V3 train/validation manifests, train `models/steering_model_local_v3.pt`, and evaluate it on the complete Session C2 holdout without random row re-splitting.
+
+### What Was Added
+
+- Added `--train-csv` and `--validation-csv` support to `src/training/train_behavior_cloning.py`.
+- Preserved the old single `--csv` random-split workflow for backward compatibility.
+- Added pre-training safety checks for missing images, invalid labels, train/validation image-path overlap, and `source_session` overlap.
+- Added `--validation-csv` support to `scripts/evaluate_steering_model.py`.
+- Added overall, subgroup, steering-bin, zero-baseline, prediction-variance, direction-error, and source-session evaluation metrics.
+- Fixed unittest discovery with `tests/__init__.py`.
+- Added focused session-aware trainer and evaluator tests.
+
+### Training Result
+
+```text
+Interpreter: .venv\Scripts\python.exe
+Python: 3.13.14
+PyTorch: 2.12.0+cpu
+Device: CPU
+Train rows: 10657
+Validation rows: 4163
+Epochs: 15
+Batch size: 32
+Seed: 42
+Parameters: 188219
+Training duration: 432.77 seconds
+Best epoch: 3
+Best validation loss: 0.100252
+Final training loss: 0.111446
+Final validation loss: 0.113804
+Final training MAE: 0.238593
+Final validation MAE: 0.221872
+```
+
+### Session C2 Evaluation Result
+
+```text
+Rows evaluated: 4163
+MAE: 0.215618
+RMSE: 0.316627
+Zero-steering baseline MAE: 0.214081
+MAE improvement over zero baseline: -0.72%
+Near-zero MAE: 0.139037
+Left MAE: 0.288706
+Right MAE: 0.249182
+Strong-turn MAE: 0.598862
+Prediction std: 0.228446
+Actual std: 0.347744
+Prediction/actual std ratio: 0.656937
+Incorrect direction rate: 16.46%
+```
+
+### Fair Holdout Comparison
+
+On the same Session C2 validation manifest:
+
+```text
+V1 MAE/RMSE: 0.225056 / 0.332471
+Local V2 MAE/RMSE: 0.193998 / 0.267838
+Local V3 MAE/RMSE: 0.215618 / 0.316627
+```
+
+Local V3 improved over v1 on this holdout but did not improve over Local V2. Local V2 remains the strongest of the three on Session C2.
+
+### Release Decision
+
+Verdict: R2, valid offline experiment, not promoted.
+
+Training and evaluation completed without leakage, but the model does not beat Local V2 on the fair holdout and does not beat the zero-steering MAE baseline. Simulator control remains blocked.
+
+### Git Safety
+
+The Local V3 checkpoint, generated metrics JSON files, generated screenshots, generated Local V3 CSV manifests, raw simulator datasets, and model checkpoints remained ignored by Git.
