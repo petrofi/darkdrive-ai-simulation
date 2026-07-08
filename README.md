@@ -10,7 +10,19 @@
 
 A simulation-based autonomous driving AI project focused on computer vision, data collection, lane detection, and behavior cloning.
 
+## 🏗️ Architecture
 
+```mermaid
+graph TD
+    A[Simulator Camera] --> B[Computer Vision / OpenCV]
+    B --> C[Lane Detection Pipeline]
+    
+    A --> D[Data Collection]
+    D --> E[Behavior Cloning CNN]
+    
+    E --> F[Steering Angle Prediction]
+    F --> G[Autonomous Mode in Simulator]
+```
 ## Safety Notice
 
 This project does not control a real vehicle. It is developed only for simulation, education, and portfolio purposes.
@@ -210,7 +222,8 @@ See [docs/web-lane-image-dataset.md](docs/web-lane-image-dataset.md) for details
 From Windows PowerShell:
 
 ```powershell
-cd C:\Users\tarik\OneDrive\Ekler\Desktop\darkdrive-ai-simulation
+git clone https://github.com/petrofi/darkdrive-ai-simulation.git
+cd darkdrive-ai-simulation
 python -m venv .venv
 .\.venv\Scripts\activate
 python -m pip install -r requirements.txt
@@ -453,13 +466,7 @@ python src/inference/predict_steering.py --model models/steering_model_v1.pt --i
 
 ## Using the Local Udacity Simulator
 
-Local simulator folder:
-
-```text
-C:\Users\tarik\Downloads\win_sys_int\win_sys_int
-```
-
-This simulator folder stays outside the repository. Do not copy or commit `sys_int.exe`, `sys_int_Data`, simulator assets, generated simulator images, generated CSV logs, or trained model files.
+Download the [Udacity Self-Driving Car Simulator](https://github.com/udacity/self-driving-car-sim) and extract it outside this repository.
 
 Prepare the project output folder:
 
@@ -467,13 +474,10 @@ Prepare the project output folder:
 python scripts/prepare_simulator_output.py
 ```
 
-Expected output folder:
+Expected output folder for simulator recordings:
+`data/processed/simulator/`
 
-```text
-C:\Users\tarik\OneDrive\Ekler\Desktop\darkdrive-ai-simulation\data\processed\simulator
-```
-
-If the simulator asks for a recording/output folder, select that folder.
+If the simulator asks for a recording/output folder, select the absolute path to this folder.
 
 Validate dataset:
 
