@@ -34,7 +34,7 @@ Exit criteria already met:
 
 Goal: improve the data distribution before changing the architecture.
 
-Status: first session-aware model experiment complete, not promoted. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1 historically. Local V3 provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation. The first Local V3 model trained successfully but did not outperform Local V2 on the fair Session C2 holdout.
+Status: first session-aware model experiment and EXP-007 road-focused crop experiment complete, both not promoted. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1 historically. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data. Local V3 provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation. The first Local V3 model and the road-crop variant both failed to beat the zero-steering MAE baseline on Session C2.
 
 Actions:
 
@@ -46,7 +46,8 @@ Actions:
 - Downsample Session D softer-left rows to avoid left dominance.
 - Keep the explicit Local V3 session-aware validation split fixed for the next model run.
 - Review Local V3 strong-turn and right-recovery failure samples before changing architecture.
-- Test left/right camera correction as a separate experiment.
+- Run the next single-variable model-quality experiment on the fixed split.
+- Keep left/right camera correction as a separate future experiment.
 
 Metrics:
 
@@ -73,6 +74,16 @@ First Local V3 result:
 - Prediction/actual std ratio: 0.656937.
 - Verdict: R2, valid offline experiment, not promoted.
 
+EXP-007 road-focused crop result:
+
+- Crop: `road_crop_v1`, y=[55,150) before resize.
+- Session C2 MAE/RMSE: 0.215280 / 0.307111.
+- Right MAE: 0.249969.
+- Strong-turn MAE: 0.574012.
+- Prediction/actual std ratio: 0.670205.
+- Zero-baseline improvement: -0.56%.
+- Verdict: P2, valid experiment with no meaningful improvement.
+
 ## Research Iteration 3: Better CNN
 
 Goal: improve visual feature learning after proving the dataset is stronger.
@@ -80,11 +91,12 @@ Goal: improve visual feature learning after proving the dataset is stronger.
 Candidate changes:
 
 - NVIDIA Behavioral Cloning Network style crop and convolution stack.
-- Improved image crop to remove sky/hood regions if present.
 - Image normalization with dataset mean/std.
 - Optional batch normalization.
 - ResNet18 transfer learning only if the dataset becomes large enough.
 - EfficientNet-lite only after a strong lightweight baseline exists.
+
+Recent result: a standalone road crop was tested in EXP-007 and did not materially improve Local V3. Do not run another crop variant against Session C2 without a new experimental plan and a future untouched test session.
 
 Rules:
 

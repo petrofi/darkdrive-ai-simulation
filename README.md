@@ -883,12 +883,28 @@ Prediction/actual std ratio: 0.656937
 Release verdict: R2, valid offline experiment, not promoted
 ```
 
-On the same Session C2 validation manifest, Local V2 still performs better:
+Historical note: Local V2's Session C2 score is not considered an independent holdout result because Session C2 contributed to the Local V2 training dataset. It is kept only as historical context:
 
 ```text
 Local V2 Session C2 MAE/RMSE: 0.193998 / 0.267838
 Local V3 Session C2 MAE/RMSE: 0.215618 / 0.316627
 ```
+
+EXP-007 tested one controlled preprocessing change on the same fixed Local V3 split:
+
+```text
+Preprocessing: road_crop_v1, crop y=[55,150) before resize
+Checkpoint: models/steering_model_local_v3_crop_v1.pt
+Best validation loss: 0.094317
+Session C2 MAE/RMSE: 0.215280 / 0.307111
+Right MAE: 0.249969
+Strong-turn MAE: 0.574012
+Prediction/actual std ratio: 0.670205
+Zero-steering baseline improvement: -0.56%
+Verdict: P2, valid experiment with no meaningful improvement
+```
+
+The crop improved RMSE, strong-turn MAE, and prediction variance slightly, but it did not materially improve MAE, it slightly worsened right MAE, and it still did not beat the zero-steering baseline.
 
 Closed-loop simulator control remains unimplemented and blocked.
 
@@ -913,7 +929,9 @@ First real simulator training workflow verified:
 - Dataset v2 includes targeted recovery-driving data and can be built as an ignored local training CSV.
 - A local v2 behavior-cloning model was trained and evaluated offline, but it did not improve over v1.
 - Local V3 uses explicit session-aware train/validation manifests with Session C2 held out.
-- A Local V3 model was trained and evaluated offline on the complete Session C2 simulator session, but it did not improve over Local V2 on that holdout.
+- A Local V3 model was trained and evaluated offline on the complete Session C2 simulator session, but it did not beat the zero-steering MAE baseline.
+- EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3.
+- Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
 - Simulator autonomous driving integration is not implemented yet.
 
 ## Future Work
@@ -945,6 +963,7 @@ Research artifacts:
 - [Dataset V2 Merged Training Report](docs/dataset-v2-merged-training-report.md)
 - [Local V2 Model Evaluation Report](docs/model-local-v2-evaluation-report.md)
 - [Local V3 Model Evaluation Report](docs/model-local-v3-evaluation-report.md)
+- [Local V3 Road Crop Evaluation Report](docs/model-local-v3-road-crop-evaluation-report.md)
 - [Model Analysis V1](docs/model-analysis-v1.md)
 - [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
 - [Research Roadmap](docs/research-roadmap.md)

@@ -4,9 +4,9 @@ This report documents the first Local V3 session-aware training run and Session 
 
 ## Experiment Objective
 
-Hypothesis: training on the session-aware Local V3 manifest should improve steering magnitude, right-steering, and strong-turn prediction compared with Local V2, while evaluating on a complete Session C2 holdout with no adjacent-frame random split leakage.
+Hypothesis: training on the session-aware Local V3 manifest should improve steering magnitude, right-steering, and strong-turn prediction compared with prior local baselines, while evaluating on a complete Session C2 holdout with no adjacent-frame random split leakage.
 
-Result: the pipeline worked, but the model result did not improve over Local V2 on the fair Session C2 holdout.
+Result: the pipeline worked, but the model did not beat the zero-steering MAE baseline on the clean Session C2 holdout. Local V2's Session C2 score is now treated as contaminated historical context because Session C2 contributed to the Local V2 training dataset.
 
 Release verdict: **R2) Valid offline experiment, not promoted**.
 
@@ -200,20 +200,20 @@ Source-session metrics:
 | --- | ---: | ---: | ---: |
 | `session_c2_right_recovery` | 4163 | 0.215618 | 0.316627 |
 
-## Fair Session C2 Comparison
+## Session C2 Comparison
 
-All three checkpoints were evaluated on the exact same Local V3 Session C2 validation manifest.
+All three checkpoints were evaluated on the exact same Local V3 Session C2 validation manifest. Only the Local V3 row is a clean complete-session holdout for that model. Local V2's Session C2 score is not considered an independent holdout result because Session C2 contributed to the Local V2 training dataset.
 
 | Model | MAE | RMSE | Near-zero MAE | Left MAE | Right MAE | Strong-turn MAE | Prediction std | Direction error | Verdict |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | `steering_model_sim_v1.pt` | 0.225056 | 0.332471 | 0.146287 | 0.284477 | 0.276305 | 0.615606 | 0.234684 | 19.85% | Worse than Local V2 and Local V3 on C2 |
-| `steering_model_local_v2.pt` | 0.193998 | 0.267838 | 0.146422 | 0.233108 | 0.221535 | 0.444943 | 0.267542 | 12.03% | Best C2 holdout result |
+| `steering_model_local_v2.pt` | 0.193998 | 0.267838 | 0.146422 | 0.233108 | 0.221535 | 0.444943 | 0.267542 | 12.03% | Historical, contaminated by Session C2 in training |
 | `steering_model_local_v3.pt` | 0.215618 | 0.316627 | 0.139037 | 0.288706 | 0.249182 | 0.598862 | 0.228446 | 16.46% | Valid but not promoted |
 
 Interpretation:
 
 - Local V3 improves over v1 on C2 MAE/RMSE, but only modestly.
-- Local V3 is worse than Local V2 on C2 MAE, RMSE, left MAE, right MAE, strong-turn MAE, prediction std, and direction error.
+- Local V3 is worse than Local V2's C2 score on MAE, RMSE, left MAE, right MAE, strong-turn MAE, prediction std, and direction error, but Local V2 is not a clean holdout comparison.
 - Local V3 has the best near-zero MAE, but that is not the core failure mode.
 - Local V3 does not beat the zero-steering baseline on Session C2.
 - Prediction standard deviation remains compressed at 65.69% of actual steering std.
@@ -228,7 +228,7 @@ The earlier v1 and Local V2 headline metrics came from different random split co
 | Local V2 | 0.211307 | 0.303382 | 0.092040 |
 | Local V3 | 0.215618 on Session C2 | 0.316627 on Session C2 | 0.100252 |
 
-Those historical numbers are not perfectly apples-to-apples with Local V3 because Local V3 uses a complete held-out session. The fair comparison is the Session C2 table above.
+Those historical numbers are not perfectly apples-to-apples with Local V3 because Local V3 uses a complete held-out session. Local V2's Session C2 result is also not independent holdout evidence because Session C2 contributed to Local V2 training.
 
 ## Release Verdict
 
@@ -238,7 +238,6 @@ Reasons:
 
 - Explicit session-aware training and evaluation work correctly.
 - The complete Session C2 holdout evaluation is valid and leakage-safe.
-- Local V3 does not improve over Local V2 on the fair Session C2 holdout.
 - Local V3 does not beat the zero-steering baseline on MAE.
 - Strong-turn error is high at 0.598862.
 - Prediction variance remains compressed.

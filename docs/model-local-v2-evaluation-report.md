@@ -100,6 +100,8 @@ The model under-predicts turn magnitude. Right-steering and strong-turn errors a
 
 ## Source/Session Metrics
 
+Note: `session_c2_right_recovery` contributed to the Local V2 training dataset. Metrics for that session in this report are not independent holdout metrics; they are historical random-split diagnostics only.
+
 | Source/session | Samples | MAE | RMSE |
 | --- | ---: | ---: | ---: |
 | `local_simulator_v1` | 568 | 0.198192 | 0.275037 |

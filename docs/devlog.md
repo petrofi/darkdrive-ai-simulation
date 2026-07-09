@@ -694,7 +694,7 @@ Prediction/actual std ratio: 0.656937
 Incorrect direction rate: 16.46%
 ```
 
-### Fair Holdout Comparison
+### Session C2 Comparison
 
 On the same Session C2 validation manifest:
 
@@ -704,14 +704,101 @@ Local V2 MAE/RMSE: 0.193998 / 0.267838
 Local V3 MAE/RMSE: 0.215618 / 0.316627
 ```
 
-Local V3 improved over v1 on this holdout but did not improve over Local V2. Local V2 remains the strongest of the three on Session C2.
+Local V3 improved over v1 on this holdout but did not improve over Local V2's Session C2 score. Local V2's Session C2 score is historical context only, not an independent holdout result, because Session C2 contributed to the Local V2 training dataset.
 
 ### Release Decision
 
 Verdict: R2, valid offline experiment, not promoted.
 
-Training and evaluation completed without leakage, but the model does not beat Local V2 on the fair holdout and does not beat the zero-steering MAE baseline. Simulator control remains blocked.
+Training and evaluation completed without leakage, but the model does not beat the zero-steering MAE baseline. Simulator control remains blocked.
 
 ### Git Safety
 
 The Local V3 checkpoint, generated metrics JSON files, generated screenshots, generated Local V3 CSV manifests, raw simulator datasets, and model checkpoints remained ignored by Git.
+
+## Day 25: EXP-007 Road-Focused Crop Preprocessing
+
+### Goal
+
+Run exactly one controlled preprocessing experiment on the fixed Local V3 split: add a deterministic road-focused crop before resize and keep all other major variables unchanged.
+
+### What Was Added
+
+- Added shared preprocessing profiles in `src/utils/image_preprocessing.py`.
+- Added `baseline` and `road_crop_v1` support to training, evaluation, and single-image inference.
+- Stored preprocessing metadata in new checkpoints.
+- Made evaluation and inference read checkpoint preprocessing metadata when available.
+- Preserved backward compatibility: old checkpoints without metadata default to `baseline`.
+- Added focused preprocessing tests for shape, crop boundaries, invalid profile handling, deterministic validation, metadata fallback, and shared preprocessing consistency.
+
+### Crop Definition
+
+```text
+Profile: road_crop_v1
+Source frame: 320x160
+Crop: x=[0, full width), y=[55,150)
+Resize after crop: 160x80
+Pixel scaling: unchanged, [0,1]
+```
+
+### Training Result
+
+```text
+Interpreter: C:\Users\tarik\AppData\Local\Programs\Python\Python310\python.exe
+Device: CPU
+Train rows: 10657
+Validation rows: 4163
+Epochs: 15
+Batch size: 32
+Seed: 42
+Parameters: 188219
+Training duration: 409.065 seconds
+Best epoch: 5
+Best validation loss: 0.094317
+Final training loss: 0.119376
+Final validation loss: 0.107179
+Final training MAE: 0.245646
+Final validation MAE: 0.209884
+Checkpoint: models/steering_model_local_v3_crop_v1.pt
+```
+
+### Session C2 Evaluation Result
+
+```text
+Rows evaluated: 4163
+MAE: 0.215280
+RMSE: 0.307111
+Zero-steering baseline MAE: 0.214081
+MAE improvement over zero baseline: -0.56%
+Near-zero MAE: 0.151936
+Left MAE: 0.269212
+Right MAE: 0.249969
+Strong-turn MAE: 0.574012
+Prediction std: 0.233060
+Actual std: 0.347744
+Prediction/actual std ratio: 0.670205
+Incorrect direction rate: 16.00%
+```
+
+### Controlled Comparison
+
+```text
+Local V3 baseline MAE/RMSE: 0.215618 / 0.316627
+Local V3 road_crop_v1 MAE/RMSE: 0.215280 / 0.307111
+Baseline right/strong MAE: 0.249182 / 0.598862
+Crop right/strong MAE: 0.249969 / 0.574012
+Baseline std ratio: 0.656937
+Crop std ratio: 0.670205
+```
+
+The crop improved RMSE, strong-turn MAE, direction error, and prediction variance slightly. It did not materially improve overall MAE, it still missed the zero-steering baseline, near-zero MAE regressed, and right MAE regressed slightly.
+
+### Verdict
+
+Verdict: P2, valid experiment with no meaningful improvement.
+
+Do not run another crop variant against Session C2 in this task. Recommended next single-variable experiment: Huber loss on the same fixed Local V3 split.
+
+### Git Safety
+
+The crop checkpoint, generated metrics JSON files, generated screenshots, generated Local V3 CSV manifests, raw simulator datasets, and model checkpoints remained ignored by Git. No simulator control code was added.

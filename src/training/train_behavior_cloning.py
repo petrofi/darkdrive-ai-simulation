@@ -28,10 +28,18 @@ from src.utils.driving_log import (
     required_columns,
     resolve_image_path,
 )
+from src.utils.image_preprocessing import (
+    BASELINE_PROFILE,
+    MODEL_INPUT_HEIGHT as IMAGE_HEIGHT,
+    MODEL_INPUT_WIDTH as IMAGE_WIDTH,
+    VALID_PREPROCESSING_PROFILES,
+    image_to_chw_float,
+    preprocessing_metadata,
+    preprocess_image_array,
+    validate_preprocessing_profile,
+)
 
 
-IMAGE_WIDTH = 160
-IMAGE_HEIGHT = 80
 RANDOM_SEED = 42
 TRAINING_CHART_PATH = Path("screenshots/training_loss.png")
 
@@ -71,11 +79,13 @@ class DrivingDataset(Dataset):
         images_dir: str | Path | None = None,
         data_frame: pd.DataFrame | None = None,
         augment: bool = False,
+        preprocessing_profile: str = BASELINE_PROFILE,
     ) -> None:
         self.csv_path = Path(csv_path)
         self.dataset_format = dataset_format
         self.images_dir = Path(images_dir) if images_dir else None
         self.augment = augment
+        self.preprocessing_profile = validate_preprocessing_profile(preprocessing_profile)
 
         if data_frame is None:
             self.data = load_driving_log(self.csv_path, self.dataset_format)
@@ -101,15 +111,20 @@ class DrivingDataset(Dataset):
         if image is None:
             raise FileNotFoundError(f"Could not load image: {image_path}")
 
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
+        image = preprocess_image_array(
+            image,
+            self.preprocessing_profile,
+            color_order="BGR",
+            output_width=IMAGE_WIDTH,
+            output_height=IMAGE_HEIGHT,
+        )
         steering = float(row["steering"])
 
         if self.augment:
             image, steering = augment_training_image(image, steering)
 
         # Convert from H x W x C uint8 pixels to C x H x W float values in [0, 1].
-        image_tensor = torch.from_numpy(np.ascontiguousarray(image)).float().permute(2, 0, 1) / 255.0
+        image_tensor = torch.from_numpy(image_to_chw_float(image))
         steering_tensor = torch.tensor([steering], dtype=torch.float32)
         return image_tensor, steering_tensor
 
@@ -516,6 +531,7 @@ def save_checkpoint(
     output_path: str | Path,
     args: dict[str, object],
     history: dict[str, list[float]],
+    preprocessing_profile: str,
 ) -> None:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -526,6 +542,8 @@ def save_checkpoint(
         "parameter_count": count_parameters(model),
         "image_width": IMAGE_WIDTH,
         "image_height": IMAGE_HEIGHT,
+        "preprocessing_profile": preprocessing_profile,
+        "preprocessing": preprocessing_metadata(preprocessing_profile),
         "simulation_only": True,
         "training_args": args,
         "history": history,
@@ -576,11 +594,13 @@ def train(
     weight_decay: float = 1e-4,
     loss_name: str = "mse",
     augment: bool = True,
+    preprocessing_profile: str = BASELINE_PROFILE,
     device_name: str = "auto",
     num_workers: int = 0,
     seed: int = RANDOM_SEED,
 ) -> bool:
     csv_path = Path(csv_path)
+    preprocessing_profile = validate_preprocessing_profile(preprocessing_profile)
     frames = prepare_training_frames(
         csv_path,
         dataset_format,
@@ -606,6 +626,7 @@ def train(
         images_dir=images_dir,
         data_frame=frames.training_data,
         augment=augment,
+        preprocessing_profile=preprocessing_profile,
     )
     validation_dataset = DrivingDataset(
         frames.validation_csv,
@@ -613,6 +634,7 @@ def train(
         images_dir=images_dir,
         data_frame=frames.validation_data,
         augment=False,
+        preprocessing_profile=preprocessing_profile,
     )
 
     device = choose_device(device_name)
@@ -646,6 +668,8 @@ def train(
     print(f"Validation rows: {len(validation_dataset)}")
     print(f"Training source sessions: {frames.training_validation.source_sessions or ['not recorded']}")
     print(f"Validation source sessions: {frames.validation_validation.source_sessions or ['not recorded']}")
+    print(f"Preprocessing profile: {preprocessing_profile}")
+    print(f"Preprocessing metadata: {preprocessing_metadata(preprocessing_profile)}")
     print(f"Device: {device}")
     print(f"Augmentation: {'on' if augment else 'off'}")
     print(f"Model parameters: {parameter_count}")
@@ -711,6 +735,8 @@ def train(
         "weight_decay": weight_decay,
         "loss": loss_name,
         "augment": augment,
+        "preprocessing_profile": preprocessing_profile,
+        "preprocessing": preprocessing_metadata(preprocessing_profile),
         "device": str(device),
         "seed": seed,
         "model_architecture": "SteeringModel",
@@ -731,7 +757,7 @@ def train(
     if best_state_dict is not None:
         model.load_state_dict(best_state_dict)
 
-    save_checkpoint(model, output_path, checkpoint_args, history)
+    save_checkpoint(model, output_path, checkpoint_args, history, preprocessing_profile)
     save_loss_chart(history["training_loss"], history["validation_loss"], chart_output)
     print("Training summary:")
     print(f"- Training rows: {len(training_dataset)}")
@@ -790,6 +816,12 @@ def parse_args() -> argparse.Namespace:
         help="Fraction of rows used for validation.",
     )
     parser.add_argument(
+        "--preprocessing-profile",
+        choices=VALID_PREPROCESSING_PROFILES,
+        default=BASELINE_PROFILE,
+        help="Image preprocessing profile to apply before model input.",
+    )
+    parser.add_argument(
         "--device",
         choices=["auto", "cpu", "cuda"],
         default="auto",
@@ -840,6 +872,7 @@ if __name__ == "__main__":
         weight_decay=args.weight_decay,
         loss_name=args.loss,
         augment=args.augment,
+        preprocessing_profile=args.preprocessing_profile,
         device_name=args.device,
         num_workers=args.num_workers,
         seed=args.seed,

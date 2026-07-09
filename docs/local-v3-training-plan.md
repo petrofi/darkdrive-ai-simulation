@@ -149,6 +149,20 @@ First Local V3 result:
 | Prediction/actual std ratio | 0.656937 |
 | Release verdict | R2, valid offline experiment, not promoted |
 
+EXP-007 road-focused crop result:
+
+| Metric | Value |
+| --- | ---: |
+| Crop | `road_crop_v1`, y=[55,150) before resize |
+| Best validation loss | 0.094317 |
+| Session C2 MAE | 0.215280 |
+| Session C2 RMSE | 0.307111 |
+| Right MAE | 0.249969 |
+| Strong-turn MAE | 0.574012 |
+| Prediction/actual std ratio | 0.670205 |
+| Zero-baseline improvement | -0.56% |
+| Verdict | P2, valid experiment with no meaningful improvement |
+
 Validation requirements for future Local V3-family runs:
 
 - Use `train.csv` only for optimization.
@@ -162,15 +176,15 @@ Validation requirements for future Local V3-family runs:
 
 ## Acceptance Criteria
 
-Local V3 model promotion will require material improvement over both prior baselines:
+Local V3 model promotion will require material improvement over the clean fixed-split baseline and the zero-steering baseline. Historical v1 and Local V2 numbers can provide context, but Local V2's Session C2 score is not independent holdout evidence because Session C2 contributed to Local V2 training.
 
 | Metric | Minimum expectation |
 | --- | --- |
 | Overall MAE | Better than v1 MAE 0.174045 |
 | Overall RMSE | Better than v1 RMSE 0.246529 |
-| Strong-turn MAE | Clearly better than local v2 strong-turn MAE 0.469480 |
-| Right-steering MAE | Clearly better than local v2 right-steering MAE 0.256633 |
-| Prediction std | Closer to actual steering std than local v2 compressed predictions |
+| Strong-turn MAE | Clearly better than Local V3 baseline strong-turn MAE 0.598862 and EXP-007 strong-turn MAE 0.574012 |
+| Right-steering MAE | Clearly better than Local V3 baseline right-steering MAE 0.249182 and EXP-007 right-steering MAE 0.249969 |
+| Prediction std | Closer to actual steering std than current Local V3-family compressed predictions |
 | Validation split | Complete-session C2 validation reported, not a random row split |
 
 ## Safety Boundary

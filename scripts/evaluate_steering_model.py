@@ -33,6 +33,12 @@ from src.utils.driving_log import (
     primary_image_column,
     resolve_image_path,
 )
+from src.utils.image_preprocessing import (
+    BASELINE_PROFILE,
+    VALID_PREPROCESSING_PROFILES,
+    preprocessing_metadata,
+    resolve_preprocessing_profile,
+)
 
 
 NEAR_ZERO_ABS = 0.05
@@ -55,7 +61,7 @@ def load_checkpoint(model_path: Path) -> object | None:
         return None
 
 
-def load_model(model_path: Path, device: torch.device) -> SteeringModel | None:
+def load_model(model_path: Path, device: torch.device) -> tuple[SteeringModel, object] | None:
     if not model_path.exists():
         print(f"Model not found: {model_path}")
         print("Train the model on validated simulator data before evaluation.")
@@ -74,7 +80,7 @@ def load_model(model_path: Path, device: torch.device) -> SteeringModel | None:
         return None
 
     model.eval()
-    return model
+    return model, checkpoint
 
 
 def collect_predictions(
@@ -302,7 +308,13 @@ def default_output_paths(model_path: Path, csv_path: Path) -> tuple[Path, Path, 
             Path(f"screenshots/prediction_samples_{model_stem}_on_local_v3.png"),
             Path(f"screenshots/error_by_steering_bin_{model_stem}_on_local_v3.png"),
         )
-    if model_stem.startswith("steering_model_local_v3") or "data/processed/local_v3_training" in csv_text:
+    if model_stem.startswith("steering_model_local_v3") and model_stem != "steering_model_local_v3":
+        return (
+            Path(f"screenshots/prediction_vs_actual_{model_stem}.png"),
+            Path(f"screenshots/prediction_samples_{model_stem}.png"),
+            Path(f"screenshots/error_by_steering_bin_{model_stem}.png"),
+        )
+    if model_stem == "steering_model_local_v3" or "data/processed/local_v3_training" in csv_text:
         return (
             Path("screenshots/prediction_vs_actual_local_v3.png"),
             Path("screenshots/prediction_samples_local_v3.png"),
@@ -429,14 +441,17 @@ def evaluate_model(
     seed: int,
     validation_csv: Path | None = None,
     metrics_json: Path | None = None,
+    preprocessing_profile: str = "checkpoint",
 ) -> dict[str, Any] | None:
     print("DarkDrive steering model evaluation")
     print("Simulation-only evaluation. No real vehicle control is used.")
 
     device = choose_device(device_name)
-    model = load_model(model_path, device)
-    if model is None:
+    loaded_model = load_model(model_path, device)
+    if loaded_model is None:
         return None
+    model, checkpoint = loaded_model
+    resolved_preprocessing_profile = resolve_preprocessing_profile(preprocessing_profile, checkpoint)
 
     evaluation_data, evaluation_csv, explicit_validation = load_evaluation_frame(
         csv_path,
@@ -455,6 +470,7 @@ def evaluate_model(
         images_dir=images_dir,
         data_frame=evaluation_data,
         augment=False,
+        preprocessing_profile=resolved_preprocessing_profile,
     )
     validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 
@@ -480,6 +496,8 @@ def evaluate_model(
     metrics["model_path"] = str(model_path)
     metrics["evaluation_csv"] = str(evaluation_csv)
     metrics["explicit_validation_manifest"] = explicit_validation
+    metrics["preprocessing_profile"] = resolved_preprocessing_profile
+    metrics["preprocessing"] = preprocessing_metadata(resolved_preprocessing_profile)
     metrics["device"] = str(device)
     metrics["artifacts"] = {
         "prediction_plot": str(prediction_plot_path),
@@ -488,6 +506,8 @@ def evaluate_model(
     }
 
     print_metrics(metrics)
+    print(f"- Preprocessing profile: {resolved_preprocessing_profile}")
+    print(f"- Preprocessing metadata: {preprocessing_metadata(resolved_preprocessing_profile)}")
     print(f"- Device: {device}")
     print(f"- Split mode: {'explicit validation manifest' if explicit_validation else 'random row split'}")
 
@@ -515,6 +535,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
+        "--preprocessing-profile",
+        choices=("checkpoint", *VALID_PREPROCESSING_PROFILES),
+        default="checkpoint",
+        help=(
+            "Image preprocessing profile. Use checkpoint to read checkpoint metadata; "
+            f"old checkpoints default to {BASELINE_PROFILE}."
+        ),
+    )
+    parser.add_argument(
         "--metrics-json",
         default=None,
         help="Optional ignored JSON output path for evaluation metrics.",
@@ -535,5 +564,6 @@ if __name__ == "__main__":
         args.seed,
         validation_csv=Path(args.validation_csv) if args.validation_csv else None,
         metrics_json=Path(args.metrics_json) if args.metrics_json else None,
+        preprocessing_profile=args.preprocessing_profile,
     )
     raise SystemExit(0 if metrics is not None else 1)

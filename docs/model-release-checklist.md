@@ -51,7 +51,7 @@ These are initial research thresholds, not final safety claims.
 - Non-zero steering sign accuracy should remain above 90%.
 - Sharp-turn and recovery errors should be reviewed separately.
 
-The v1 model met the RMSE improvement target but did not meet the MAE improvement target. The local v2 model underperformed v1 historically and is not a release candidate. The local v3 model completed session-aware evaluation on Session C2, but did not outperform local v2 on that fair holdout and did not beat the zero-steering MAE baseline.
+The v1 model met the RMSE improvement target but did not meet the MAE improvement target. The local v2 model underperformed v1 historically and is not a release candidate. Local V2's Session C2 score is not treated as an independent holdout result because Session C2 contributed to the Local V2 training dataset. The local v3 model completed session-aware evaluation on Session C2, but did not beat the zero-steering MAE baseline. EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3.
 
 ## Simulator-Control Gate
 
@@ -80,12 +80,21 @@ Current dataset progress:
 - Local V3 strong-turn MAE: 0.598862.
 - Local V3 prediction/actual std ratio: 0.656937.
 - Local V3 release verdict: R2, valid offline experiment, not promoted.
+- EXP-007 road crop checkpoint: `models/steering_model_local_v3_crop_v1.pt`.
+- EXP-007 Session C2 MAE/RMSE: 0.215280 / 0.307111.
+- EXP-007 right MAE: 0.249969.
+- EXP-007 strong-turn MAE: 0.574012.
+- EXP-007 prediction/actual std ratio: 0.670205.
+- EXP-007 zero-baseline improvement: -0.56%.
+- EXP-007 verdict: P2, valid experiment with no meaningful improvement.
 
 Blocking issues:
 
 - Local v2 underperformed v1 historically on MAE and RMSE.
-- Local V3 did not outperform Local V2 on the fair Session C2 holdout.
+- Local V2 Session C2 metrics are contaminated historical context, not clean holdout evidence.
 - Local V3 did not beat the zero-steering MAE baseline on Session C2.
+- EXP-007 did not beat the zero-steering MAE baseline on Session C2.
+- EXP-007 right MAE regressed slightly versus the Local V3 baseline.
 - Local V3 strong-turn error remains high.
 - Temporal prediction stability has not been measured.
 - No current checkpoint has passed release gates.
