@@ -51,7 +51,7 @@ These are initial research thresholds, not final safety claims.
 - Non-zero steering sign accuracy should remain above 90%.
 - Sharp-turn and recovery errors should be reviewed separately.
 
-The v1 model met the RMSE improvement target but did not meet the MAE improvement target. The local v2 model underperformed v1 historically and is not a release candidate. Local V2's Session C2 score is not treated as an independent holdout result because Session C2 contributed to the Local V2 training dataset. The local v3 model completed session-aware evaluation on Session C2, but did not beat the zero-steering MAE baseline. EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3. EXP-008 Huber loss made the zero-baseline comparison barely positive, but right MAE, RMSE, and direction error regressed. EXP-009 `cnn_v2` improved RMSE slightly, but MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed.
+The v1 model met the RMSE improvement target but did not meet the MAE improvement target. The local v2 model underperformed v1 historically and is not a release candidate. Local V2's Session C2 score is not treated as an independent holdout result because Session C2 contributed to the Local V2 training dataset. The local v3 model completed session-aware evaluation on Session C2, but did not beat the zero-steering MAE baseline. EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3. EXP-008 Huber loss made the zero-baseline comparison barely positive, but right MAE, RMSE, and direction error regressed. EXP-009 `cnn_v2` improved RMSE slightly, but MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed. Session E validation is E2, valid but not ideal, and is not frozen as the final independent test set.
 
 ## Simulator-Control Gate
 
@@ -103,6 +103,11 @@ Current dataset progress:
 - EXP-009 zero-baseline improvement: -1.39%.
 - EXP-009 direction error: 19.03%.
 - EXP-009 verdict: A2, valid experiment with no meaningful improvement.
+- Session E candidate rows/images: 6379 rows / 19137 images.
+- Session E missing/corrupt images: 0 / 0.
+- Session E near-zero / left / right / strong: 46.59% / 26.09% / 27.32% / 9.72%.
+- Session E verdict: E2, valid but not ideal.
+- Session E freeze decision: not frozen as the final independent test set.
 
 Blocking issues:
 
@@ -116,5 +121,6 @@ Blocking issues:
 - EXP-009 cnn_v2 regressed MAE, right MAE, strong-turn MAE, std ratio, zero-baseline improvement, and direction error versus the Local V3 baseline.
 - Local V3 strong-turn error remains high.
 - The Session C2 holdout has now been used for multiple model-selection decisions; further tuning should wait for an independent Session E test set.
+- Current Session E candidate is too straight-heavy and has too little strong-turn coverage for final frozen-test status.
 - Temporal prediction stability has not been measured.
 - No current checkpoint has passed release gates.

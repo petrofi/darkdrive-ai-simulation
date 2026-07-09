@@ -944,6 +944,19 @@ Verdict: A2, valid experiment with no meaningful improvement
 
 The stronger CNN improved RMSE slightly, but MAE, right MAE, strong-turn MAE, prediction variance compression, zero-baseline comparison, and direction error regressed. It is not a release or simulator-control candidate.
 
+Session E was recorded as a candidate independent test set and validated without training or evaluating any model:
+
+```text
+Rows: 6379
+Total images: 19137
+Missing/corrupt images: 0 / 0
+Near-zero / left / right / strong: 46.59% / 26.09% / 27.32% / 9.72%
+Verdict: E2, valid but not ideal
+Freeze decision: not frozen as the final independent test set
+```
+
+Session E is technically clean and left/right balanced, but it is too straight-heavy and has too little strong-turn coverage for final frozen-test status. A Session E2 candidate should be recorded before further model-selection work.
+
 Closed-loop simulator control remains unimplemented and blocked.
 
 ## 30-Day Roadmap Summary
@@ -971,6 +984,7 @@ First real simulator training workflow verified:
 - EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3.
 - EXP-008 Huber loss was valid but did not materially improve Local V3 because right MAE and direction error regressed.
 - EXP-009 `cnn_v2` architecture was valid but did not materially improve Local V3 because MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed.
+- Session E was validated as E2, valid but not ideal, and is not frozen as the final independent test set.
 - Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
 - Simulator autonomous driving integration is not implemented yet.
 
@@ -984,7 +998,7 @@ First real simulator training workflow verified:
 
 ## Next Phase
 
-Collect and freeze an independent Session E test set before further model-selection work, then improve the real simulator model with better data balance, recovery driving, left/right camera augmentation, and offline evaluation before implementing any simulator-only autonomous drive loop.
+Record and validate a better Session E2 candidate before further model-selection work, then improve the real simulator model with better data balance, recovery driving, left/right camera augmentation, and offline evaluation before implementing any simulator-only autonomous drive loop.
 
 ## Machine Learning Research Phase
 
@@ -1006,6 +1020,7 @@ Research artifacts:
 - [Local V3 Road Crop Evaluation Report](docs/model-local-v3-road-crop-evaluation-report.md)
 - [Local V3 Huber Loss Evaluation Report](docs/model-local-v3-huber-evaluation-report.md)
 - [Local V3 CNN V2 Evaluation Report](docs/model-local-v3-cnn-v2-evaluation-report.md)
+- [Session E Independent Test Report](docs/session-e-independent-test-report.md)
 - [Model Analysis V1](docs/model-analysis-v1.md)
 - [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
 - [Research Roadmap](docs/research-roadmap.md)

@@ -1026,3 +1026,87 @@ Updated the experiment ledger to add `EXP-010-session-e-independent-test-set-pre
 ### Git Safety
 
 Session E raw simulator data remains ignored by Git. No raw images, raw `driving_log.csv`, generated datasets, checkpoints, screenshots, or metrics JSON files were staged.
+
+## Day 29: Session E Independent Test Validation
+
+### Goal
+
+Validate the newly recorded `session_e_independent_test` dataset as a candidate frozen independent test set. Do not train models, evaluate checkpoints, or compare model variants on Session E.
+
+### Source
+
+```text
+data/processed/simulator_v2/session_e_independent_test/driving_log.csv
+data/processed/simulator_v2/session_e_independent_test/IMG/
+```
+
+The CSV is headerless Udacity format with center, left, right, steering, throttle, brake, and speed columns. Image paths are absolute Windows paths pointing to the Session E `IMG/` folder.
+
+### Validation Result
+
+```text
+CSV rows: 6379
+Total image files: 19137
+Center / left / right files: 6379 / 6379 / 6379
+Missing center / left / right images: 0 / 0 / 0
+Corrupt images: 0
+Duplicate CSV rows: 0
+Duplicate image references: 0
+Exact duplicate image files by MD5: 0
+Invalid steering labels: 0
+Out-of-range steering labels: 0
+Official validator result: PASS
+```
+
+### Distribution
+
+```text
+Steering min / max / mean / std: -1.000000 / 1.000000 / 0.000864 / 0.315431
+Near-zero steering: 46.59%
+Left steering: 26.09%
+Right steering: 27.32%
+Strong turns: 9.72%
+Throttle min / mean / max: 0.000000 / 0.936395 / 1.000000
+Brake min / mean / max: 0.000000 / 0.023379 / 1.000000
+Speed min / mean / max: 0.000038 / 28.194715 / 30.509890
+```
+
+### Temporal Checks
+
+```text
+Medium steering runs, abs>=0.25: 675
+Sustained medium runs, length>=5: 38
+Sustained left/right medium runs: 22 / 16
+Strong steering runs, abs>=0.5: 131
+Sustained strong runs, length>=5: 23
+Sustained left/right strong runs: 12 / 11
+Long near-zero runs, length>=30: 3
+Longest near-zero run: 41 frames
+Stationary rows, speed<=0.1: 87
+Timestamp parse failures: 0
+Non-positive timestamp deltas: 0
+Gaps greater than 0.50s: 4
+Largest timestamp gap: 46.718s
+```
+
+The timestamp gaps look like recording pauses or interruptions. They did not produce missing images, malformed rows, or duplicate frames.
+
+### Verdict
+
+Verdict: E2, valid but not ideal.
+
+Session E is technically clean and left/right balanced, but it is not frozen as the final independent test set because near-zero steering is slightly high at 46.59% and strong-turn coverage is low at 9.72%.
+
+### Decision
+
+No training was run.
+
+No model evaluation was run.
+
+Session E should not be used for training, validation, hyperparameter tuning, crop selection, loss selection, architecture selection, or repeated model selection.
+
+Recommended next data step: record a Session E2 candidate with less straight-only driving and at least 15% strong-turn coverage while keeping smooth representative driving and balanced left/right steering.
+
+### Git Safety
+
+Raw Session E images, raw `driving_log.csv`, generated screenshots, model checkpoints, and metrics JSON files remain ignored by Git.

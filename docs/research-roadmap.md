@@ -34,7 +34,7 @@ Exit criteria already met:
 
 Goal: improve the data distribution before changing the architecture.
 
-Status: first session-aware model experiment, EXP-007 road-focused crop, EXP-008 Huber loss, and EXP-009 `cnn_v2` architecture are complete and not promoted. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1 historically. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data. Local V3 provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation. The first Local V3 model and road-crop variant failed to beat the zero-steering MAE baseline. Huber loss barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed. `cnn_v2` improved RMSE slightly but regressed MAE, right MAE, strong-turn MAE, prediction variance, zero-baseline comparison, and direction error. The Session E independent test folder has been prepared, but recording is pending.
+Status: first session-aware model experiment, EXP-007 road-focused crop, EXP-008 Huber loss, and EXP-009 `cnn_v2` architecture are complete and not promoted. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1 historically. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data. Local V3 provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation. The first Local V3 model and road-crop variant failed to beat the zero-steering MAE baseline. Huber loss barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed. `cnn_v2` improved RMSE slightly but regressed MAE, right MAE, strong-turn MAE, prediction variance, zero-baseline comparison, and direction error. Session E was recorded and validated as E2, valid but not ideal, so it is not frozen as the final independent test set.
 
 Actions:
 
@@ -46,7 +46,7 @@ Actions:
 - Downsample Session D softer-left rows to avoid left dominance.
 - Treat the explicit Local V3 session-aware validation split as used for multiple model-selection decisions.
 - Review Local V3 strong-turn and right-recovery failure samples before any further model changes.
-- Record, validate, and freeze an independent Session E test set before further model-selection work.
+- Record a Session E2 candidate and validate it before further model-selection work.
 - Keep left/right camera correction as a separate future experiment.
 
 Metrics:
@@ -109,13 +109,16 @@ EXP-009 `cnn_v2` architecture result:
 - Direction error: 19.03%.
 - Verdict: A2, valid experiment with no meaningful improvement.
 
-Session E independent test preparation:
+Session E independent test validation:
 
 - Target folder: `data/processed/simulator_v2/session_e_independent_test/`.
-- `IMG/` subfolder is prepared.
-- Recording is pending.
-- No validation, training, or model evaluation has been run for Session E.
-- Session E must be frozen and must not be used for training, validation, tuning, crop selection, loss selection, architecture selection, or repeated model selection.
+- Rows/images: 6379 rows and 19137 images.
+- Missing/corrupt images: 0 / 0.
+- Near-zero / left / right / strong: 46.59% / 26.09% / 27.32% / 9.72%.
+- Verdict: E2, valid but not ideal.
+- Freeze decision: not frozen as the final independent test set.
+- No training or model evaluation was run on Session E.
+- Next data step: record a Session E2 candidate with less straight-only driving and at least 15% strong-turn coverage.
 
 ## Research Iteration 3: Better CNN
 

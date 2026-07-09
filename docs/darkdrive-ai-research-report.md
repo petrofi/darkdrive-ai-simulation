@@ -6,7 +6,7 @@ DarkDrive is at Simulator Training Baseline maturity with a session-aware Local 
 
 The project has moved beyond infrastructure. It has real simulator data, trained behavior cloning checkpoints, validated Dataset v2 sessions, and offline evaluation. It has not reached simulator-driving readiness.
 
-Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V3 session-aware workflow, EXP-007 road-crop experiment, EXP-008 Huber-loss experiment, and EXP-009 `cnn_v2` architecture experiment as valid offline research artifacts. Reject the current Local V3-family checkpoints as release/control candidates. Local V3 baseline and EXP-007 did not beat the zero-steering MAE baseline on the clean Session C2 holdout. EXP-008 barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed. EXP-009 improved RMSE slightly, but MAE, right MAE, strong-turn MAE, prediction variance, zero-baseline comparison, and direction error regressed. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data.
+Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V3 session-aware workflow, EXP-007 road-crop experiment, EXP-008 Huber-loss experiment, EXP-009 `cnn_v2` architecture experiment, and Session E validation as valid offline research artifacts. Reject the current Local V3-family checkpoints as release/control candidates. Local V3 baseline and EXP-007 did not beat the zero-steering MAE baseline on the clean Session C2 holdout. EXP-008 barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed. EXP-009 improved RMSE slightly, but MAE, right MAE, strong-turn MAE, prediction variance, zero-baseline comparison, and direction error regressed. Session E validates technically but is E2, not frozen, because near-zero steering is slightly high and strong-turn coverage is low. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data.
 
 ## Current Strengths
 
@@ -15,6 +15,7 @@ Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V
 - Dataset validation works.
 - Real Udacity-style simulator data exists.
 - Dataset v2 now includes validated recovery and curve-focused sessions.
+- Session E independent-test validation workflow exists.
 - Training pipeline is functional and now supports explicit train/validation manifests.
 - Evaluation pipeline is functional and now supports complete-session validation manifests.
 - Training, evaluation, and inference now support checkpoint-aware preprocessing profiles.
@@ -32,6 +33,7 @@ Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V
 - EXP-007 road-focused crop preprocessing did not materially improve Local V3 and still missed the zero-steering baseline.
 - EXP-008 Huber loss improved MAE only slightly and regressed RMSE, right MAE, and direction error.
 - EXP-009 `cnn_v2` architecture did not materially improve Local V3 and regressed MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error.
+- Session E is valid but not ideal: near-zero steering is 46.59% and strong turns are 9.72%, so it is not frozen as the final independent test set.
 - Local V3 strong-turn MAE is high at 0.598862.
 - EXP-007 strong-turn MAE improved to 0.574012 but remains high.
 - EXP-008 strong-turn MAE improved to 0.575495 but remains high.
@@ -55,13 +57,14 @@ The immediate bottleneck is now model/data generalization beyond repeated Sessio
 
 ## Highest Impact Next Experiment
 
-Collect and freeze an independent Session E test set before further model-selection work.
+Record and validate a better Session E2 candidate before further model-selection work.
 
 Plan:
 
 - Preserve the Local V3 train/validation split as historical research context.
 - Do not tune repeatedly against Session C2.
-- Use Session E as an untouched test set for future decisions.
+- Do not use the current E2-verdict Session E recording for training, validation, tuning, or model selection.
+- Record Session E2 with less straight-only driving and at least 15% strong-turn coverage.
 - Keep any future side-camera correction or weighted-loss work as a separate tracked experiment.
 
 This reduces the risk of overfitting experiment choices to Session C2.
@@ -91,13 +94,13 @@ Sprint goal: restore evaluation independence before further model-selection work
 
 Deliverables:
 
-- Independent Session E test set collection and validation.
+- Session E2 collection and validation.
 - Failure-sample review for Local V3-family checkpoints.
 - Updated experiment table.
 - Updated release checklist.
-- Decision on whether future side-camera correction or weighted loss should be tested after Session E is frozen.
+- Decision on whether future side-camera correction or weighted loss should be tested after an E1-quality independent test set is frozen.
 
-Recent EXP-007 result: road-focused crop preprocessing was valid but not useful enough. Recent EXP-008 result: Huber loss was valid but not useful enough because right MAE and direction error regressed. Recent EXP-009 result: `cnn_v2` was valid but not useful enough because MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed. The next exact recommendation is to collect an independent Session E test set before further model-selection work.
+Recent EXP-007 result: road-focused crop preprocessing was valid but not useful enough. Recent EXP-008 result: Huber loss was valid but not useful enough because right MAE and direction error regressed. Recent EXP-009 result: `cnn_v2` was valid but not useful enough because MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed. Recent Session E result: valid but not ideal, not frozen. The next exact recommendation is to record a Session E2 candidate before further model-selection work.
 
 ## Recommended Commit Message
 
