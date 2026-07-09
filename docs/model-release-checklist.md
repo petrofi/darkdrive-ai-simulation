@@ -128,3 +128,13 @@ Blocking issues:
 - Session E2 has not been recorded or validated yet.
 - Temporal prediction stability has not been measured.
 - No current checkpoint has passed release gates.
+
+## External Dataset Gate
+
+- [x] External Udacity-format source has recorded provenance and SHA-256.
+- [x] External archive extraction was zip-slip protected and structure verified.
+- [x] External image references and steering labels were validated.
+- [ ] External Mix V1 balancing policy is reviewed.
+- [ ] External data is explicitly approved for a controlled offline experiment.
+
+The source currently has X2 status: 60.74% near-zero steering and 0.55% strong turns. It must not be mixed into Local V3 or used in training until a reviewed mix candidate addresses this distribution. No current release decision changes.

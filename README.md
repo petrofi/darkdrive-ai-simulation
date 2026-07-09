@@ -664,6 +664,8 @@ For Udacity-style datasets, the current baseline uses only the `center` camera i
 
 External datasets are used only to improve steering-label diversity for offline simulator-model research. Real-time simulator control is not implemented yet.
 
+External Udacity-format dataset ingestion workflow added. The public `udacity_behavioral_cloning_public` source was downloaded, checksummed, safely extracted, and validated before any training use. It is X2 (valid but requiring balancing): its 60.74% near-zero steering and 0.55% strong-turn coverage make it unsuitable for direct unbalanced augmentation. No external-data model has been trained yet.
+
 Research datasets:
 
 ```text

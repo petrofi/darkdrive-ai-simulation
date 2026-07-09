@@ -1173,3 +1173,16 @@ Added `docs/session-e2-independent-test-plan.md` and updated the experiment ledg
 ### Git Safety
 
 Session E2 raw simulator data remains ignored by Git. No raw images, raw `driving_log.csv`, generated datasets, checkpoints, screenshots, or metrics JSON files were staged.
+
+## Day 31: External Udacity Dataset Ingestion
+
+The public `udacity_behavioral_cloning_public` archive was downloaded, SHA-256 registered, safely extracted, root-discovered, and validated without modifying internal sessions or Local V3 manifests.
+
+- Archive: 333,137,665 bytes; SHA-256 `7ca6aba7f72df475de32959b3b7a5a825b345c94307e715639dc2a13eb61dd0c`.
+- Dataset: 8,036 CSV rows and 24,108 images; all center/left/right references resolved with 0 missing or corrupt images.
+- Labels: 0 invalid and 0 out of range; no duplicate rows or image references.
+- Distribution: 60.74% near-zero, 19.06% left, 20.20% right, and 0.55% strong turns.
+- Verdict: X2, valid but requiring an explicit balancing policy before a future experiment.
+- Generated raw data, metadata, and the optional 8,036-row normalized manifest remain ignored by Git.
+
+No model training or evaluation was run, and external data was not merged into Local V3. The next task is to build an External Mix V1 candidate for review, not to train it.

@@ -102,6 +102,12 @@ Deliverables:
 
 Recent EXP-007 result: road-focused crop preprocessing was valid but not useful enough. Recent EXP-008 result: Huber loss was valid but not useful enough because right MAE and direction error regressed. Recent EXP-009 result: `cnn_v2` was valid but not useful enough because MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed. Recent Session E result: valid but not ideal, not frozen. The next exact recommendation is to record a Session E2 candidate before further model-selection work.
 
+## External Udacity Dataset Governance Result
+
+The public Udacity-format source `udacity_behavioral_cloning_public` was downloaded and validated without training or evaluation. It contains 8,036 clean CSV rows and 24,108 images; all three camera references resolve, the image scan found no corruption, steering labels are valid, and the archive SHA-256 is recorded. The result is X2, not X1, because the distribution is strongly straight-heavy: 60.74% near-zero steering and 0.55% strong turns. It is therefore not suitable as direct unbalanced augmentation.
+
+The generated normalized manifest is ignored by Git and only supports future review. A controlled External Mix V1 candidate may be designed with documented balancing, but no external-data model has been trained and external data has not been merged into Local V3.
+
 ## Recommended Commit Message
 
 ```text

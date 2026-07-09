@@ -209,3 +209,9 @@ Exit criteria:
 - Vehicle can remain in lane for short controlled simulator segments.
 - Failure cases are recorded and categorized.
 - New recovery data is collected from failures.
+
+## External Dataset Governance Update
+
+`udacity_behavioral_cloning_public` completed controlled ingestion with X2 verdict. It is clean structurally (8,036 rows, 24,108 images, 0 missing/corrupt references, valid labels, and recorded SHA-256), but it is not ready for direct use because 60.74% of steering labels are near zero and only 0.55% are strong turns.
+
+The next data task is to create an External Mix V1 candidate with an explicit near-zero cap and protection for Local V3's scarce turn coverage. Review the candidate before any training. This does not change the requirement to preserve evaluation independence or the simulation-only control gate.
