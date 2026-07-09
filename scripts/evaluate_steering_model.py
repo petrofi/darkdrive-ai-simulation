@@ -15,13 +15,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.steering_model import SteeringModel
+from src.models.steering_model import (
+    MODEL_ARCH_BASELINE,
+    VALID_MODEL_ARCHES,
+    make_steering_model,
+    resolve_model_arch,
+)
 from src.training.train_behavior_cloning import (
     DrivingDataset,
     choose_device,
@@ -61,7 +67,11 @@ def load_checkpoint(model_path: Path) -> object | None:
         return None
 
 
-def load_model(model_path: Path, device: torch.device) -> tuple[SteeringModel, object] | None:
+def load_model(
+    model_path: Path,
+    device: torch.device,
+    requested_model_arch: str = "checkpoint",
+) -> tuple[nn.Module, object, str] | None:
     if not model_path.exists():
         print(f"Model not found: {model_path}")
         print("Train the model on validated simulator data before evaluation.")
@@ -72,7 +82,13 @@ def load_model(model_path: Path, device: torch.device) -> tuple[SteeringModel, o
         return None
     state_dict = checkpoint.get("model_state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint
 
-    model = SteeringModel().to(device)
+    try:
+        resolved_model_arch = resolve_model_arch(requested_model_arch, checkpoint)
+    except ValueError as exc:
+        print(exc)
+        return None
+
+    model = make_steering_model(resolved_model_arch).to(device)
     try:
         model.load_state_dict(state_dict)
     except RuntimeError as exc:
@@ -80,11 +96,11 @@ def load_model(model_path: Path, device: torch.device) -> tuple[SteeringModel, o
         return None
 
     model.eval()
-    return model, checkpoint
+    return model, checkpoint, resolved_model_arch
 
 
 def collect_predictions(
-    model: SteeringModel,
+    model: nn.Module,
     data_loader: DataLoader,
     device: torch.device,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -442,15 +458,16 @@ def evaluate_model(
     validation_csv: Path | None = None,
     metrics_json: Path | None = None,
     preprocessing_profile: str = "checkpoint",
+    model_arch: str = "checkpoint",
 ) -> dict[str, Any] | None:
     print("DarkDrive steering model evaluation")
     print("Simulation-only evaluation. No real vehicle control is used.")
 
     device = choose_device(device_name)
-    loaded_model = load_model(model_path, device)
+    loaded_model = load_model(model_path, device, model_arch)
     if loaded_model is None:
         return None
-    model, checkpoint = loaded_model
+    model, checkpoint, resolved_model_arch = loaded_model
     resolved_preprocessing_profile = resolve_preprocessing_profile(preprocessing_profile, checkpoint)
 
     evaluation_data, evaluation_csv, explicit_validation = load_evaluation_frame(
@@ -496,6 +513,8 @@ def evaluate_model(
     metrics["model_path"] = str(model_path)
     metrics["evaluation_csv"] = str(evaluation_csv)
     metrics["explicit_validation_manifest"] = explicit_validation
+    metrics["model_arch"] = resolved_model_arch
+    metrics["model_class"] = model.__class__.__name__
     metrics["preprocessing_profile"] = resolved_preprocessing_profile
     metrics["preprocessing"] = preprocessing_metadata(resolved_preprocessing_profile)
     metrics["device"] = str(device)
@@ -506,6 +525,7 @@ def evaluate_model(
     }
 
     print_metrics(metrics)
+    print(f"- Model architecture: {resolved_model_arch} ({model.__class__.__name__})")
     print(f"- Preprocessing profile: {resolved_preprocessing_profile}")
     print(f"- Preprocessing metadata: {preprocessing_metadata(resolved_preprocessing_profile)}")
     print(f"- Device: {device}")
@@ -544,6 +564,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--model-arch",
+        choices=("checkpoint", *VALID_MODEL_ARCHES),
+        default="checkpoint",
+        help=(
+            "Model architecture. Use checkpoint to read checkpoint metadata; "
+            f"old checkpoints default to {MODEL_ARCH_BASELINE}."
+        ),
+    )
+    parser.add_argument(
         "--metrics-json",
         default=None,
         help="Optional ignored JSON output path for evaluation metrics.",
@@ -565,5 +594,6 @@ if __name__ == "__main__":
         validation_csv=Path(args.validation_csv) if args.validation_csv else None,
         metrics_json=Path(args.metrics_json) if args.metrics_json else None,
         preprocessing_profile=args.preprocessing_profile,
+        model_arch=args.model_arch,
     )
     raise SystemExit(0 if metrics is not None else 1)

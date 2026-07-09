@@ -34,7 +34,7 @@ Exit criteria already met:
 
 Goal: improve the data distribution before changing the architecture.
 
-Status: first session-aware model experiment, EXP-007 road-focused crop, and EXP-008 Huber loss are complete and not promoted. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1 historically. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data. Local V3 provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation. The first Local V3 model and road-crop variant failed to beat the zero-steering MAE baseline. Huber loss barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed.
+Status: first session-aware model experiment, EXP-007 road-focused crop, EXP-008 Huber loss, and EXP-009 `cnn_v2` architecture are complete and not promoted. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1 historically. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data. Local V3 provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation. The first Local V3 model and road-crop variant failed to beat the zero-steering MAE baseline. Huber loss barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed. `cnn_v2` improved RMSE slightly but regressed MAE, right MAE, strong-turn MAE, prediction variance, zero-baseline comparison, and direction error.
 
 Actions:
 
@@ -44,9 +44,9 @@ Actions:
 - Use Session D for sustained curve and strong-turn coverage.
 - Downsample near-zero-heavy v1/A/B rows.
 - Downsample Session D softer-left rows to avoid left dominance.
-- Keep the explicit Local V3 session-aware validation split fixed for the next model run.
-- Review Local V3 strong-turn and right-recovery failure samples before changing architecture.
-- Run the next single-variable model-quality experiment on the fixed split.
+- Treat the explicit Local V3 session-aware validation split as used for multiple model-selection decisions.
+- Review Local V3 strong-turn and right-recovery failure samples before any further model changes.
+- Collect and freeze an independent Session E test set before further model-selection work.
 - Keep left/right camera correction as a separate future experiment.
 
 Metrics:
@@ -96,6 +96,19 @@ EXP-008 Huber loss result:
 - Direction error: 17.44%.
 - Verdict: H2, valid experiment with no meaningful improvement.
 
+EXP-009 `cnn_v2` architecture result:
+
+- Architecture: `SteeringModelV2`, 726103 parameters, BatchNorm2d + ELU convolution stack.
+- Preprocessing: `baseline`.
+- Loss: `MSELoss`.
+- Session C2 MAE/RMSE: 0.217054 / 0.313915.
+- Right MAE: 0.261968.
+- Strong-turn MAE: 0.612222.
+- Prediction/actual std ratio: 0.599089.
+- Zero-baseline improvement: -1.39%.
+- Direction error: 19.03%.
+- Verdict: A2, valid experiment with no meaningful improvement.
+
 ## Research Iteration 3: Better CNN
 
 Goal: improve visual feature learning after proving the dataset is stronger.
@@ -111,6 +124,8 @@ Candidate changes:
 Recent result: a standalone road crop was tested in EXP-007 and did not materially improve Local V3. Do not run another crop variant against Session C2 without a new experimental plan and a future untouched test session.
 
 Recent loss result: Huber/SmoothL1Loss was tested in EXP-008 and did not materially improve Local V3 because right MAE and direction error regressed. Do not run another loss variant against Session C2 in the same experiment chain.
+
+Recent architecture result: `cnn_v2` was tested in EXP-009 and did not materially improve Local V3. It improved RMSE slightly but worsened MAE, right MAE, strong-turn MAE, prediction variance compression, zero-baseline comparison, and direction error. Do not run another architecture variant against Session C2 in the same experiment chain.
 
 Rules:
 

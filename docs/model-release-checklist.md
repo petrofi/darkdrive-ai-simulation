@@ -51,7 +51,7 @@ These are initial research thresholds, not final safety claims.
 - Non-zero steering sign accuracy should remain above 90%.
 - Sharp-turn and recovery errors should be reviewed separately.
 
-The v1 model met the RMSE improvement target but did not meet the MAE improvement target. The local v2 model underperformed v1 historically and is not a release candidate. Local V2's Session C2 score is not treated as an independent holdout result because Session C2 contributed to the Local V2 training dataset. The local v3 model completed session-aware evaluation on Session C2, but did not beat the zero-steering MAE baseline. EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3. EXP-008 Huber loss made the zero-baseline comparison barely positive, but right MAE, RMSE, and direction error regressed.
+The v1 model met the RMSE improvement target but did not meet the MAE improvement target. The local v2 model underperformed v1 historically and is not a release candidate. Local V2's Session C2 score is not treated as an independent holdout result because Session C2 contributed to the Local V2 training dataset. The local v3 model completed session-aware evaluation on Session C2, but did not beat the zero-steering MAE baseline. EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3. EXP-008 Huber loss made the zero-baseline comparison barely positive, but right MAE, RMSE, and direction error regressed. EXP-009 `cnn_v2` improved RMSE slightly, but MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed.
 
 ## Simulator-Control Gate
 
@@ -95,6 +95,14 @@ Current dataset progress:
 - EXP-008 zero-baseline improvement: 0.20%.
 - EXP-008 direction error: 17.44%.
 - EXP-008 verdict: H2, valid experiment with no meaningful improvement.
+- EXP-009 cnn_v2 checkpoint: `models/steering_model_local_v3_cnn_v2.pt`.
+- EXP-009 Session C2 MAE/RMSE: 0.217054 / 0.313915.
+- EXP-009 right MAE: 0.261968.
+- EXP-009 strong-turn MAE: 0.612222.
+- EXP-009 prediction/actual std ratio: 0.599089.
+- EXP-009 zero-baseline improvement: -1.39%.
+- EXP-009 direction error: 19.03%.
+- EXP-009 verdict: A2, valid experiment with no meaningful improvement.
 
 Blocking issues:
 
@@ -105,6 +113,8 @@ Blocking issues:
 - EXP-007 right MAE regressed slightly versus the Local V3 baseline.
 - EXP-008 right MAE and direction error regressed versus the Local V3 baseline.
 - EXP-008 zero-baseline improvement is too small for release consideration.
+- EXP-009 cnn_v2 regressed MAE, right MAE, strong-turn MAE, std ratio, zero-baseline improvement, and direction error versus the Local V3 baseline.
 - Local V3 strong-turn error remains high.
+- The Session C2 holdout has now been used for multiple model-selection decisions; further tuning should wait for an independent Session E test set.
 - Temporal prediction stability has not been measured.
 - No current checkpoint has passed release gates.

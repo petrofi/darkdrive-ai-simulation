@@ -20,7 +20,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.steering_model import SteeringModel
+from src.models.steering_model import (
+    MODEL_ARCH_BASELINE,
+    VALID_MODEL_ARCHES,
+    make_steering_model,
+    validate_model_arch,
+)
 from src.utils.driving_log import (
     filter_rows_with_existing_images,
     load_driving_log,
@@ -451,7 +456,7 @@ def count_parameters(model: nn.Module) -> int:
 
 
 def train_one_epoch(
-    model: SteeringModel,
+    model: nn.Module,
     data_loader: DataLoader,
     loss_function: nn.Module,
     optimizer: torch.optim.Optimizer,
@@ -481,7 +486,7 @@ def train_one_epoch(
 
 
 def evaluate(
-    model: SteeringModel,
+    model: nn.Module,
     data_loader: DataLoader,
     loss_function: nn.Module,
     device: torch.device,
@@ -531,18 +536,20 @@ def save_loss_chart(
 
 
 def save_checkpoint(
-    model: SteeringModel,
+    model: nn.Module,
     output_path: str | Path,
     args: dict[str, object],
     history: dict[str, list[float]],
     preprocessing_profile: str,
+    model_arch: str,
 ) -> None:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     checkpoint = {
         "model_state_dict": model.state_dict(),
-        "model_class": "SteeringModel",
-        "model_architecture": "SteeringModel",
+        "model_class": model.__class__.__name__,
+        "model_arch": model_arch,
+        "model_architecture": model.__class__.__name__,
         "parameter_count": count_parameters(model),
         "image_width": IMAGE_WIDTH,
         "image_height": IMAGE_HEIGHT,
@@ -619,6 +626,7 @@ def train(
     learning_rate: float = 1e-3,
     weight_decay: float = 1e-4,
     loss_name: str = "mse",
+    model_arch: str = MODEL_ARCH_BASELINE,
     augment: bool = True,
     preprocessing_profile: str = BASELINE_PROFILE,
     device_name: str = "auto",
@@ -628,6 +636,7 @@ def train(
     csv_path = Path(csv_path)
     preprocessing_profile = validate_preprocessing_profile(preprocessing_profile)
     selected_loss_metadata = loss_metadata(loss_name)
+    model_arch = validate_model_arch(model_arch)
     frames = prepare_training_frames(
         csv_path,
         dataset_format,
@@ -683,7 +692,7 @@ def train(
         pin_memory=pin_memory,
     )
 
-    model = SteeringModel().to(device)
+    model = make_steering_model(model_arch).to(device)
     parameter_count = count_parameters(model)
     loss_function = make_loss_function(loss_name)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -698,6 +707,7 @@ def train(
     print(f"Preprocessing profile: {preprocessing_profile}")
     print(f"Preprocessing metadata: {preprocessing_metadata(preprocessing_profile)}")
     print(f"Loss metadata: {selected_loss_metadata}")
+    print(f"Model architecture: {model_arch} ({model.__class__.__name__})")
     print(f"Device: {device}")
     print(f"Augmentation: {'on' if augment else 'off'}")
     print(f"Model parameters: {parameter_count}")
@@ -771,7 +781,9 @@ def train(
         "preprocessing": preprocessing_metadata(preprocessing_profile),
         "device": str(device),
         "seed": seed,
-        "model_architecture": "SteeringModel",
+        "model_arch": model_arch,
+        "model_class": model.__class__.__name__,
+        "model_architecture": model.__class__.__name__,
         "input_image_width": IMAGE_WIDTH,
         "input_image_height": IMAGE_HEIGHT,
         "parameter_count": parameter_count,
@@ -789,7 +801,7 @@ def train(
     if best_state_dict is not None:
         model.load_state_dict(best_state_dict)
 
-    save_checkpoint(model, output_path, checkpoint_args, history, preprocessing_profile)
+    save_checkpoint(model, output_path, checkpoint_args, history, preprocessing_profile, model_arch)
     save_loss_chart(history["training_loss"], history["validation_loss"], chart_output)
     print("Training summary:")
     print(f"- Training rows: {len(training_dataset)}")
@@ -840,6 +852,12 @@ def parse_args() -> argparse.Namespace:
         choices=VALID_LOSS_NAMES,
         default=LOSS_MSE,
         help="Regression loss function.",
+    )
+    parser.add_argument(
+        "--model-arch",
+        choices=VALID_MODEL_ARCHES,
+        default=MODEL_ARCH_BASELINE,
+        help="Steering model architecture to train.",
     )
     parser.add_argument(
         "--validation-split",
@@ -903,6 +921,7 @@ if __name__ == "__main__":
         learning_rate=args.lr,
         weight_decay=args.weight_decay,
         loss_name=args.loss,
+        model_arch=args.model_arch,
         augment=args.augment,
         preprocessing_profile=args.preprocessing_profile,
         device_name=args.device,

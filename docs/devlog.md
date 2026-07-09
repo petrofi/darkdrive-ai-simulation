@@ -882,3 +882,85 @@ Do not run another loss variant in this task. Recommended next single-variable e
 ### Git Safety
 
 The Huber checkpoint, generated metrics JSON files, generated screenshots, generated Local V3 CSV manifests, raw simulator datasets, and model checkpoints remained ignored by Git. No simulator control code was added.
+
+## Day 27: EXP-009 Slightly Stronger CNN Architecture
+
+### Goal
+
+Run exactly one controlled architecture experiment on the fixed Local V3 split: replace the compact baseline `SteeringModel` with `cnn_v2` / `SteeringModelV2` while keeping baseline preprocessing, MSE loss, AdamW, learning rate, epochs, batch size, seed, and train-only augmentation unchanged.
+
+### What Was Added
+
+- Added `SteeringModelV2`, a slightly stronger single-frame CNN with BatchNorm2d, ELU activations, a deeper convolution stack, adaptive pooling, and a wider MLP head.
+- Added model selection through `--model-arch baseline` and `--model-arch cnn_v2`.
+- Preserved `baseline` as the default model architecture for backward compatibility.
+- Added checkpoint metadata for `model_arch`, `model_class`, `model_architecture`, and parameter count.
+- Updated evaluator and inference loading to read model architecture from checkpoint metadata, with old metadata-free checkpoints defaulting to baseline.
+- Added focused model-architecture tests for factory creation, forward shape, parameter count, checkpoint metadata, evaluator loading, and unsupported architecture errors.
+
+### Training Result
+
+```text
+Interpreter: C:\Users\tarik\AppData\Local\Programs\Python\Python310\python.exe
+Device: CPU
+Train rows: 10657
+Validation rows: 4163
+Preprocessing: baseline
+Loss: MSELoss
+Architecture: cnn_v2 / SteeringModelV2
+Epochs: 15
+Batch size: 32
+Seed: 42
+Parameters: 726103
+Observed command wall time: 634.1 seconds
+Best epoch: 5
+Best validation loss: 0.098543
+Final training loss: 0.127928
+Final validation loss: 0.119668
+Final training MAE: 0.256503
+Final validation MAE: 0.229572
+Checkpoint: models/steering_model_local_v3_cnn_v2.pt
+```
+
+### Session C2 Evaluation Result
+
+```text
+Rows evaluated: 4163
+MAE: 0.217054
+RMSE: 0.313915
+Zero-steering baseline MAE: 0.214081
+MAE improvement over zero baseline: -1.39%
+Near-zero MAE: 0.136335
+Left MAE: 0.285110
+Right MAE: 0.261968
+Strong-turn MAE: 0.612222
+Prediction std: 0.208329
+Actual std: 0.347744
+Prediction/actual std ratio: 0.599089
+Incorrect direction rate: 19.03%
+```
+
+### Controlled Comparison
+
+```text
+Local V3 baseline MAE/RMSE: 0.215618 / 0.316627
+Local V3 cnn_v2 MAE/RMSE: 0.217054 / 0.313915
+Baseline right/strong MAE: 0.249182 / 0.598862
+cnn_v2 right/strong MAE: 0.261968 / 0.612222
+Baseline std ratio: 0.656937
+cnn_v2 std ratio: 0.599089
+Baseline direction error: 16.46%
+cnn_v2 direction error: 19.03%
+```
+
+The stronger CNN improved RMSE slightly but worsened overall MAE, right MAE, strong-turn MAE, prediction variance compression, zero-baseline comparison, and direction error.
+
+### Verdict
+
+Verdict: A2, valid experiment with no meaningful improvement.
+
+Do not run another architecture variant against Session C2 in this task. Recommended next single step: collect an independent Session E test set before further model-selection work.
+
+### Git Safety
+
+The cnn_v2 checkpoint, generated metrics JSON files, generated screenshots, generated Local V3 CSV manifests, raw simulator datasets, and model checkpoints remained ignored by Git. No simulator control code was added.

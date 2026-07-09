@@ -10,7 +10,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.steering_model import SteeringModel
+from src.models.steering_model import (
+    MODEL_ARCH_BASELINE,
+    VALID_MODEL_ARCHES,
+    make_steering_model,
+    resolve_model_arch,
+)
 from src.utils.image_preprocessing import (
     BASELINE_PROFILE,
     VALID_PREPROCESSING_PROFILES,
@@ -55,6 +60,7 @@ def predict(
     model_path: str | Path,
     image_path: str | Path,
     preprocessing_profile: str = "checkpoint",
+    model_arch: str = "checkpoint",
 ) -> float | None:
     model_path = Path(model_path)
     if not model_path.exists():
@@ -64,13 +70,19 @@ def predict(
 
     checkpoint = load_checkpoint(model_path)
     resolved_preprocessing_profile = resolve_preprocessing_profile(preprocessing_profile, checkpoint)
+    try:
+        resolved_model_arch = resolve_model_arch(model_arch, checkpoint)
+    except ValueError as exc:
+        print(exc)
+        return None
+
     image_tensor = preprocess_image(image_path, resolved_preprocessing_profile)
     if image_tensor is None:
         return None
 
     state_dict = checkpoint.get("model_state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint
 
-    model = SteeringModel()
+    model = make_steering_model(resolved_model_arch)
     try:
         model.load_state_dict(state_dict)
     except RuntimeError:
@@ -84,6 +96,7 @@ def predict(
 
     if isinstance(checkpoint, dict) and checkpoint.get("simulation_only"):
         print("Loaded simulation-only steering checkpoint.")
+    print(f"Model architecture: {resolved_model_arch} ({model.__class__.__name__})")
     print(f"Preprocessing profile: {resolved_preprocessing_profile}")
     print(f"Preprocessing metadata: {preprocessing_metadata(resolved_preprocessing_profile)}")
     print(f"Predicted steering angle: {prediction:.4f}")
@@ -103,9 +116,18 @@ def parse_args() -> argparse.Namespace:
             f"old checkpoints default to {BASELINE_PROFILE}."
         ),
     )
+    parser.add_argument(
+        "--model-arch",
+        choices=("checkpoint", *VALID_MODEL_ARCHES),
+        default="checkpoint",
+        help=(
+            "Model architecture. Use checkpoint to read checkpoint metadata; "
+            f"old checkpoints default to {MODEL_ARCH_BASELINE}."
+        ),
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    predict(args.model, args.image, args.preprocessing_profile)
+    predict(args.model, args.image, args.preprocessing_profile, args.model_arch)
