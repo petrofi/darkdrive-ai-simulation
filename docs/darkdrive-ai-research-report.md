@@ -2,11 +2,11 @@
 
 ## Current Maturity Level
 
-DarkDrive is at Simulator Training Baseline maturity with a session-aware Local V3 evaluation workflow and one completed Local V3 preprocessing experiment.
+DarkDrive is at Simulator Training Baseline maturity with a session-aware Local V3 evaluation workflow, one completed Local V3 preprocessing experiment, and one completed Local V3 loss-function experiment.
 
 The project has moved beyond infrastructure. It has real simulator data, trained behavior cloning checkpoints, validated Dataset v2 sessions, and offline evaluation. It has not reached simulator-driving readiness.
 
-Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V3 session-aware workflow, and EXP-007 road-crop experiment as valid offline research artifacts. Reject the current Local V3-family checkpoints as release/control candidates because neither Local V3 baseline nor EXP-007 beat the zero-steering MAE baseline on the clean Session C2 holdout. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data.
+Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V3 session-aware workflow, EXP-007 road-crop experiment, and EXP-008 Huber-loss experiment as valid offline research artifacts. Reject the current Local V3-family checkpoints as release/control candidates. Local V3 baseline and EXP-007 did not beat the zero-steering MAE baseline on the clean Session C2 holdout. EXP-008 barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data.
 
 ## Current Strengths
 
@@ -18,6 +18,7 @@ Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V
 - Training pipeline is functional and now supports explicit train/validation manifests.
 - Evaluation pipeline is functional and now supports complete-session validation manifests.
 - Training, evaluation, and inference now support checkpoint-aware preprocessing profiles.
+- Training now supports configurable MSE versus Huber/SmoothL1 regression loss with checkpoint metadata.
 - The model learns real steering signal.
 - Repository safety boundaries are clear.
 - Checkpoints and generated datasets are not committed.
@@ -28,10 +29,13 @@ Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V
 - The local Dataset v2 model underperformed v1 despite improved aggregate label balance.
 - The first Local V3 model did not beat the zero-steering MAE baseline on the clean Session C2 holdout.
 - EXP-007 road-focused crop preprocessing did not materially improve Local V3 and still missed the zero-steering baseline.
+- EXP-008 Huber loss improved MAE only slightly and regressed RMSE, right MAE, and direction error.
 - Local V3 strong-turn MAE is high at 0.598862.
 - EXP-007 strong-turn MAE improved to 0.574012 but remains high.
+- EXP-008 strong-turn MAE improved to 0.575495 but remains high.
 - Local V3 prediction variance remains compressed: prediction/actual std ratio 0.656937.
 - EXP-007 prediction/actual std ratio improved only slightly to 0.670205.
+- EXP-008 prediction/actual std ratio improved to 0.705915 but remains below the preferred 0.80 candidate range.
 - Current model uses only the center camera.
 - Older v1 and Local V2 headline evaluations used random row-based splits, which may leak adjacent-frame similarity.
 - Local V2 Session C2 metrics are contaminated by Session C2 membership in the Local V2 training dataset.
@@ -54,7 +58,7 @@ Plan:
 - Preserve the Local V3 train/validation split.
 - Do not tune repeatedly against Session C2.
 - Compare one change at a time against the current Local V3 checkpoint.
-- Candidate changes: Huber loss, normalization, or a slightly stronger behavior-cloning CNN.
+- Candidate changes: a slightly stronger behavior-cloning CNN or normalization, tested one at a time.
 - Keep side-camera correction as a separate tracked experiment.
 
 This isolates the effect of data quality.
@@ -90,7 +94,7 @@ Deliverables:
 - Updated release checklist.
 - Decision on whether NVIDIA-style CNN is justified.
 
-Recent EXP-007 result: road-focused crop preprocessing was valid but not useful enough. The next exact single-variable recommendation is a Huber-loss run on the same fixed Local V3 split, without another crop sweep.
+Recent EXP-007 result: road-focused crop preprocessing was valid but not useful enough. Recent EXP-008 result: Huber loss was valid but not useful enough because right MAE and direction error regressed. The next exact single-variable recommendation is a slightly stronger CNN architecture on the same fixed Local V3 split.
 
 ## Recommended Commit Message
 

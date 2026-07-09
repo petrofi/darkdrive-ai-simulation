@@ -802,3 +802,83 @@ Do not run another crop variant against Session C2 in this task. Recommended nex
 ### Git Safety
 
 The crop checkpoint, generated metrics JSON files, generated screenshots, generated Local V3 CSV manifests, raw simulator datasets, and model checkpoints remained ignored by Git. No simulator control code was added.
+
+## Day 26: EXP-008 Huber Loss / SmoothL1Loss
+
+### Goal
+
+Run exactly one controlled loss-function experiment on the fixed Local V3 split: replace MSE with Huber-style `SmoothL1Loss(beta=1.0)` while keeping baseline preprocessing and every other major variable unchanged.
+
+### What Was Added
+
+- Tightened configurable regression loss support in `src/training/train_behavior_cloning.py`.
+- Preserved `mse` as the default loss for backward compatibility.
+- Implemented `huber` as `torch.nn.SmoothL1Loss(beta=1.0)`.
+- Added clear loss metadata to checkpoints: name, PyTorch class, beta, and delta.
+- Added focused tests for default MSE, Huber selection, unsupported loss handling, checkpoint metadata, and baseline preprocessing defaults.
+
+### Training Result
+
+```text
+Interpreter: C:\Users\tarik\AppData\Local\Programs\Python\Python310\python.exe
+Device: CPU
+Train rows: 10657
+Validation rows: 4163
+Preprocessing: baseline
+Loss: SmoothL1Loss(beta=1.0)
+Epochs: 15
+Batch size: 32
+Seed: 42
+Parameters: 188219
+Training duration: 496.612 seconds
+Best epoch: 7
+Best validation loss: 0.049741
+Final training loss: 0.056181
+Final validation loss: 0.052497
+Final training MAE: 0.238528
+Final validation MAE: 0.218696
+Checkpoint: models/steering_model_local_v3_huber.pt
+```
+
+### Session C2 Evaluation Result
+
+```text
+Rows evaluated: 4163
+MAE: 0.213646
+RMSE: 0.320153
+Zero-steering baseline MAE: 0.214081
+MAE improvement over zero baseline: 0.20%
+Near-zero MAE: 0.132261
+Left MAE: 0.265846
+Right MAE: 0.276358
+Strong-turn MAE: 0.575495
+Prediction std: 0.245478
+Actual std: 0.347744
+Prediction/actual std ratio: 0.705915
+Incorrect direction rate: 17.44%
+```
+
+### Controlled Comparison
+
+```text
+Local V3 MSE MAE/RMSE: 0.215618 / 0.316627
+Local V3 Huber MAE/RMSE: 0.213646 / 0.320153
+MSE right/strong MAE: 0.249182 / 0.598862
+Huber right/strong MAE: 0.276358 / 0.575495
+MSE std ratio: 0.656937
+Huber std ratio: 0.705915
+MSE direction error: 16.46%
+Huber direction error: 17.44%
+```
+
+Huber improved overall MAE slightly, made the zero-baseline comparison barely positive, improved strong-turn MAE, and increased prediction variance. It also worsened RMSE, right-turn MAE, and direction error.
+
+### Verdict
+
+Verdict: H2, valid experiment with no meaningful improvement.
+
+Do not run another loss variant in this task. Recommended next single-variable experiment: a slightly stronger CNN architecture on the same fixed Local V3 split.
+
+### Git Safety
+
+The Huber checkpoint, generated metrics JSON files, generated screenshots, generated Local V3 CSV manifests, raw simulator datasets, and model checkpoints remained ignored by Git. No simulator control code was added.

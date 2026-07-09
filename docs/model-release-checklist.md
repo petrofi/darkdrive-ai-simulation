@@ -51,7 +51,7 @@ These are initial research thresholds, not final safety claims.
 - Non-zero steering sign accuracy should remain above 90%.
 - Sharp-turn and recovery errors should be reviewed separately.
 
-The v1 model met the RMSE improvement target but did not meet the MAE improvement target. The local v2 model underperformed v1 historically and is not a release candidate. Local V2's Session C2 score is not treated as an independent holdout result because Session C2 contributed to the Local V2 training dataset. The local v3 model completed session-aware evaluation on Session C2, but did not beat the zero-steering MAE baseline. EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3.
+The v1 model met the RMSE improvement target but did not meet the MAE improvement target. The local v2 model underperformed v1 historically and is not a release candidate. Local V2's Session C2 score is not treated as an independent holdout result because Session C2 contributed to the Local V2 training dataset. The local v3 model completed session-aware evaluation on Session C2, but did not beat the zero-steering MAE baseline. EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3. EXP-008 Huber loss made the zero-baseline comparison barely positive, but right MAE, RMSE, and direction error regressed.
 
 ## Simulator-Control Gate
 
@@ -87,6 +87,14 @@ Current dataset progress:
 - EXP-007 prediction/actual std ratio: 0.670205.
 - EXP-007 zero-baseline improvement: -0.56%.
 - EXP-007 verdict: P2, valid experiment with no meaningful improvement.
+- EXP-008 Huber checkpoint: `models/steering_model_local_v3_huber.pt`.
+- EXP-008 Session C2 MAE/RMSE: 0.213646 / 0.320153.
+- EXP-008 right MAE: 0.276358.
+- EXP-008 strong-turn MAE: 0.575495.
+- EXP-008 prediction/actual std ratio: 0.705915.
+- EXP-008 zero-baseline improvement: 0.20%.
+- EXP-008 direction error: 17.44%.
+- EXP-008 verdict: H2, valid experiment with no meaningful improvement.
 
 Blocking issues:
 
@@ -95,6 +103,8 @@ Blocking issues:
 - Local V3 did not beat the zero-steering MAE baseline on Session C2.
 - EXP-007 did not beat the zero-steering MAE baseline on Session C2.
 - EXP-007 right MAE regressed slightly versus the Local V3 baseline.
+- EXP-008 right MAE and direction error regressed versus the Local V3 baseline.
+- EXP-008 zero-baseline improvement is too small for release consideration.
 - Local V3 strong-turn error remains high.
 - Temporal prediction stability has not been measured.
 - No current checkpoint has passed release gates.

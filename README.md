@@ -906,6 +906,24 @@ Verdict: P2, valid experiment with no meaningful improvement
 
 The crop improved RMSE, strong-turn MAE, and prediction variance slightly, but it did not materially improve MAE, it slightly worsened right MAE, and it still did not beat the zero-steering baseline.
 
+EXP-008 tested one controlled loss-function change on the same fixed Local V3 split:
+
+```text
+Loss: SmoothL1Loss / Huber, beta=1.0
+Preprocessing: baseline
+Checkpoint: models/steering_model_local_v3_huber.pt
+Best validation loss: 0.049741
+Session C2 MAE/RMSE: 0.213646 / 0.320153
+Right MAE: 0.276358
+Strong-turn MAE: 0.575495
+Prediction/actual std ratio: 0.705915
+Zero-steering baseline improvement: 0.20%
+Direction error: 17.44%
+Verdict: H2, valid experiment with no meaningful improvement
+```
+
+Huber improved MAE slightly, made the zero-baseline comparison barely positive, and improved prediction variance, but RMSE, right MAE, and direction error regressed.
+
 Closed-loop simulator control remains unimplemented and blocked.
 
 ## 30-Day Roadmap Summary
@@ -931,6 +949,7 @@ First real simulator training workflow verified:
 - Local V3 uses explicit session-aware train/validation manifests with Session C2 held out.
 - A Local V3 model was trained and evaluated offline on the complete Session C2 simulator session, but it did not beat the zero-steering MAE baseline.
 - EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3.
+- EXP-008 Huber loss was valid but did not materially improve Local V3 because right MAE and direction error regressed.
 - Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
 - Simulator autonomous driving integration is not implemented yet.
 
@@ -964,6 +983,7 @@ Research artifacts:
 - [Local V2 Model Evaluation Report](docs/model-local-v2-evaluation-report.md)
 - [Local V3 Model Evaluation Report](docs/model-local-v3-evaluation-report.md)
 - [Local V3 Road Crop Evaluation Report](docs/model-local-v3-road-crop-evaluation-report.md)
+- [Local V3 Huber Loss Evaluation Report](docs/model-local-v3-huber-evaluation-report.md)
 - [Model Analysis V1](docs/model-analysis-v1.md)
 - [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
 - [Research Roadmap](docs/research-roadmap.md)

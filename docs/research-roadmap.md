@@ -34,7 +34,7 @@ Exit criteria already met:
 
 Goal: improve the data distribution before changing the architecture.
 
-Status: first session-aware model experiment and EXP-007 road-focused crop experiment complete, both not promoted. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1 historically. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data. Local V3 provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation. The first Local V3 model and the road-crop variant both failed to beat the zero-steering MAE baseline on Session C2.
+Status: first session-aware model experiment, EXP-007 road-focused crop, and EXP-008 Huber loss are complete and not promoted. Dataset v2 now has validated Session C2 right-recovery data and Session D curve-focused data. Local Dataset v2 improved aggregate distribution but the trained local v2 model underperformed v1 historically. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data. Local V3 provides explicit session-aware train and validation manifests, with Session C2 held out completely for validation. The first Local V3 model and road-crop variant failed to beat the zero-steering MAE baseline. Huber loss barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed.
 
 Actions:
 
@@ -84,6 +84,18 @@ EXP-007 road-focused crop result:
 - Zero-baseline improvement: -0.56%.
 - Verdict: P2, valid experiment with no meaningful improvement.
 
+EXP-008 Huber loss result:
+
+- Loss: `SmoothL1Loss(beta=1.0)`.
+- Preprocessing: `baseline`.
+- Session C2 MAE/RMSE: 0.213646 / 0.320153.
+- Right MAE: 0.276358.
+- Strong-turn MAE: 0.575495.
+- Prediction/actual std ratio: 0.705915.
+- Zero-baseline improvement: 0.20%.
+- Direction error: 17.44%.
+- Verdict: H2, valid experiment with no meaningful improvement.
+
 ## Research Iteration 3: Better CNN
 
 Goal: improve visual feature learning after proving the dataset is stronger.
@@ -97,6 +109,8 @@ Candidate changes:
 - EfficientNet-lite only after a strong lightweight baseline exists.
 
 Recent result: a standalone road crop was tested in EXP-007 and did not materially improve Local V3. Do not run another crop variant against Session C2 without a new experimental plan and a future untouched test session.
+
+Recent loss result: Huber/SmoothL1Loss was tested in EXP-008 and did not materially improve Local V3 because right MAE and direction error regressed. Do not run another loss variant against Session C2 in the same experiment chain.
 
 Rules:
 

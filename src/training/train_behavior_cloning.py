@@ -42,6 +42,10 @@ from src.utils.image_preprocessing import (
 
 RANDOM_SEED = 42
 TRAINING_CHART_PATH = Path("screenshots/training_loss.png")
+LOSS_MSE = "mse"
+LOSS_HUBER = "huber"
+VALID_LOSS_NAMES = (LOSS_MSE, LOSS_HUBER)
+HUBER_BETA = 1.0
 
 
 @dataclass(frozen=True)
@@ -544,6 +548,7 @@ def save_checkpoint(
         "image_height": IMAGE_HEIGHT,
         "preprocessing_profile": preprocessing_profile,
         "preprocessing": preprocessing_metadata(preprocessing_profile),
+        "loss": args.get("loss_metadata", loss_metadata(LOSS_MSE)),
         "simulation_only": True,
         "training_args": args,
         "history": history,
@@ -573,9 +578,30 @@ def default_chart_output(
     return TRAINING_CHART_PATH
 
 
-def make_loss_function(loss_name: str) -> nn.Module:
-    if loss_name == "huber":
-        return nn.SmoothL1Loss()
+def loss_metadata(loss_name: str) -> dict[str, object]:
+    if loss_name == LOSS_MSE:
+        return {
+            "name": LOSS_MSE,
+            "pytorch_loss": "MSELoss",
+            "beta": None,
+            "delta": None,
+        }
+    if loss_name == LOSS_HUBER:
+        return {
+            "name": LOSS_HUBER,
+            "pytorch_loss": "SmoothL1Loss",
+            "beta": HUBER_BETA,
+            "delta": HUBER_BETA,
+        }
+
+    valid = ", ".join(VALID_LOSS_NAMES)
+    raise ValueError(f"Unsupported regression loss: {loss_name}. Valid losses: {valid}")
+
+
+def make_loss_function(loss_name: str = LOSS_MSE) -> nn.Module:
+    metadata = loss_metadata(loss_name)
+    if metadata["name"] == LOSS_HUBER:
+        return nn.SmoothL1Loss(beta=HUBER_BETA)
     return nn.MSELoss()
 
 
@@ -601,6 +627,7 @@ def train(
 ) -> bool:
     csv_path = Path(csv_path)
     preprocessing_profile = validate_preprocessing_profile(preprocessing_profile)
+    selected_loss_metadata = loss_metadata(loss_name)
     frames = prepare_training_frames(
         csv_path,
         dataset_format,
@@ -670,6 +697,7 @@ def train(
     print(f"Validation source sessions: {frames.validation_validation.source_sessions or ['not recorded']}")
     print(f"Preprocessing profile: {preprocessing_profile}")
     print(f"Preprocessing metadata: {preprocessing_metadata(preprocessing_profile)}")
+    print(f"Loss metadata: {selected_loss_metadata}")
     print(f"Device: {device}")
     print(f"Augmentation: {'on' if augment else 'off'}")
     print(f"Model parameters: {parameter_count}")
@@ -734,6 +762,10 @@ def train(
         "learning_rate": learning_rate,
         "weight_decay": weight_decay,
         "loss": loss_name,
+        "loss_metadata": selected_loss_metadata,
+        "loss_config": selected_loss_metadata,
+        "loss_beta": selected_loss_metadata["beta"],
+        "loss_delta": selected_loss_metadata["delta"],
         "augment": augment,
         "preprocessing_profile": preprocessing_profile,
         "preprocessing": preprocessing_metadata(preprocessing_profile),
@@ -805,8 +837,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--weight-decay", type=float, default=1e-4, help="AdamW weight decay.")
     parser.add_argument(
         "--loss",
-        choices=["mse", "huber"],
-        default="mse",
+        choices=VALID_LOSS_NAMES,
+        default=LOSS_MSE,
         help="Regression loss function.",
     )
     parser.add_argument(
