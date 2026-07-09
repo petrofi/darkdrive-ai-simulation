@@ -108,6 +108,9 @@ Current dataset progress:
 - Session E near-zero / left / right / strong: 46.59% / 26.09% / 27.32% / 9.72%.
 - Session E verdict: E2, valid but not ideal.
 - Session E freeze decision: not frozen as the final independent test set.
+- Session E2 target folder: `data/processed/simulator_v2/session_e2_independent_test/`.
+- Session E2 recording status: pending.
+- Session E2 target: 5000-7000 rows, near-zero 30%-42%, left/right both above 22%, strong turns at least 15%.
 
 Blocking issues:
 
@@ -122,5 +125,6 @@ Blocking issues:
 - Local V3 strong-turn error remains high.
 - The Session C2 holdout has now been used for multiple model-selection decisions; further tuning should wait for an independent Session E test set.
 - Current Session E candidate is too straight-heavy and has too little strong-turn coverage for final frozen-test status.
+- Session E2 has not been recorded or validated yet.
 - Temporal prediction stability has not been measured.
 - No current checkpoint has passed release gates.

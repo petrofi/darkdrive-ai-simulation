@@ -1110,3 +1110,66 @@ Recommended next data step: record a Session E2 candidate with less straight-onl
 ### Git Safety
 
 Raw Session E images, raw `driving_log.csv`, generated screenshots, model checkpoints, and metrics JSON files remain ignored by Git.
+
+## Day 30: Session E2 Independent Test Set Preparation
+
+### Goal
+
+Prepare a Session E2 candidate to replace Session E as the possible frozen independent test set. Session E was valid but not frozen because near-zero steering was 46.59% and strong-turn coverage was 9.72%.
+
+### Folder Preparation
+
+Prepared the target folder:
+
+```text
+data/processed/simulator_v2/session_e2_independent_test/
+data/processed/simulator_v2/session_e2_independent_test/IMG/
+```
+
+Exact Windows folder for recording:
+
+```text
+C:\Users\tarik\OneDrive\Ekler\Desktop\darkdrive-ai-simulation\data\processed\simulator_v2\session_e2_independent_test
+```
+
+The Udacity simulator recording window should select `session_e2_independent_test` directly. It should not select `simulator_v2`.
+
+### Data Status
+
+```text
+driving_log.csv exists: no
+IMG file count: 0
+```
+
+Session E2 recording is pending.
+
+### Collection Target
+
+```text
+Rows: 5000-7000
+Missing/corrupt images: 0 / 0
+Near-zero steering: preferably 30%-42%
+Left steering: preferably above 22%
+Right steering: preferably above 22%
+Strong turns: preferably at least 15%, ideally 15%-22%
+```
+
+Session E2 should be representative, not artificially extreme. It should include normal driving, left curves, right curves, medium turns, some strong turns, and small recovery corrections while avoiding long straight-only driving, random steering, crashes, wall hits, and one-sided targeting.
+
+### Validation / Training / Evaluation
+
+No Session E2 validation was run because no data exists yet.
+
+No model training was run.
+
+No model evaluation was run.
+
+No fake `driving_log.csv` was created.
+
+### Documentation
+
+Added `docs/session-e2-independent-test-plan.md` and updated the experiment ledger, research roadmap, and release checklist.
+
+### Git Safety
+
+Session E2 raw simulator data remains ignored by Git. No raw images, raw `driving_log.csv`, generated datasets, checkpoints, screenshots, or metrics JSON files were staged.
