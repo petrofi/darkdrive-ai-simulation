@@ -964,3 +964,65 @@ Do not run another architecture variant against Session C2 in this task. Recomme
 ### Git Safety
 
 The cnn_v2 checkpoint, generated metrics JSON files, generated screenshots, generated Local V3 CSV manifests, raw simulator datasets, and model checkpoints remained ignored by Git. No simulator control code was added.
+
+## Day 28: Session E Independent Test Set Preparation
+
+### Goal
+
+Prepare the workflow for an independent Session E test set after repeated Session C2 model-selection experiments.
+
+Session E is intended to be a frozen independent test set. It must not be used for training, validation, hyperparameter tuning, crop selection, loss selection, architecture selection, or repeated model selection.
+
+### Folder Preparation
+
+Prepared the target folder:
+
+```text
+data/processed/simulator_v2/session_e_independent_test/
+data/processed/simulator_v2/session_e_independent_test/IMG/
+```
+
+Exact Windows folder for recording:
+
+```text
+C:\Users\tarik\OneDrive\Ekler\Desktop\darkdrive-ai-simulation\data\processed\simulator_v2\session_e_independent_test
+```
+
+The Udacity simulator recording window should select `session_e_independent_test` directly. It should not select `simulator_v2`.
+
+### Data Status
+
+```text
+driving_log.csv exists: no
+IMG file count: 0
+```
+
+Session E recording is pending.
+
+### Validation / Training / Evaluation
+
+No Session E validation was run because no data exists yet.
+
+No model training was run.
+
+No model evaluation was run.
+
+No fake `driving_log.csv` was created.
+
+### Documentation
+
+Added `docs/session-e-independent-test-plan.md` with:
+
+- frozen-test-set rule
+- target folder
+- simulator recording instruction
+- collection guidance
+- target distribution ranges
+- explicit prohibited uses
+- current pending-recording status
+
+Updated the experiment ledger to add `EXP-010-session-e-independent-test-set-prep`.
+
+### Git Safety
+
+Session E raw simulator data remains ignored by Git. No raw images, raw `driving_log.csv`, generated datasets, checkpoints, screenshots, or metrics JSON files were staged.
