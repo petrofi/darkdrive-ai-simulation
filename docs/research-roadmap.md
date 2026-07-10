@@ -214,4 +214,6 @@ Exit criteria:
 
 `udacity_behavioral_cloning_public` completed controlled ingestion with X2 verdict. It is clean structurally (8,036 rows, 24,108 images, 0 missing/corrupt references, valid labels, and recorded SHA-256), but it is not ready for direct use because 60.74% of steering labels are near zero and only 0.55% are strong turns.
 
-The next data task is to create an External Mix V1 candidate with an explicit near-zero cap and protection for Local V3's scarce turn coverage. Review the candidate before any training. This does not change the requirement to preserve evaluation independence or the simulation-only control gate.
+External Mix V1 now exists as an ignored M1 candidate for human review. It preserves all 10,657 Local V3 training rows and adds 3,000 deterministic center-camera external rows: 750 near-zero, 1,125 left, and 1,125 right, including all 44 available strong turns. The final 13,657 rows are 27.91% near-zero, 36.22% left, 35.87% right, and 21.55% strong turns; external data is 21.97% of the candidate. Integrity and forbidden-session checks passed.
+
+Next external-data step: review the M1 candidate. If approved, run exactly one controlled offline Local V3 baseline versus External Mix V1 experiment. This does not change evaluation-independence requirements or the simulation-only control gate. No external-data model has been trained yet.

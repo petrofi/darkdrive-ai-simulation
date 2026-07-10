@@ -21,6 +21,7 @@ data/processed/simulator_v2/**/driving_log.csv
 data/processed/local_v2_training/*
 data/processed/local_v2_training/**
 data/processed/local_v3_training/**
+data/processed/external_mix_v1_training/**
 data/external/*
 data/external/**
 data/external/donkeycar/**

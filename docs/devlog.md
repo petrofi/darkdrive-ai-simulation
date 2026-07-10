@@ -1186,3 +1186,19 @@ The public `udacity_behavioral_cloning_public` archive was downloaded, SHA-256 r
 - Generated raw data, metadata, and the optional 8,036-row normalized manifest remain ignored by Git.
 
 No model training or evaluation was run, and external data was not merged into Local V3. The next task is to build an External Mix V1 candidate for review, not to train it.
+
+## Day 32: External Mix V1 Training Candidate
+
+Built a deterministic, ignored External Mix V1 candidate without modifying Local V3 `train.csv` or `validation.csv`. The candidate preserves all 10,657 Local V3 training rows and adds 3,000 center-camera rows from `udacity_behavioral_cloning_public`.
+
+- Seed: 42.
+- External sample: 750 near-zero, 1,125 left, and 1,125 right rows.
+- Strong-turn retention: all 44 available external strong-turn rows.
+- Final rows: 13,657, including 21.97% external data.
+- Final distribution: 27.91% near-zero, 36.22% left, 35.87% right, and 21.55% strong turns.
+- Integrity: 0 missing/corrupt images, duplicate rows/paths, invalid labels, or forbidden Session C2/E/E2 rows.
+- Local preservation: 10,657 of 10,657 rows, with 0 missing paths or steering/session metadata mismatches.
+- Verdict: M1, External Mix V1 candidate ready for review.
+- Tests: both scripts compiled and the full repository suite passed 57 tests.
+
+The generated candidate and reports remain ignored under `data/processed/external_mix_v1_training/`. No model was trained, no checkpoint was evaluated, and the candidate was not promoted to a model or release artifact.

@@ -106,7 +106,9 @@ Recent EXP-007 result: road-focused crop preprocessing was valid but not useful 
 
 The public Udacity-format source `udacity_behavioral_cloning_public` was downloaded and validated without training or evaluation. It contains 8,036 clean CSV rows and 24,108 images; all three camera references resolve, the image scan found no corruption, steering labels are valid, and the archive SHA-256 is recorded. The result is X2, not X1, because the distribution is strongly straight-heavy: 60.74% near-zero steering and 0.55% strong turns. It is therefore not suitable as direct unbalanced augmentation.
 
-The generated normalized manifest is ignored by Git and only supports future review. A controlled External Mix V1 candidate may be designed with documented balancing, but no external-data model has been trained and external data has not been merged into Local V3.
+The generated normalized source manifest is ignored by Git. External Mix V1 was subsequently built as a separate ignored training candidate with documented balancing: all 10,657 Local V3 rows plus 3,000 deterministic center-camera external rows. The external subset is 25.00% near-zero, 37.50% left, 37.50% right, and 1.47% strong turns; all 44 available external strong-turn rows were retained. The final 13,657-row candidate is 27.91% near-zero, 36.22% left, 35.87% right, and 21.55% strong turns, with a 21.97% external share.
+
+External Mix V1 passed automated integrity and governance validation with M1 verdict: 0 missing/corrupt images, duplicate rows/paths, invalid labels, or forbidden Session C2/E/E2 rows, and all Local V3 training rows were preserved. The external source remains weak on strong turns, so the candidate's possible generalization benefit is unproven. No external-data model has been trained or evaluated. The next step is human review followed, only if approved, by one controlled Local V3 baseline versus External Mix V1 experiment.
 
 ## Recommended Commit Message
 

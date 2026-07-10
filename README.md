@@ -666,6 +666,8 @@ External datasets are used only to improve steering-label diversity for offline 
 
 External Udacity-format dataset ingestion workflow added. The public `udacity_behavioral_cloning_public` source was downloaded, checksummed, safely extracted, and validated before any training use. It is X2 (valid but requiring balancing): its 60.74% near-zero steering and 0.55% strong-turn coverage make it unsuitable for direct unbalanced augmentation. No external-data model has been trained yet.
 
+External Mix V1 candidate workflow added. It preserves all 10,657 Local V3 training rows and adds a deterministic, capped 3,000-row center-camera external subset. The 13,657-row candidate is 21.97% external, with 27.91% near-zero and 21.55% strong-turn steering overall. External Udacity data is capped and validated before any training use. The candidate passed automated M1 gates and is ready for human review; no external-data model has been trained yet.
+
 Research datasets:
 
 ```text
@@ -986,6 +988,7 @@ First real simulator training workflow verified:
 - EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3.
 - EXP-008 Huber loss was valid but did not materially improve Local V3 because right MAE and direction error regressed.
 - EXP-009 `cnn_v2` architecture was valid but did not materially improve Local V3 because MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed.
+- External Mix V1 preserves all Local V3 training rows and adds a capped 3,000-row external subset; its M1 verdict means ready for review, not approved for training.
 - Session E was validated as E2, valid but not ideal, and is not frozen as the final independent test set.
 - Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
 - Simulator autonomous driving integration is not implemented yet.
@@ -1010,6 +1013,7 @@ Research artifacts:
 
 - [External Dataset Research](docs/external-dataset-research.md)
 - [External Dataset Plan](docs/external-dataset-plan.md)
+- [External Mix V1 Dataset Build Report](docs/external-mix-v1-dataset-build-report.md)
 - [DonkeyCar Dataset Integration](docs/donkeycar-dataset-integration.md)
 - [Dataset V2 Collection Plan](docs/dataset-v2-collection-plan.md)
 - [Dataset V2 Session A Report](docs/dataset-v2-session-a-report.md)

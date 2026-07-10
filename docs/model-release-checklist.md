@@ -134,7 +134,8 @@ Blocking issues:
 - [x] External Udacity-format source has recorded provenance and SHA-256.
 - [x] External archive extraction was zip-slip protected and structure verified.
 - [x] External image references and steering labels were validated.
+- [x] External Mix V1 candidate was built and passed automated M1 integrity, cap, balance, and forbidden-session gates.
 - [ ] External Mix V1 balancing policy is reviewed.
 - [ ] External data is explicitly approved for a controlled offline experiment.
 
-The source currently has X2 status: 60.74% near-zero steering and 0.55% strong turns. It must not be mixed into Local V3 or used in training until a reviewed mix candidate addresses this distribution. No current release decision changes.
+The source retains X2 status: 60.74% near-zero steering and 0.55% strong turns. The ignored External Mix V1 candidate contains 13,657 rows, caps external data at 21.97%, caps its external near-zero share at 25.00%, and passes M1 automated review gates with 21.55% combined strong turns. M1 does not authorize training, model evaluation, release, or simulator control. Human review and explicit approval remain open, and no current release decision changes.
