@@ -46,3 +46,15 @@ Governance notes:
 - A SHA-256 checksum must be recorded for each downloaded archive.
 - The raw ZIP, extracted data, raw `driving_log.csv`, generated reports, and generated manifests remain ignored by Git.
 - A valid result only makes the dataset eligible for a future reviewed experiment; it never authorizes training automatically.
+
+## Better External Candidate Scout
+
+EXP-015 scored five un-ingested sources in `docs/external-dataset-candidate-registry.md`:
+
+- `kaggle_udacity_behavioral_cloning_lake_jungle`: 4/5, best next manual-access candidate.
+- `donkeycar_tubs_public`: 3/5, Kaggle tub source requiring access, conversion, scale, and license review.
+- `donkeycar_autorope_datasets`: 3/5, DonkeyCar 4.x Git LFS tubs requiring conversion and license clarification.
+- `carla_generated_future`: 3/5, future controlled-generation pipeline rather than an immediate download.
+- `comma2k19_real_world`: 2/5, real-highway research/domain-adaptation source with high conversion cost.
+
+These are candidate records only. Kaggle access was unavailable, so no new archive, checksum, extracted root, row count, image count, steering distribution, or K1/K2/K3 verdict exists. Manual access instructions are in `docs/kaggle-udacity-dataset-manual-download.md`.

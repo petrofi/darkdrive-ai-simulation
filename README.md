@@ -670,6 +670,8 @@ External Mix V1 candidate workflow added. It preserves all 10,657 Local V3 train
 
 External Mix V1 was trained as a controlled offline experiment. Results are offline simulator evaluation only: Session C2 MAE/RMSE were 0.216895/0.319567, producing EM2, valid experiment with no meaningful improvement over Local V3. The checkpoint was not promoted. Closed-loop simulator control remains unimplemented.
 
+Better external dataset scouting now prioritizes steering-label quality and curve/recovery distribution over dataset size. Kaggle Udacity lake/jungle is the next manual-access candidate, but Kaggle credentials were unavailable and no archive was downloaded or approved. DonkeyCar requires conversion and scale validation, comma2k19 is research-only for the current simulator goal, and CARLA is a separate future controlled-generation path.
+
 Research datasets:
 
 ```text
@@ -992,6 +994,7 @@ First real simulator training workflow verified:
 - EXP-009 `cnn_v2` architecture was valid but did not materially improve Local V3 because MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed.
 - External Mix V1 preserves all Local V3 training rows and adds a capped 3,000-row external subset; it passed M1 candidate validation before EXP-014.
 - EXP-014 trained External Mix V1 exactly once offline; strong-turn error improved, but primary error and direction metrics did not, so the EM2 checkpoint was not promoted.
+- EXP-015 scored five better-data candidates; no new data was downloaded, merged, trained, or evaluated because Kaggle access was unavailable.
 - Session E was validated as E2, valid but not ideal, and is not frozen as the final independent test set.
 - Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
 - Simulator autonomous driving integration is not implemented yet.
@@ -1018,6 +1021,10 @@ Research artifacts:
 - [External Dataset Plan](docs/external-dataset-plan.md)
 - [External Mix V1 Dataset Build Report](docs/external-mix-v1-dataset-build-report.md)
 - [External Mix V1 Model Evaluation Report](docs/model-external-mix-v1-evaluation-report.md)
+- [External Dataset Candidate Registry](docs/external-dataset-candidate-registry.md)
+- [Better External Data Scout Report](docs/better-external-data-scout-report.md)
+- [Kaggle Udacity Manual Download](docs/kaggle-udacity-dataset-manual-download.md)
+- [External Dataset Source Notes](docs/external-dataset-source-notes.md)
 - [DonkeyCar Dataset Integration](docs/donkeycar-dataset-integration.md)
 - [Dataset V2 Collection Plan](docs/dataset-v2-collection-plan.md)
 - [Dataset V2 Session A Report](docs/dataset-v2-session-a-report.md)

@@ -219,3 +219,7 @@ External Mix V1 now exists as an ignored M1 candidate for human review. It prese
 EXP-014 trained External Mix V1 exactly once as a controlled offline experiment. It produced Session C2 MAE/RMSE of 0.216895/0.319567 versus 0.215618/0.316627 for Local V3. Strong-turn MAE improved from 0.598862 to 0.579000 and std ratio improved from 0.656937 to 0.700562, but right MAE, overall error, zero-baseline comparison, and direction error regressed. Verdict EM2: valid experiment, no meaningful improvement; the checkpoint is not promoted.
 
 Next step: collect and validate Session E2 before further model selection. Session C2 has already influenced multiple preprocessing, loss, architecture, and data-composition decisions. No closed-loop simulator control is authorized.
+
+EXP-015 external-source scouting adds a parallel data-access action without changing the model-selection gate. Kaggle Udacity lake/jungle is the highest-priority external access candidate at 4/5, but Kaggle CLI/credentials were unavailable and its license and steering distribution remain unverified. DonkeyCar sources require conversion and scale checks; comma2k19 is a real-highway domain-adaptation source; CARLA belongs in a separate controlled-generation task.
+
+External-data next step: manually download the named Kaggle archive, record SHA-256, then validate every detected track before building any manifest. No new external data is approved for training.

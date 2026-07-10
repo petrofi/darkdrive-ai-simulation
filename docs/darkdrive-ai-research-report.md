@@ -114,6 +114,14 @@ EXP-014 then trained this candidate exactly once with the Local V3 baseline conf
 
 The external source's weak strong-turn coverage remains a limitation. Because Session C2 has now been used repeatedly, the next single recommendation is to collect and validate Session E2 before further model selection. No simulator control was implemented.
 
+## Better External Data Scout Result
+
+EXP-015 reviewed five named sources without downloading them blindly. The Kaggle Udacity lake/jungle candidate ranked highest at priority 4/5 because its expected camera/steering simulator format is closest to DarkDrive, but no Kaggle CLI or credentials were available and its license, schemas, track contents, and steering distributions remain unverified.
+
+DonkeyCar Kaggle/autorope tubs ranked 3/5 because they can provide image/steering/throttle-style records but need conversion, steering-scale checks, domain review, and license clarification. CARLA ranked 3/5 as a future controlled-generation route with heavy setup. comma2k19 ranked 2/5 because its roughly 100 GB real-highway video/CAN domain and conversion requirements do not target the immediate simulator recovery-data need.
+
+No archive was downloaded, no fake metrics were recorded, no data was merged, and no model was trained or evaluated. The external-data next step is manual download and multi-track validation of the named Kaggle candidate. The separate model-selection next step remains Session E2 collection because Session C2 has been reused repeatedly.
+
 ## Recommended Commit Message
 
 ```text

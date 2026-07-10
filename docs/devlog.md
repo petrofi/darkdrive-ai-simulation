@@ -1222,3 +1222,17 @@ Ran exactly one EXP-014 training command with External Mix V1 as the only change
 - Verdict: EM2, valid experiment with no meaningful improvement.
 
 Compared with Local V3, strong-turn MAE and prediction variance improved, but overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error regressed. The checkpoint is retained only as an ignored offline research artifact and is not promoted. No simulator control was implemented. The next single step is to collect and validate Session E2 before further model selection.
+
+## Day 34: Better External Dataset Scout
+
+Reviewed five documented data-source candidates after the first external source proved 60.74% near-zero with only 0.55% strong turns and EXP-014 returned EM2.
+
+- `kaggle_udacity_behavioral_cloning_lake_jungle`: priority 4, best next practical source because its expected Udacity simulator camera/steering format is closest to DarkDrive. Actual tracks, schema, distribution, and license remain unverified.
+- `donkeycar_tubs_public`: priority 3, potentially useful image/steering/throttle tubs but blocked by Kaggle access, conversion, scale, domain, and license questions.
+- `donkeycar_autorope_datasets`: priority 3, public Git LFS repository using DonkeyCar 4.x tubs; conversion and license clarification required.
+- `carla_generated_future`: priority 3, strong future controlled-generation option but too heavy for this task.
+- `comma2k19_real_world`: priority 2, roughly 100 GB of real highway video/sensor data and unsuitable for immediate simulator training.
+
+The Kaggle access check found no CLI, credential file, username environment variable, or key environment variable. No secrets were read. No archive was downloaded, no extraction or validation was performed, and no dataset metrics were fabricated.
+
+Created the scored candidate registry, manual Kaggle download instructions, cross-source notes, and the scout report. No model was trained, no checkpoint was evaluated, and no dataset was merged. The next exact step is manual Kaggle download followed by checksum, safe multi-track extraction, and validation.
