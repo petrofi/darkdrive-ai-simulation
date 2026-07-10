@@ -140,10 +140,13 @@ Blocking issues:
 - [x] External data was explicitly used in one controlled offline experiment.
 - [x] EXP-014 used the fixed baseline configuration and complete Session C2 validation manifest without leakage.
 - [x] Better external sources were scored by label quality, distribution potential, access, domain, conversion, and license risk.
-- [ ] Kaggle Udacity lake/jungle archive is acquired with provenance and SHA-256.
-- [ ] Every Kaggle track passes schema, image-integrity, steering-distribution, and license review.
+- [x] Kaggle Udacity archive is acquired with provenance and SHA-256.
+- [x] Every Kaggle track passed schema and image-integrity validation.
+- [x] Kaggle tracks received separate distribution verdicts: jungle K1, `make` K2.
+- [ ] Kaggle dataset-specific license/terms are resolved.
+- [ ] A jungle-only candidate manifest is built and reviewed.
 - [ ] An external-data checkpoint passes model-promotion gates.
 
 The source retains X2 status: 60.74% near-zero steering and 0.55% strong turns. EXP-014 trained the ignored 13,657-row External Mix V1 candidate once and received EM2, valid experiment with no meaningful improvement. Session C2 MAE/RMSE were 0.216895/0.319567; strong-turn MAE improved, but overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error regressed versus Local V3. The checkpoint is not promoted, no release decision changes, and simulator control remains blocked.
 
-EXP-015 selected the Kaggle Udacity lake/jungle source as priority 4/5 for access, not for training. Kaggle access was unavailable, so no files or distributions were validated. DonkeyCar, comma2k19, and CARLA remain conversion/future candidates. These registry results do not change any release gate.
+EXP-016 manually ingested and validated the Kaggle source. Jungle materially improves the external distribution baseline with 26.38% strong turns and balanced directions; `make` is too straight-heavy and right-poor for wholesale use. Both remain unapproved for training, licensing is unresolved, and no release gate changes.

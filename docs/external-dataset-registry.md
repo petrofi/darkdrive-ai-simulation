@@ -49,12 +49,31 @@ Governance notes:
 
 ## Better External Candidate Scout
 
-EXP-015 scored five un-ingested sources in `docs/external-dataset-candidate-registry.md`:
+EXP-015 scored five initially un-ingested sources in `docs/external-dataset-candidate-registry.md`:
 
-- `kaggle_udacity_behavioral_cloning_lake_jungle`: 4/5, best next manual-access candidate.
+- `kaggle_udacity_behavioral_cloning_lake_jungle`: originally 4/5; now 5/5 for candidate-manifest review after EXP-016 validation found one K1 track.
 - `donkeycar_tubs_public`: 3/5, Kaggle tub source requiring access, conversion, scale, and license review.
 - `donkeycar_autorope_datasets`: 3/5, DonkeyCar 4.x Git LFS tubs requiring conversion and license clarification.
 - `carla_generated_future`: 3/5, future controlled-generation pipeline rather than an immediate download.
 - `comma2k19_real_world`: 2/5, real-highway research/domain-adaptation source with high conversion cost.
 
-These are candidate records only. Kaggle access was unavailable, so no new archive, checksum, extracted root, row count, image count, steering distribution, or K1/K2/K3 verdict exists. Manual access instructions are in `docs/kaggle-udacity-dataset-manual-download.md`.
+The other four entries remain candidate records only.
+
+## kaggle_udacity_behavioral_cloning_lake_jungle
+
+- Dataset ID: `kaggle_udacity_behavioral_cloning_lake_jungle`
+- Source URL: <https://www.kaggle.com/datasets/andy8744/udacity-self-driving-car-behavioural-cloning>
+- Access: manually downloaded and extracted by the human, then relocated from the repository root to ignored external storage.
+- ZIP: 294,399,633 bytes.
+- SHA-256: `b8bde91d71b4fca7639962eb24374e519cf01dec48650b026079e46ccf74ceba`.
+- Extracted files/bytes: 22,004 / 294,206,140.
+- Schema: two headerless Udacity tracks with center/left/right, steering, throttle, brake, speed, and local `IMG/` folders.
+- License: unresolved; no license/README/terms file was found in the archive.
+
+Track verdicts:
+
+- `self_driving_car_dataset_jungle`: K1, strong external candidate. 3,404 rows, 10,212 images, 47.00% near-zero, 25.88% left, 27.12% right, and 26.38% strong turns.
+- `self_driving_car_dataset_make`: K2, valid but weak. 3,930 rows, 11,790 images, 80.41% near-zero, 16.87% left, 2.72% right, and 1.88% strong turns.
+- Both tracks have 0 missing/corrupt images, duplicate rows/paths/filenames, invalid labels, or out-of-range labels.
+
+Status: validated per track, but not approved for training. A later task may build and review a jungle-only candidate manifest; the K2 `make` track should remain excluded by default.

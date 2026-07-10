@@ -1,6 +1,6 @@
 # External Dataset Candidate Registry
 
-This registry scores possible future DarkDrive data sources before any download, conversion, merge, training, or checkpoint evaluation. Registry inclusion does not approve a dataset for training.
+This registry scores possible and ingested DarkDrive data sources before any conversion, merge, training, or checkpoint evaluation decision. Registry inclusion or validation does not approve a dataset for training.
 
 ## Selection Principle
 
@@ -20,13 +20,13 @@ Priority scores:
 
 | Priority | Dataset ID | Immediate decision |
 | ---: | --- | --- |
-| 4 | `kaggle_udacity_behavioral_cloning_lake_jungle` | Best next access target; manually download, then extract and validate every track before any manifest work. |
+| 5 | `kaggle_udacity_behavioral_cloning_lake_jungle` | Manually ingested and validated: jungle is K1; `make` is K2. Review a jungle-only candidate manifest later. |
 | 3 | `donkeycar_tubs_public` | Potential image/control source, but Kaggle access, tub conversion, steering scale, domain, and license require review. |
 | 3 | `donkeycar_autorope_datasets` | Public Git LFS tub repository with known DonkeyCar 4.x format; conversion and license review required. |
 | 3 | `carla_generated_future` | Best controlled generation route later, but too heavy for the current external-download task. |
 | 2 | `comma2k19_real_world` | Valuable domain-adaptation research source, not an immediate simulator behavior-cloning dataset. |
 
-No candidate receives score 5 because none is both immediately accessible and already verified for licensing, steering distribution, image integrity, and DarkDrive-compatible controls.
+The Kaggle source advances to score 5 for immediate candidate-manifest review because it contains a verified K1 track. Training approval and license resolution remain separate gates.
 
 ## `kaggle_udacity_behavioral_cloning_lake_jungle`
 
@@ -35,18 +35,24 @@ No candidate receives score 5 because none is both immediately accessible and al
 | Dataset ID | `kaggle_udacity_behavioral_cloning_lake_jungle` |
 | Source name | Kaggle: Udacity Self Driving Car - Behavioural Cloning |
 | Source URL | <https://www.kaggle.com/datasets/andy8744/udacity-self-driving-car-behavioural-cloning> |
-| Access method | Kaggle browser or Kaggle CLI; credentials required for CLI download |
-| Expected format | Reported simulator camera images and CSV-style driving metadata; possible lake/jungle track folders; not locally verified |
-| Expected labels | Steering angle and camera paths; throttle/brake/speed availability must be inspected after download |
-| License/terms status | Dataset-specific license was not visible through the unauthenticated review; unresolved until the Kaggle data card is reviewed by the human downloader |
+| Access method | Manually downloaded from Kaggle; ZIP checksummed and stored under ignored external data |
+| Expected format | Actual format: two headerless Udacity tracks with center/left/right, steering, throttle, brake, speed, and `IMG/` |
+| Expected labels | Verified steering, throttle, brake, and speed for every row in both tracks |
+| License/terms status | Unresolved: no license/README/terms file exists in the archive; Kaggle data-card terms require human review |
 | Domain similarity | High: Udacity simulator behavior cloning is closest to DarkDrive's current image/steering pipeline |
-| Expected steering-label quality | Promising, but label schema, scale, duplication, and synchronization are unverified |
-| Expected curve/strong-turn usefulness | Potentially useful if multiple tracks add curves; actual distribution is unknown and may still be straight-heavy |
-| Download difficulty | Medium: Kaggle account/API credentials required; no CLI or credentials were available on 2026-07-10 |
-| Conversion difficulty | Low to medium if Udacity-style; higher if multiple schemas or nested tracks differ |
-| Direct training suitability | No. Each track requires checksum, safe extraction, schema detection, image validation, distribution review, and a future mix decision |
-| Risk notes | Unverified license, unknown distribution, possible multiple roots, possible near-zero dominance, and unavailable access |
-| Priority score | 4 |
+| Expected steering-label quality | Structurally valid in both tracks; jungle distribution is strong, `make` distribution is weak |
+| Expected curve/strong-turn usefulness | Jungle: 26.38% strong turns with balanced directions; `make`: only 1.88% strong and 2.72% right |
+| Download difficulty | Completed manually; ZIP is 294,399,633 bytes with recorded SHA-256 |
+| Conversion difficulty | Low for a future center-camera manifest; raw absolute Windows paths require normalization |
+| Direct training suitability | No. Jungle is eligible only for later manifest review; `make` must not be used wholesale |
+| Risk notes | License unresolved; manual extraction safety cannot be verified retroactively; tracks have sharply different quality |
+| Priority score | 5 |
+
+Actual validation result:
+
+- `self_driving_car_dataset_jungle`: K1, 3,404 rows, 10,212 images, 47.00% near-zero, 25.88% left, 27.12% right, 26.38% strong turns.
+- `self_driving_car_dataset_make`: K2, 3,930 rows, 11,790 images, 80.41% near-zero, 16.87% left, 2.72% right, 1.88% strong turns.
+- Both tracks: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid labels, or out-of-range labels.
 
 ## `donkeycar_tubs_public`
 

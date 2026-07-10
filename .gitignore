@@ -34,6 +34,8 @@ models/*.pt
 models/*.pth
 videos/*
 screenshots/*
+kaggle_udacity_behavioral_cloning_lake*.zip
+kaggle_udacity_behavioral_cloning_lake*/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/external/.gitkeep

@@ -220,6 +220,6 @@ EXP-014 trained External Mix V1 exactly once as a controlled offline experiment.
 
 Next step: collect and validate Session E2 before further model selection. Session C2 has already influenced multiple preprocessing, loss, architecture, and data-composition decisions. No closed-loop simulator control is authorized.
 
-EXP-015 external-source scouting adds a parallel data-access action without changing the model-selection gate. Kaggle Udacity lake/jungle is the highest-priority external access candidate at 4/5, but Kaggle CLI/credentials were unavailable and its license and steering distribution remain unverified. DonkeyCar sources require conversion and scale checks; comma2k19 is a real-highway domain-adaptation source; CARLA belongs in a separate controlled-generation task.
+EXP-016 completed manual Kaggle ingestion and per-track validation without changing the model-selection gate. The jungle track is K1: 3,404 rows, 47.00% near-zero, balanced 25.88%/27.12% left/right, and 26.38% strong turns. The `make` track is K2: 80.41% near-zero, only 2.72% right, and 1.88% strong turns. Both tracks are technically clean with no missing/corrupt images, duplicates, or invalid labels.
 
-External-data next step: manually download the named Kaggle archive, record SHA-256, then validate every detected track before building any manifest. No new external data is approved for training.
+External-data next step: build and review a jungle-only candidate manifest in a later task, preserving provenance and excluding `make` by default. Do not train yet. The independent evaluation next step remains Session E2 collection because Session C2 has already influenced multiple decisions.

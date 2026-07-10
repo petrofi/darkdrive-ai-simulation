@@ -120,7 +120,9 @@ EXP-015 reviewed five named sources without downloading them blindly. The Kaggle
 
 DonkeyCar Kaggle/autorope tubs ranked 3/5 because they can provide image/steering/throttle-style records but need conversion, steering-scale checks, domain review, and license clarification. CARLA ranked 3/5 as a future controlled-generation route with heavy setup. comma2k19 ranked 2/5 because its roughly 100 GB real-highway video/CAN domain and conversion requirements do not target the immediate simulator recovery-data need.
 
-No archive was downloaded, no fake metrics were recorded, no data was merged, and no model was trained or evaluated. The external-data next step is manual download and multi-track validation of the named Kaggle candidate. The separate model-selection next step remains Session E2 collection because Session C2 has been reused repeatedly.
+EXP-016 subsequently completed the manual ingestion and multi-track validation. Jungle is K1 with 3,404 rows, 10,212 images, 47.00% near-zero, 25.88% left, 27.12% right, and 26.38% strong turns. The supplied `make` track is K2 with 3,930 rows, 11,790 images, 80.41% near-zero, 16.87% left, 2.72% right, and 1.88% strong turns. Both tracks have complete center/left/right images, no corruption, no duplicates, and valid controls.
+
+The jungle track is genuinely better than the first external Udacity source for curve and strong-turn coverage. The source must not be used wholesale because `make` is weak, and archive licensing remains unresolved. The next external-data step is a later jungle-only candidate-manifest review; no model was trained or evaluated from Kaggle data. The separate model-selection next step remains Session E2 collection because Session C2 has been reused repeatedly.
 
 ## Recommended Commit Message
 

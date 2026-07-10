@@ -1,5 +1,7 @@
 # Kaggle Udacity Dataset Manual Download
 
+Status update: manual download and EXP-016 validation are complete. This document remains as the reproducible acquisition procedure. See `docs/kaggle-udacity-dataset-validation-report.md` for actual results.
+
 ## Dataset
 
 - Dataset ID: `kaggle_udacity_behavioral_cloning_lake_jungle`
@@ -71,4 +73,4 @@ Before any manifest or training decision, validation must check every detected t
 - license and data-card notes
 - whether distribution is meaningfully better than the previous source's 60.74% near-zero and 0.55% strong-turn coverage
 
-The data must not be trained, evaluated, or merged until those checks pass and a future candidate manifest is reviewed.
+Those checks now pass for jungle (K1) and identify `make` as valid but weak (K2). The data still must not be trained or merged until a future jungle-only candidate manifest is reviewed.

@@ -1236,3 +1236,15 @@ Reviewed five documented data-source candidates after the first external source 
 The Kaggle access check found no CLI, credential file, username environment variable, or key environment variable. No secrets were read. No archive was downloaded, no extraction or validation was performed, and no dataset metrics were fabricated.
 
 Created the scored candidate registry, manual Kaggle download instructions, cross-source notes, and the scout report. No model was trained, no checkpoint was evaluated, and no dataset was merged. The next exact step is manual Kaggle download followed by checksum, safe multi-track extraction, and validation.
+
+## Day 35: Kaggle Udacity Manual Ingestion And Validation
+
+Relocated the manually downloaded 294,399,633-byte Kaggle ZIP and 22,004 extracted files from the repository root into ignored external-data storage. Source/target verification matched the ZIP size, extracted file count, and 294,206,140 extracted bytes; no root-level Kaggle artifact remains. SHA-256: `b8bde91d71b4fca7639962eb24374e519cf01dec48650b026079e46ccf74ceba`.
+
+Added a recursive multi-track validator with headered/headerless schema support, alternate image/steering aliases, absolute Windows and relative path normalization, optional safe ZIP extraction, full image verification, distribution metrics, and K1/K2/K3 verdicts.
+
+- Jungle: 3,404 rows, 10,212 images, 47.00% near-zero, 25.88% left, 27.12% right, 26.38% strong turns, K1.
+- `make`: 3,930 rows, 11,790 images, 80.41% near-zero, 16.87% left, 2.72% right, 1.88% strong turns, K2.
+- Both: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid labels, or out-of-range labels; throttle, brake, and speed are available for every row.
+
+No archive license/README/terms file was present, so licensing remains unresolved. No manifest was created, no data was merged, no model was trained, and no checkpoint was evaluated. The next external-data step is a later jungle-only candidate-manifest review.

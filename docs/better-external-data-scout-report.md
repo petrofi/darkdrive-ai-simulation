@@ -62,6 +62,8 @@ Use `kaggle_udacity_behavioral_cloning_lake_jungle` as the next access candidate
 
 The human should manually download the Kaggle archive, place it at the documented ignored path, record its SHA-256, and rerun extraction/validation. Do not build a mix or train from it yet.
 
+Follow-up: this action was completed in EXP-016. Jungle validated K1 and `make` validated K2. The next external-data action is a later jungle-only candidate-manifest review, with no training.
+
 No model was trained in this task.
 
 No checkpoint evaluation was run.
