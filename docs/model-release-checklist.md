@@ -122,6 +122,7 @@ Blocking issues:
 - EXP-008 right MAE and direction error regressed versus the Local V3 baseline.
 - EXP-008 zero-baseline improvement is too small for release consideration.
 - EXP-009 cnn_v2 regressed MAE, right MAE, strong-turn MAE, std ratio, zero-baseline improvement, and direction error versus the Local V3 baseline.
+- EXP-014 External Mix V1 improved strong-turn MAE and std ratio but regressed overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error versus Local V3.
 - Local V3 strong-turn error remains high.
 - The Session C2 holdout has now been used for multiple model-selection decisions; further tuning should wait for an independent Session E test set.
 - Current Session E candidate is too straight-heavy and has too little strong-turn coverage for final frozen-test status.
@@ -135,7 +136,9 @@ Blocking issues:
 - [x] External archive extraction was zip-slip protected and structure verified.
 - [x] External image references and steering labels were validated.
 - [x] External Mix V1 candidate was built and passed automated M1 integrity, cap, balance, and forbidden-session gates.
-- [ ] External Mix V1 balancing policy is reviewed.
-- [ ] External data is explicitly approved for a controlled offline experiment.
+- [x] External Mix V1 balancing policy was reviewed for EXP-014.
+- [x] External data was explicitly used in one controlled offline experiment.
+- [x] EXP-014 used the fixed baseline configuration and complete Session C2 validation manifest without leakage.
+- [ ] An external-data checkpoint passes model-promotion gates.
 
-The source retains X2 status: 60.74% near-zero steering and 0.55% strong turns. The ignored External Mix V1 candidate contains 13,657 rows, caps external data at 21.97%, caps its external near-zero share at 25.00%, and passes M1 automated review gates with 21.55% combined strong turns. M1 does not authorize training, model evaluation, release, or simulator control. Human review and explicit approval remain open, and no current release decision changes.
+The source retains X2 status: 60.74% near-zero steering and 0.55% strong turns. EXP-014 trained the ignored 13,657-row External Mix V1 candidate once and received EM2, valid experiment with no meaningful improvement. Session C2 MAE/RMSE were 0.216895/0.319567; strong-turn MAE improved, but overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error regressed versus Local V3. The checkpoint is not promoted, no release decision changes, and simulator control remains blocked.

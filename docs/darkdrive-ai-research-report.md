@@ -2,11 +2,11 @@
 
 ## Current Maturity Level
 
-DarkDrive is at Simulator Training Baseline maturity with a session-aware Local V3 evaluation workflow, one completed Local V3 preprocessing experiment, one completed Local V3 loss-function experiment, and one completed Local V3 architecture experiment.
+DarkDrive is at Simulator Training Baseline maturity with a session-aware Local V3 evaluation workflow, one completed Local V3 preprocessing experiment, one completed Local V3 loss-function experiment, one completed Local V3 architecture experiment, and one completed External Mix V1 data-composition experiment.
 
 The project has moved beyond infrastructure. It has real simulator data, trained behavior cloning checkpoints, validated Dataset v2 sessions, and offline evaluation. It has not reached simulator-driving readiness.
 
-Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V3 session-aware workflow, EXP-007 road-crop experiment, EXP-008 Huber-loss experiment, EXP-009 `cnn_v2` architecture experiment, and Session E validation as valid offline research artifacts. Reject the current Local V3-family checkpoints as release/control candidates. Local V3 baseline and EXP-007 did not beat the zero-steering MAE baseline on the clean Session C2 holdout. EXP-008 barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed. EXP-009 improved RMSE slightly, but MAE, right MAE, strong-turn MAE, prediction variance, zero-baseline comparison, and direction error regressed. Session E validates technically but is E2, not frozen, because near-zero steering is slightly high and strong-turn coverage is low. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data.
+Research verdict: accept the pipeline, v1 baseline, Local V2 checkpoint, Local V3 session-aware workflow, EXP-007 road-crop experiment, EXP-008 Huber-loss experiment, EXP-009 `cnn_v2` architecture experiment, EXP-014 External Mix V1 experiment, and Session E validation as valid offline research artifacts. Reject the current Local V3-family and External Mix V1 checkpoints as release/control candidates. Local V3 baseline and EXP-007 did not beat the zero-steering MAE baseline on the Session C2 holdout. EXP-008 barely beat the zero baseline on MAE, but RMSE, right MAE, and direction error regressed. EXP-009 improved RMSE slightly, but MAE, right MAE, strong-turn MAE, prediction variance, zero-baseline comparison, and direction error regressed. EXP-014 improved strong-turn MAE and prediction variance but regressed overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error. Session E validates technically but is E2, not frozen, because near-zero steering is slightly high and strong-turn coverage is low. Local V2's Session C2 score is historical context only because Session C2 contributed to Local V2 training data.
 
 ## Current Strengths
 
@@ -108,7 +108,11 @@ The public Udacity-format source `udacity_behavioral_cloning_public` was downloa
 
 The generated normalized source manifest is ignored by Git. External Mix V1 was subsequently built as a separate ignored training candidate with documented balancing: all 10,657 Local V3 rows plus 3,000 deterministic center-camera external rows. The external subset is 25.00% near-zero, 37.50% left, 37.50% right, and 1.47% strong turns; all 44 available external strong-turn rows were retained. The final 13,657-row candidate is 27.91% near-zero, 36.22% left, 35.87% right, and 21.55% strong turns, with a 21.97% external share.
 
-External Mix V1 passed automated integrity and governance validation with M1 verdict: 0 missing/corrupt images, duplicate rows/paths, invalid labels, or forbidden Session C2/E/E2 rows, and all Local V3 training rows were preserved. The external source remains weak on strong turns, so the candidate's possible generalization benefit is unproven. No external-data model has been trained or evaluated. The next step is human review followed, only if approved, by one controlled Local V3 baseline versus External Mix V1 experiment.
+External Mix V1 passed automated integrity and governance validation with M1 verdict: 0 missing/corrupt images, duplicate rows/paths, invalid labels, or forbidden Session C2/E/E2 rows, and all Local V3 training rows were preserved.
+
+EXP-014 then trained this candidate exactly once with the Local V3 baseline configuration. On the complete Session C2 manifest, External Mix V1 recorded MAE/RMSE 0.216895/0.319567 versus 0.215618/0.316627 for Local V3. Strong-turn MAE improved to 0.579000 and std ratio to 0.700562, while right MAE regressed to 0.251651, zero-baseline comparison worsened to -1.31%, and direction error rose to 17.11%. Verdict EM2: valid experiment, no meaningful improvement. The checkpoint is an ignored offline artifact and is not promoted.
+
+The external source's weak strong-turn coverage remains a limitation. Because Session C2 has now been used repeatedly, the next single recommendation is to collect and validate Session E2 before further model selection. No simulator control was implemented.
 
 ## Recommended Commit Message
 

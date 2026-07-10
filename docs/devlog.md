@@ -1202,3 +1202,23 @@ Built a deterministic, ignored External Mix V1 candidate without modifying Local
 - Tests: both scripts compiled and the full repository suite passed 57 tests.
 
 The generated candidate and reports remain ignored under `data/processed/external_mix_v1_training/`. No model was trained, no checkpoint was evaluated, and the candidate was not promoted to a model or release artifact.
+
+## Day 33: External Mix V1 Controlled Training Experiment
+
+Ran exactly one EXP-014 training command with External Mix V1 as the only changed variable. The complete Session C2 manifest remained validation-only, with 0 image-path or source-session overlap and 0 Session C2/E/E2 rows in training.
+
+- Training rows: 13,657, including 10,657 internal and 3,000 external rows.
+- Validation rows: 4,163 from `session_c2_right_recovery` only.
+- Configuration: baseline `SteeringModel`, 188,219 parameters, baseline preprocessing, MSE, AdamW, learning rate 0.001, weight decay 0.0001, 15 epochs, batch 32, seed 42, training-only augmentation, CPU.
+- Duration: 616.520 seconds.
+- Best epoch / validation loss: 3 / 0.102123.
+- Final train/validation loss: 0.089346 / 0.106086.
+- Final train/validation MAE: 0.205349 / 0.218132.
+- Session C2 MAE/RMSE: 0.216895 / 0.319567.
+- Right / strong-turn MAE: 0.251651 / 0.579000.
+- Prediction/actual std ratio: 0.700562.
+- Zero-baseline improvement: -1.31%.
+- Direction error: 17.11%.
+- Verdict: EM2, valid experiment with no meaningful improvement.
+
+Compared with Local V3, strong-turn MAE and prediction variance improved, but overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error regressed. The checkpoint is retained only as an ignored offline research artifact and is not promoted. No simulator control was implemented. The next single step is to collect and validate Session E2 before further model selection.
