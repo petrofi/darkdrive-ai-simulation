@@ -122,7 +122,11 @@ DonkeyCar Kaggle/autorope tubs ranked 3/5 because they can provide image/steerin
 
 EXP-016 subsequently completed the manual ingestion and multi-track validation. Jungle is K1 with 3,404 rows, 10,212 images, 47.00% near-zero, 25.88% left, 27.12% right, and 26.38% strong turns. The supplied `make` track is K2 with 3,930 rows, 11,790 images, 80.41% near-zero, 16.87% left, 2.72% right, and 1.88% strong turns. Both tracks have complete center/left/right images, no corruption, no duplicates, and valid controls.
 
-The jungle track is genuinely better than the first external Udacity source for curve and strong-turn coverage. The source must not be used wholesale because `make` is weak, and archive licensing remains unresolved. The next external-data step is a later jungle-only candidate-manifest review; no model was trained or evaluated from Kaggle data. The separate model-selection next step remains Session E2 collection because Session C2 has been reused repeatedly.
+The jungle track is genuinely better than the first external Udacity source for curve and strong-turn coverage. The source must not be used wholesale because `make` is weak, and archive licensing remains unresolved.
+
+EXP-017 built a center-camera-only jungle candidate under ignored processed storage. It retains all 3,404 source rows in order, preserves original left/right references as provenance without using them for training labels, and exactly matches the EXP-016 distribution. Full manifest validation found 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, `make` rows, or Session C2/E/E2 rows. Throttle, brake, and speed are available for every row. Verdict J1 means ready for human review, not training authorization.
+
+The next external-data step is to review the manifest and later design a controlled Kaggle Jungle Mix V1 candidate with explicit composition, leakage, and license gates. No Kaggle model was trained or evaluated, and Local V3 was not modified. The separate model-selection next step remains Session E2 collection because Session C2 has been reused repeatedly.
 
 ## Recommended Commit Message
 

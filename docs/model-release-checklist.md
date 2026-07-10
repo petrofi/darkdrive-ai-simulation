@@ -143,10 +143,11 @@ Blocking issues:
 - [x] Kaggle Udacity archive is acquired with provenance and SHA-256.
 - [x] Every Kaggle track passed schema and image-integrity validation.
 - [x] Kaggle tracks received separate distribution verdicts: jungle K1, `make` K2.
+- [x] A center-only jungle candidate manifest is built and passed J1 integrity/provenance checks.
 - [ ] Kaggle dataset-specific license/terms are resolved.
-- [ ] A jungle-only candidate manifest is built and reviewed.
+- [ ] The jungle candidate receives human review and a controlled mix policy is approved.
 - [ ] An external-data checkpoint passes model-promotion gates.
 
 The source retains X2 status: 60.74% near-zero steering and 0.55% strong turns. EXP-014 trained the ignored 13,657-row External Mix V1 candidate once and received EM2, valid experiment with no meaningful improvement. Session C2 MAE/RMSE were 0.216895/0.319567; strong-turn MAE improved, but overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error regressed versus Local V3. The checkpoint is not promoted, no release decision changes, and simulator control remains blocked.
 
-EXP-016 manually ingested and validated the Kaggle source. Jungle materially improves the external distribution baseline with 26.38% strong turns and balanced directions; `make` is too straight-heavy and right-poor for wholesale use. Both remain unapproved for training, licensing is unresolved, and no release gate changes.
+EXP-016 manually ingested and validated the Kaggle source. EXP-017 then built an ignored 3,404-row center-only jungle manifest with exact distribution preservation and 0 missing/corrupt images, duplicate paths, invalid labels, `make` rows, or Session C2/E/E2 rows. J1 makes the manifest ready for review only. Licensing is unresolved, no training was run, and no release gate changes.

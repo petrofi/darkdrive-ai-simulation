@@ -20,13 +20,13 @@ Priority scores:
 
 | Priority | Dataset ID | Immediate decision |
 | ---: | --- | --- |
-| 5 | `kaggle_udacity_behavioral_cloning_lake_jungle` | Manually ingested and validated: jungle is K1; `make` is K2. Review a jungle-only candidate manifest later. |
+| 5 | `kaggle_udacity_behavioral_cloning_lake_jungle` | Manually ingested and validated; the jungle-only center manifest passed J1, while `make` remains excluded. Review before any controlled mix. |
 | 3 | `donkeycar_tubs_public` | Potential image/control source, but Kaggle access, tub conversion, steering scale, domain, and license require review. |
 | 3 | `donkeycar_autorope_datasets` | Public Git LFS tub repository with known DonkeyCar 4.x format; conversion and license review required. |
 | 3 | `carla_generated_future` | Best controlled generation route later, but too heavy for the current external-download task. |
 | 2 | `comma2k19_real_world` | Valuable domain-adaptation research source, not an immediate simulator behavior-cloning dataset. |
 
-The Kaggle source advances to score 5 for immediate candidate-manifest review because it contains a verified K1 track. Training approval and license resolution remain separate gates.
+The Kaggle source remains score 5 because it contains a verified K1 track and a J1 candidate manifest. Training approval, controlled mix design, human review, and license resolution remain separate gates.
 
 ## `kaggle_udacity_behavioral_cloning_lake_jungle`
 
@@ -43,8 +43,8 @@ The Kaggle source advances to score 5 for immediate candidate-manifest review be
 | Expected steering-label quality | Structurally valid in both tracks; jungle distribution is strong, `make` distribution is weak |
 | Expected curve/strong-turn usefulness | Jungle: 26.38% strong turns with balanced directions; `make`: only 1.88% strong and 2.72% right |
 | Download difficulty | Completed manually; ZIP is 294,399,633 bytes with recorded SHA-256 |
-| Conversion difficulty | Low for a future center-camera manifest; raw absolute Windows paths require normalization |
-| Direct training suitability | No. Jungle is eligible only for later manifest review; `make` must not be used wholesale |
+| Conversion difficulty | Low; EXP-017 normalized producer Windows paths into a center-camera manifest while preserving original references |
+| Direct training suitability | No. The jungle manifest is J1 for review only; `make` must not be used wholesale |
 | Risk notes | License unresolved; manual extraction safety cannot be verified retroactively; tracks have sharply different quality |
 | Priority score | 5 |
 
@@ -53,6 +53,13 @@ Actual validation result:
 - `self_driving_car_dataset_jungle`: K1, 3,404 rows, 10,212 images, 47.00% near-zero, 25.88% left, 27.12% right, 26.38% strong turns.
 - `self_driving_car_dataset_make`: K2, 3,930 rows, 11,790 images, 80.41% near-zero, 16.87% left, 2.72% right, 1.88% strong turns.
 - Both tracks: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid labels, or out-of-range labels.
+
+EXP-017 candidate result:
+
+- `data/processed/external/kaggle_jungle_candidate/` contains ignored manifest, summary, and source-distribution outputs.
+- 3,404 center-camera jungle rows; `make` rows: 0; Session C2/E/E2 rows: 0.
+- 0 missing/corrupt images, duplicate rows/paths/filenames, or invalid/out-of-range labels.
+- Distribution matches EXP-016 exactly. Verdict J1, ready for review; no training or Local V3 merge was performed.
 
 ## `donkeycar_tubs_public`
 
@@ -136,4 +143,4 @@ Actual validation result:
 
 ## Governance Decision
 
-The Kaggle Udacity source is the best next practical access target, but score 4 rather than 5 reflects missing credentials, unverified license terms, and unknown per-track steering distributions. No dataset should enter a training manifest until its actual files, labels, provenance, license notes, and distribution pass review.
+The Kaggle Udacity source completed access, per-track validation, and a jungle-only J1 candidate build. Its score 5 reflects verified K1 steering coverage, not training approval. License terms remain unresolved, `make` remains excluded, and the next governed action is human manifest review followed by a separately specified controlled mix candidate. No dataset should enter training until provenance, license notes, composition, leakage, and distribution gates pass review.

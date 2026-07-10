@@ -672,6 +672,8 @@ External Mix V1 was trained as a controlled offline experiment. Results are offl
 
 Better external dataset scouting now prioritizes steering-label quality and curve/recovery distribution over dataset size. The Kaggle Udacity dataset was manually ingested and validated as an external candidate. Jungle is K1 with balanced left/right steering and 26.38% strong turns; `make` is K2 with 80.41% near-zero and only 2.72% right steering. No model has been trained from Kaggle data yet. DonkeyCar requires conversion and scale validation, comma2k19 is research-only for the current simulator goal, and CARLA is a separate future controlled-generation path.
 
+Kaggle jungle candidate manifest workflow added. It preserves all 3,404 K1 rows in source order as center-camera-only records, retains side-camera references only as provenance, and passes J1 integrity/distribution checks. The weak `make` track is excluded by default. Generated outputs remain ignored, licensing remains unresolved, and no Kaggle-trained model exists yet.
+
 Research datasets:
 
 ```text
@@ -995,7 +997,8 @@ First real simulator training workflow verified:
 - External Mix V1 preserves all Local V3 training rows and adds a capped 3,000-row external subset; it passed M1 candidate validation before EXP-014.
 - EXP-014 trained External Mix V1 exactly once offline; strong-turn error improved, but primary error and direction metrics did not, so the EM2 checkpoint was not promoted.
 - EXP-015 scored five better-data candidates; no new data was downloaded, merged, trained, or evaluated because Kaggle access was unavailable.
-- EXP-016 manually ingested the Kaggle source: jungle passed K1, `make` received K2, and no manifest or model was created.
+- EXP-016 manually ingested the Kaggle source: jungle passed K1 and `make` received K2.
+- EXP-017 built the ignored 3,404-row jungle center-camera manifest; it passed J1 with `make` and Session C2/E/E2 excluded, and no model was trained.
 - Session E was validated as E2, valid but not ideal, and is not frozen as the final independent test set.
 - Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
 - Simulator autonomous driving integration is not implemented yet.
@@ -1026,6 +1029,7 @@ Research artifacts:
 - [Better External Data Scout Report](docs/better-external-data-scout-report.md)
 - [Kaggle Udacity Manual Download](docs/kaggle-udacity-dataset-manual-download.md)
 - [Kaggle Udacity Dataset Validation Report](docs/kaggle-udacity-dataset-validation-report.md)
+- [Kaggle Jungle Candidate Manifest Report](docs/kaggle-jungle-candidate-manifest-report.md)
 - [External Dataset Source Notes](docs/external-dataset-source-notes.md)
 - [DonkeyCar Dataset Integration](docs/donkeycar-dataset-integration.md)
 - [Dataset V2 Collection Plan](docs/dataset-v2-collection-plan.md)

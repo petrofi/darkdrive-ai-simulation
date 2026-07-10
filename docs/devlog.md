@@ -1248,3 +1248,17 @@ Added a recursive multi-track validator with headered/headerless schema support,
 - Both: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid labels, or out-of-range labels; throttle, brake, and speed are available for every row.
 
 No archive license/README/terms file was present, so licensing remains unresolved. No manifest was created, no data was merged, no model was trained, and no checkpoint was evaluated. The next external-data step is a later jungle-only candidate-manifest review.
+
+## Day 36: Kaggle Jungle Candidate Manifest
+
+Built and validated an ignored center-camera-only candidate from the complete `self_driving_car_dataset_jungle` K1 track. The builder recursively discovers the reviewed track, supports the source's headerless Udacity schema, normalizes producer-side Windows paths, preserves all original camera references as provenance, and refuses overwrite without `--force`.
+
+- Output: `data/processed/external/kaggle_jungle_candidate/`.
+- Rows: 3,404, all from `kaggle_udacity_behavioral_cloning_lake_jungle` / `self_driving_car_dataset_jungle` / center camera.
+- Distribution: 47.00% near-zero, 25.88% left, 27.12% right, and 26.38% strong turns; exact match to EXP-016 metadata.
+- Integrity: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, K2 `make` rows, or Session C2/E/E2 rows.
+- Controls: throttle, brake, and speed preserved for all 3,404 rows.
+- Verdict: J1, jungle candidate manifest ready for review.
+- Tests: script compilation passed and the complete suite passed 78 tests.
+
+Generated manifest/summary/distribution files remain ignored. Licensing remains unresolved. No model was trained, no checkpoint was evaluated, no training mix was built, and Local V3 was not modified. The next external-data step is human review followed by a separately governed Kaggle Jungle Mix V1 candidate task.

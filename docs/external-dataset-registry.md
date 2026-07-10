@@ -51,7 +51,7 @@ Governance notes:
 
 EXP-015 scored five initially un-ingested sources in `docs/external-dataset-candidate-registry.md`:
 
-- `kaggle_udacity_behavioral_cloning_lake_jungle`: originally 4/5; now 5/5 for candidate-manifest review after EXP-016 validation found one K1 track.
+- `kaggle_udacity_behavioral_cloning_lake_jungle`: originally 4/5; now 5/5 after EXP-016 found one K1 track and EXP-017 built its J1 candidate manifest.
 - `donkeycar_tubs_public`: 3/5, Kaggle tub source requiring access, conversion, scale, and license review.
 - `donkeycar_autorope_datasets`: 3/5, DonkeyCar 4.x Git LFS tubs requiring conversion and license clarification.
 - `carla_generated_future`: 3/5, future controlled-generation pipeline rather than an immediate download.
@@ -76,4 +76,13 @@ Track verdicts:
 - `self_driving_car_dataset_make`: K2, valid but weak. 3,930 rows, 11,790 images, 80.41% near-zero, 16.87% left, 2.72% right, and 1.88% strong turns.
 - Both tracks have 0 missing/corrupt images, duplicate rows/paths/filenames, invalid labels, or out-of-range labels.
 
-Status: validated per track, but not approved for training. A later task may build and review a jungle-only candidate manifest; the K2 `make` track should remain excluded by default.
+Candidate manifest record:
+
+- Output: `data/processed/external/kaggle_jungle_candidate/` (ignored).
+- Policy: all 3,404 jungle rows retained in source order; center camera only; no side-camera offsets; original center/left/right references preserved as provenance.
+- Validation: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, `make` rows, or Session C2/E/E2 rows.
+- Distribution: 47.00% near-zero, 25.88% left, 27.12% right, and 26.38% strong turns; exact match to EXP-016 validation metadata.
+- Controls: throttle, brake, and speed preserved for every row.
+- Verdict: J1, jungle candidate manifest ready for review.
+
+Status: manifest built and technically validated, but not approved for training. Human review, a controlled mix plan, and license resolution remain separate gates. The K2 `make` track remains excluded by default.

@@ -222,4 +222,6 @@ Next step: collect and validate Session E2 before further model selection. Sessi
 
 EXP-016 completed manual Kaggle ingestion and per-track validation without changing the model-selection gate. The jungle track is K1: 3,404 rows, 47.00% near-zero, balanced 25.88%/27.12% left/right, and 26.38% strong turns. The `make` track is K2: 80.41% near-zero, only 2.72% right, and 1.88% strong turns. Both tracks are technically clean with no missing/corrupt images, duplicates, or invalid labels.
 
-External-data next step: build and review a jungle-only candidate manifest in a later task, preserving provenance and excluding `make` by default. Do not train yet. The independent evaluation next step remains Session E2 collection because Session C2 has already influenced multiple decisions.
+EXP-017 built the ignored jungle-only center-camera candidate manifest. All 3,404 K1 rows were retained in source order, the full center-image scan passed, controls and producer camera references were preserved, and the manifest exactly matches the validated distribution. It contains 0 `make` rows and 0 Session C2/E/E2 rows. Verdict J1 means ready for review, not approved for training.
+
+External-data next step: review this manifest, then design a controlled Kaggle Jungle Mix V1 candidate in a later task with explicit composition, leakage, and license gates. Keep `make` excluded by default and do not train yet. The independent evaluation next step remains Session E2 collection because Session C2 has already influenced multiple decisions.
