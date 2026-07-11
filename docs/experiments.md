@@ -41,9 +41,10 @@ Each future experiment must record:
 | EXP-018-kaggle-jungle-mix-v1-training-candidate | All 10,657 Local V3 training rows plus all 3,404 Kaggle Jungle center-camera rows; ignored output `data/processed/kaggle_jungle_mix_v1_training/` | N/A | N/A | Dataset mix build and validation only | N/A | N/A | N/A | Hypothesis: the strong Jungle distribution can add external visual diversity without diluting Local V3 curve strength. Final 14,061 rows are 24.21% external, 33.15% near-zero, 33.45% left, 33.40% right, and 27.00% strong. All source rows/order preserved; 0 missing/corrupt images, duplicate paths, invalid labels, `make` rows, or Session C2/E/E2 rows. Verdict KM1. No training or checkpoint evaluation. | Human reviews the mix and unresolved license gate before one later controlled training experiment. |
 | EXP-019-kaggle-jungle-mix-v1-training | Kaggle Jungle Mix V1 train, 14,061 rows, versus complete 4,163-row Session C2 validation manifest | 15 | 0.001 | Baseline `SteeringModel`, 188,219 parameters | 0.095746 best | 0.216064 | 0.309429 | One-variable data experiment: baseline/MSE/AdamW/weight decay/batch/seed/CPU/augmentation fixed. Right MAE 0.242521, strong-turn MAE 0.559137, std ratio 0.711011, zero-baseline comparison -0.93%, direction error 16.17%. Versus Local V3, RMSE, right/strong MAE, std ratio, and direction error improved; MAE and zero-baseline comparison regressed slightly. Verdict KJM3, useful offline improvement. Licensing unresolved; checkpoint not promoted. | Collect and validate Session E2 before further model-selection or Kaggle-training decisions. |
 | EXP-020-udacity-ch2-002-phase-a-ingestion | `udacity_ch2_002`, five ROS1 bags, bounded 500-frame sample | N/A | N/A | Archive, bag, semantics, and synchronization inspection only | N/A | N/A | N/A | A1 archive; 5/5 bags and 6,985,240 messages readable; measured steering-wheel radians; S1 camera/steering sync; 500/500 sample images readable. Verdict C2A1. No full conversion, training, or evaluation. | Run a separately governed full-conversion and normalization task; do not train yet. |
-| EXP-021-left-right-camera-correction | Planned: Local V3 plus side-camera correction | TBD | 0.001 initial | Same as EXP-001 | TBD | TBD | TBD | Test correction magnitude around 0.15 to 0.25 after verifying steering sign convention. | Compare against Local V3 center-only result after a fresh independent test set is available. |
-| EXP-022-nvidia-bc-cnn | Planned: fixed Local V3 split | TBD | TBD | NVIDIA Behavioral Cloning style CNN | TBD | TBD | TBD | Architecture comparison after data improvement and a fresh independent test set. | Compare against same-data compact CNN. |
-| EXP-023-temporal-stability | Planned: held-out validation videos | TBD | TBD | Best single-frame model plus smoothing/frame stacking candidate | TBD | TBD | TBD | Measure oscillation, steering delta, and lag. | Decide if model can enter simulator-only closed-loop test. |
+| EXP-021-closed-loop-simulator-demo-v1 | Live Udacity Behavioral Cloning center-camera telemetry with ignored KJM3 checkpoint | N/A | N/A | EIO4 Socket.IO + baseline SteeringModel inference runtime | N/A | N/A | N/A | Implemented checkpoint-aware center-camera inference, clipping, EMA smoothing, low throttle, dry-run neutral commands, emergency stop, reconnect handling, and CSV/JSON telemetry. Local self-test: finite -0.110780 prediction at 4.886 ms CPU. Server bind test passed. Live Unity telemetry and movement not yet tested. | Human runs live dry-run, verifies emergency stop and logs, then performs at most one supervised 60-second active diagnostic. |
+| EXP-022-left-right-camera-correction | Planned: Local V3 plus side-camera correction | TBD | 0.001 initial | Same as EXP-001 | TBD | TBD | TBD | Test correction magnitude around 0.15 to 0.25 after verifying steering sign convention. | Compare against Local V3 center-only result after a fresh independent test set is available. |
+| EXP-023-nvidia-bc-cnn | Planned: fixed Local V3 split | TBD | TBD | NVIDIA Behavioral Cloning style CNN | TBD | TBD | TBD | Architecture comparison after data improvement and a fresh independent test set. | Compare against same-data compact CNN. |
+| EXP-024-temporal-stability | Planned: held-out validation videos | TBD | TBD | Best single-frame model plus smoothing/frame stacking candidate | TBD | TBD | TBD | Measure oscillation, steering delta, and lag. | Decide if model can enter simulator-only closed-loop test. |
 
 ## Experiment Template
 
@@ -112,3 +113,20 @@ Changed factor: ingest and inspect one external real-world ROS1 archive without 
 - License/domain: unresolved license; real-world offline data, not simulator data.
 
 Next step: run a separate full conversion and normalization-governance task before any training proposal.
+
+## EXP-021 - Closed-Loop Simulator Demo V1
+
+Status: implementation and local dry-run preparation complete; live Unity diagnostic pending.
+
+- Protocol: installed simulator assembly verified as EIO4 WebSocket on port 4567 with `telemetry` and `steer` events.
+- Model: ignored KJM3 baseline checkpoint, loaded once in eval/inference mode.
+- Preprocessing: checkpoint-selected baseline RGB 160 x 80 pipeline.
+- Controls: throttle 0.10 default, steering clip 1.0, EMA alpha 0.35.
+- Safety: neutral on frame/model/control failure, repeated-failure latch, dry-run neutral-only, Ctrl+C and stop-file emergency shutdown.
+- Telemetry: ignored per-frame CSV and JSON session summary.
+- Tests: 13 focused runtime tests; complete suite 116 tests after final update.
+- Local self-test: finite raw steering -0.110780, 4.886 ms CPU inference, neutral command only.
+- Server bind: EIO4 runtime bound and stopped cleanly under a one-second dry-run limit.
+- Active driving: not tested; no lap claim.
+
+Next step: human starts Unity Autonomous mode and completes dry-run acceptance before any supervised active command.

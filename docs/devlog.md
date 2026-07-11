@@ -1314,3 +1314,18 @@ Completed EXP-020 as an offline external-data ingestion task. The 4,716,005,956-
 - Verdict: C2A1, strong candidate for a later full-conversion task.
 
 No full conversion was performed, no research model was trained, no checkpoint was evaluated, no data was merged into Local V3 or Kaggle Jungle Mix V1, and no simulator or real-vehicle control was implemented. License and redistribution remain unresolved. Session E2 remains the next model-evaluation priority; the next CH2_002-specific step is a separate full-conversion and normalization-governance task.
+
+## Day 40: Closed-Loop Simulator Demo V1
+
+Implemented EXP-021 as a simulation-only camera-to-steering diagnostic using the existing ignored KJM3 checkpoint. Read-only simulator inspection found the correct Behavioral Cloning executable under `Downloads/simulator-windows-64` and verified its EIO4 WebSocket URL, `telemetry` event, image/speed fields, and `steer` response schema. The separate `sys_int.exe` installation remains out of scope.
+
+- Runtime: checkpoint loaded once, baseline metadata selected, eval/inference mode, center camera only.
+- Control defaults: throttle 0.10, max steering 1.0, EMA newest-prediction weight 0.35.
+- Safety: zero throttle on corrupt/missing/non-finite frames, three-failure emergency latch, dry-run neutral-only, control-emit stop, Ctrl+C neutral command, stop-file monitor, bounded runtime.
+- Logging: ignored per-frame CSV and JSON summaries under `runtime_logs/closed_loop_v1/`.
+- Dependencies: pinned EIO4-compatible Socket.IO 5, Engine.IO 4, simple-websocket, and Werkzeug stack.
+- Tests: both files compiled, 13 focused tests passed, and the complete suite passed 116 tests after final verification.
+- Real checkpoint self-test: raw steering -0.110780, CPU inference 4.886 ms, neutral/zero control, logging pass.
+- Dry-run server bind: local port 4568 opened and stopped cleanly after one second with no simulator connected.
+
+The Unity simulator was not launched automatically. Live telemetry, visible vehicle movement, and emergency-stop behavior in Unity remain pending a human dry-run. No model was trained or modified, CH2_002 was not used, no checkpoint was promoted, and no real-vehicle code was added.

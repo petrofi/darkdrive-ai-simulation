@@ -66,7 +66,7 @@ Simulator control is blocked until:
 
 ## Current Decision
 
-Do not connect the current model to simulator control.
+Do not treat the current model as released or run it unattended. EXP-021 permits only a supervised low-throttle simulator diagnostic after the live dry-run and emergency-stop checks pass.
 
 Current dataset progress:
 
@@ -172,3 +172,22 @@ EXP-016 manually ingested and validated the Kaggle source; EXP-017/018 built J1/
 - [ ] Real-world domain data receives a separate training and evaluation protocol.
 
 EXP-020 verdict C2A1 is a conversion-research result only. It does not promote any checkpoint, satisfy an independent Session E2 model test, authorize training, or change the current no-control release decision.
+
+## Closed-Loop Diagnostic Gate
+
+- [x] Correct Behavioral Cloning simulator executable and EIO4 protocol identified.
+- [x] Checkpoint loads before the server binds.
+- [x] Checkpoint architecture and preprocessing metadata are reused.
+- [x] Steering is finite-checked, clipped, and smoothed.
+- [x] Default throttle is limited to 0.10.
+- [x] Dry-run cannot emit non-zero steering or throttle.
+- [x] Missing/corrupt frames, non-finite predictions, and repeated failures command zero throttle.
+- [x] Ctrl+C and an emergency-stop file have neutral-command shutdown paths.
+- [x] Runtime CSV/JSON artifacts are ignored.
+- [x] Local real-checkpoint self-test and server bind passed.
+- [ ] Live Unity dry-run receives and logs center-camera telemetry.
+- [ ] Emergency stop is observed in the connected Unity session.
+- [ ] One supervised 60-second active diagnostic is completed without uncontrolled behavior.
+- [ ] Temporal stability and oscillation metrics are reviewed afterward.
+
+The diagnostic gate does not promote KJM3, resolve Kaggle licensing, prove a lap, or approve autonomous simulator operation.

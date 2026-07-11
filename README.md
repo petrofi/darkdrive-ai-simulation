@@ -607,15 +607,15 @@ Udacity's original project used a Keras model, `model.h5`, and a simulator `driv
 - `.pt` checkpoints
 - `src/training/train_behavior_cloning.py`
 - `src/inference/predict_steering.py`
-- future simulator-only drive loop under `src/simulator/`
+- simulator-only closed-loop runtime under `src/simulator/closed_loop_driver.py`
 
-The future simulator drive loop is not implemented yet. The current placeholder file documents the planned architecture without sending simulator commands:
+Closed-Loop Simulator Demo V1 is implemented with EIO4 Socket.IO telemetry, checkpoint-aware preprocessing, bounded steering, low throttle, dry-run, emergency stop, and ignored runtime logging. Local checkpoint inference and server binding passed, but live Unity driving has not yet been performed:
 
 ```powershell
-python src/simulator/udacity_drive_pytorch.py --model models/steering_model_v1.pt
+python scripts/run_closed_loop_simulator.py --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt --device cpu --dry-run
 ```
 
-DarkDrive does not copy the old Keras code, does not convert the project to Keras, and does not add real vehicle control. Simulator integration will come only after real simulator dataset validation and PyTorch model training.
+DarkDrive does not copy the old Keras code, does not convert the project to Keras, and does not add real vehicle control. Active simulator use is a supervised low-throttle diagnostic, not a model-release or autonomy claim.
 
 See:
 
@@ -1006,9 +1006,10 @@ First real simulator training workflow verified:
 - EXP-018 built the ignored 14,061-row Kaggle Jungle Mix V1 candidate; all Local V3 and Jungle rows were preserved, KM1 passed, and no model was trained.
 - EXP-019 trained Kaggle Jungle Mix V1 once with the fixed baseline configuration; KJM3 improved curve/right-turn metrics but did not improve overall MAE or the zero baseline, so the checkpoint was not promoted.
 - EXP-020 completed Udacity CH2_002 Phase-A ingestion: five ROS1 bags were readable, measured steering-wheel radians were S1-synchronized with all three cameras, and a 500-frame ignored sample passed. C2A1 permits only a later governed full conversion; no CH2_002 training or model evaluation was run.
+- EXP-021 implemented Closed-Loop Simulator Demo V1. The KJM3 checkpoint passed a neutral-control local self-test and the EIO4 server passed a bounded dry-run bind test; live Unity telemetry and active movement remain pending human verification.
 - Session E was validated as E2, valid but not ideal, and is not frozen as the final independent test set.
 - Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
-- Simulator autonomous driving integration is not implemented yet.
+- Simulator closed-loop integration is implemented as a guarded diagnostic, but no successful live lap or release claim exists.
 
 ## Future Work
 
@@ -1020,7 +1021,7 @@ First real simulator training workflow verified:
 
 ## Next Phase
 
-Record and validate a better Session E2 candidate before further model-selection work, then improve the real simulator model with better data balance, recovery driving, left/right camera augmentation, and offline evaluation before implementing any simulator-only autonomous drive loop.
+Run the human Unity dry-run and emergency-stop acceptance check before any active simulator diagnostic. Session E2 remains the next model-selection priority; do not treat the closed-loop diagnostic as checkpoint promotion.
 
 ## Machine Learning Research Phase
 
@@ -1034,6 +1035,7 @@ Research artifacts:
 - [External Mix V1 Model Evaluation Report](docs/model-external-mix-v1-evaluation-report.md)
 - [External Dataset Candidate Registry](docs/external-dataset-candidate-registry.md)
 - [Udacity CH2_002 Phase-A Ingestion Report](docs/udacity-ch2-002-phase-a-ingestion-report.md)
+- [Closed-Loop Simulator Demo V1](docs/closed-loop-simulator-demo-v1.md)
 - [Better External Data Scout Report](docs/better-external-data-scout-report.md)
 - [Kaggle Udacity Manual Download](docs/kaggle-udacity-dataset-manual-download.md)
 - [Kaggle Udacity Dataset Validation Report](docs/kaggle-udacity-dataset-validation-report.md)

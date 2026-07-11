@@ -6,6 +6,10 @@ __pycache__/
 venv/
 env/
 .ipynb_checkpoints/
+runtime_logs/**
+data/**
+*.csv
+*.json
 veriler/
 yeni eğitim/
 data/raw/*

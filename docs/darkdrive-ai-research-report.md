@@ -146,6 +146,16 @@ A bounded 500-frame center-camera sample retained raw radians and passed with 50
 
 Session E2 remains the highest-impact next model-evaluation task. The exact CH2_002 next step is a separate full-conversion and normalization-governance task.
 
+## Closed-Loop Simulator Demo V1 Result
+
+EXP-021 implemented the first simulation-only closed-loop integration around the ignored KJM3 checkpoint. The installed Behavioral Cloning Unity assembly verifies EIO4 WebSocket telemetry with base64 center-camera images and `steer` responses. The runtime reuses checkpoint architecture/preprocessing metadata, performs inference without gradients, clips and smooths steering, limits throttle to 0.10 by default, and records ignored telemetry and latency artifacts.
+
+Runtime safety behavior includes neutral control for corrupt/missing frames and non-finite predictions, a repeated-failure latch, neutral-only dry-run, control-emission failure shutdown, Ctrl+C neutral control, an emergency-stop file, and an optional runtime limit. These are simulator diagnostics, not real-vehicle safety controls.
+
+The KJM3 checkpoint passed a local stored-frame self-test with finite raw steering -0.110780 and 4.886 ms CPU inference. The EIO4 server also bound and stopped cleanly in a one-second dry-run with no simulator attached. Live Unity telemetry, vehicle movement, connected emergency-stop behavior, and a lap were not tested or claimed.
+
+The exact next runtime step is a human live dry-run in Unity Autonomous mode. Only after telemetry, logs, disconnect handling, and emergency stop pass should one supervised 60-second active diagnostic be attempted. Session E2 remains the next model-selection priority, and KJM3 remains unpromoted.
+
 ## Recommended Commit Message
 
 ```text
