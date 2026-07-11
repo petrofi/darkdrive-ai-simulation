@@ -672,9 +672,11 @@ External Mix V1 was trained as a controlled offline experiment. Results are offl
 
 Better external dataset scouting now prioritizes steering-label quality and curve/recovery distribution over dataset size. The Kaggle Udacity dataset was manually ingested and validated as an external candidate. Jungle is K1 with balanced left/right steering and 26.38% strong turns; `make` is K2 with 80.41% near-zero and only 2.72% right steering. No model has been trained from Kaggle data yet. DonkeyCar requires conversion and scale validation, comma2k19 is research-only for the current simulator goal, and CARLA is a separate future controlled-generation path.
 
-Kaggle jungle candidate manifest workflow added. It preserves all 3,404 K1 rows in source order as center-camera-only records, retains side-camera references only as provenance, and passes J1 integrity/distribution checks. The weak `make` track is excluded by default. Generated outputs remain ignored, licensing remains unresolved, and no Kaggle-trained model exists yet.
+Kaggle jungle candidate manifest workflow added. It preserves all 3,404 K1 rows in source order as center-camera-only records, retains side-camera references only as provenance, and passes J1 integrity/distribution checks. The weak `make` track is excluded by default. Generated outputs remain ignored and licensing remains unresolved.
 
-Kaggle Jungle Mix V1 candidate workflow was added. It preserves all 10,657 Local V3 training rows and all 3,404 Jungle center-camera rows, producing an ignored 14,061-row candidate with a 24.21% external share, 33.15% near-zero steering, balanced 33.45%/33.40% left/right steering, and 27.00% strong turns. It passed KM1 validation. The weak `make` track is excluded by default, and no Kaggle-trained model exists yet.
+Kaggle Jungle Mix V1 candidate workflow was added. It preserves all 10,657 Local V3 training rows and all 3,404 Jungle center-camera rows, producing an ignored 14,061-row candidate with a 24.21% external share, 33.15% near-zero steering, balanced 33.45%/33.40% left/right steering, and 27.00% strong turns. It passed KM1 validation, and the weak `make` track is excluded by default.
+
+Kaggle Jungle Mix V1 was trained exactly once as a controlled offline experiment. On Session C2 it improved RMSE, right/strong-turn MAE, prediction variance, and direction error versus Local V3, while overall MAE and zero-baseline comparison regressed slightly. Verdict KJM3: useful offline improvement, not promoted. Results are offline simulator evaluation only. Closed-loop simulator control remains unimplemented. Kaggle licensing remains unresolved, so the checkpoint is not released.
 
 Research datasets:
 
@@ -1002,6 +1004,7 @@ First real simulator training workflow verified:
 - EXP-016 manually ingested the Kaggle source: jungle passed K1 and `make` received K2.
 - EXP-017 built the ignored 3,404-row jungle center-camera manifest; it passed J1 with `make` and Session C2/E/E2 excluded, and no model was trained.
 - EXP-018 built the ignored 14,061-row Kaggle Jungle Mix V1 candidate; all Local V3 and Jungle rows were preserved, KM1 passed, and no model was trained.
+- EXP-019 trained Kaggle Jungle Mix V1 once with the fixed baseline configuration; KJM3 improved curve/right-turn metrics but did not improve overall MAE or the zero baseline, so the checkpoint was not promoted.
 - Session E was validated as E2, valid but not ideal, and is not frozen as the final independent test set.
 - Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
 - Simulator autonomous driving integration is not implemented yet.
@@ -1034,6 +1037,7 @@ Research artifacts:
 - [Kaggle Udacity Dataset Validation Report](docs/kaggle-udacity-dataset-validation-report.md)
 - [Kaggle Jungle Candidate Manifest Report](docs/kaggle-jungle-candidate-manifest-report.md)
 - [Kaggle Jungle Mix V1 Dataset Build Report](docs/kaggle-jungle-mix-v1-dataset-build-report.md)
+- [Kaggle Jungle Mix V1 Model Evaluation Report](docs/model-kaggle-jungle-mix-v1-evaluation-report.md)
 - [External Dataset Source Notes](docs/external-dataset-source-notes.md)
 - [DonkeyCar Dataset Integration](docs/donkeycar-dataset-integration.md)
 - [Dataset V2 Collection Plan](docs/dataset-v2-collection-plan.md)

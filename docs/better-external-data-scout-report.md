@@ -62,7 +62,7 @@ Use `kaggle_udacity_behavioral_cloning_lake_jungle` as the next access candidate
 
 The human should manually download the Kaggle archive, place it at the documented ignored path, record its SHA-256, and rerun extraction/validation. Do not build a mix or train from it yet.
 
-Follow-up: EXP-016 validated jungle as K1 and `make` as K2. EXP-017 then built the ignored 3,404-row jungle-only center-camera manifest and passed J1 checks with `make` excluded. Human manifest review, controlled mix design, and license resolution remain pending; no Kaggle model has been trained.
+Follow-up: EXP-016 validated jungle as K1 and `make` as K2; EXP-017/018 built J1/KM1 candidates; EXP-019 completed one controlled local training run with KJM3 verdict. The checkpoint is not promoted or released. Session E2 independent evaluation and license resolution remain pending.
 
 No model was trained in this task.
 

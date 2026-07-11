@@ -1277,3 +1277,25 @@ Built and validated an ignored, deterministic mix containing 100% of Local V3 tr
 - Tests: script compilation passed, 10 focused tests passed, and the complete suite passed 88 tests.
 
 Generated CSV/JSON artifacts remain ignored and Kaggle licensing remains unresolved. No model was trained, no checkpoint was evaluated, and no model was promoted. The next external-data action is human mix review followed by exactly one separately authorized controlled training experiment in a later task.
+
+## Day 38: Kaggle Jungle Mix V1 Controlled Training Experiment
+
+Ran exactly one EXP-019 training command with Kaggle Jungle Mix V1 as the only intended changed variable. The baseline `SteeringModel`, full-frame preprocessing, MSE, AdamW, learning rate 0.001, weight decay 0.0001, 15 epochs, batch 32, seed 42, training-only augmentation, complete Session C2 validation manifest, and CPU device matched Local V3.
+
+- Training/validation rows: 14,061 / 4,163.
+- Training sources: 10,657 Local V3 rows plus 3,404 Jungle rows; no C2/E/E2 or `make` rows.
+- Leakage: 0 image-path and source-session overlap.
+- Duration: 493.691 seconds.
+- Best epoch / validation loss: 5 / 0.095746.
+- Final train/validation loss: 0.106595 / 0.107738.
+- Final train/validation MAE: 0.235268 / 0.222954.
+- Session C2 MAE/RMSE: 0.216064 / 0.309429.
+- Right / strong-turn MAE: 0.242521 / 0.559137.
+- Prediction/actual std ratio: 0.711011.
+- Zero-baseline comparison: -0.93%.
+- Direction error: 16.17%.
+- Verdict: KJM3, useful Kaggle Jungle improvement.
+
+Compared with Local V3, RMSE, right MAE, strong-turn MAE, prediction variance, and direction error improved. Overall MAE regressed by 0.000446 and zero-baseline comparison worsened by 0.21 percentage points, so this is not KJM4 and is not promoted. Session C2 is repeatedly reused and not a final independent benchmark.
+
+The checkpoint, loss chart, evaluation plots, and metrics JSON remain ignored. Kaggle licensing remains unresolved, so the checkpoint is retained only as a local offline research artifact and is not released. No simulator control was implemented. The next single step is to collect and validate Session E2 as an independent test candidate.

@@ -108,6 +108,6 @@ The mix passes integrity, row-preservation, exclusion, external-ratio, direction
 
 ## Future Training Recommendation
 
-After human review and license consideration, run exactly one controlled Kaggle Jungle Mix V1 training experiment in a later task. Keep the Local V3 baseline configuration fixed and treat training data as the single changed variable. Do not tune repeatedly against Session C2; evaluation independence remains a separate governance requirement.
+This recommendation was completed exactly once in EXP-019 with the Local V3 baseline configuration fixed and training data as the single changed variable. Do not repeat the run or tune further against Session C2; Session E2 independent evaluation is now the next evidence gate.
 
 No model was trained in this task.

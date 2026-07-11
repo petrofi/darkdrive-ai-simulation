@@ -95,4 +95,14 @@ Kaggle Jungle Mix V1 candidate record:
 - Preservation: all Local V3 and Jungle rows and source order retained exactly.
 - Verdict: KM1, Kaggle Jungle Mix V1 candidate ready for review.
 
-Status: mix candidate built and technically validated, but not approved for training. Human review and license resolution remain separate gates. The K2 `make` track and prior straight-heavy external Udacity source remain excluded.
+EXP-019 controlled-use record:
+
+- Training: exactly one 15-epoch CPU run using baseline `SteeringModel`, baseline preprocessing, MSE, AdamW, learning rate 0.001, weight decay 0.0001, batch 32, and seed 42.
+- Validation: complete 4,163-row `session_c2_right_recovery` manifest, with 0 train/validation image-path or source-session overlap.
+- Results: MAE 0.216064, RMSE 0.309429, right MAE 0.242521, strong-turn MAE 0.559137, std ratio 0.711011, zero-baseline comparison -0.93%, and direction error 16.17%.
+- Controlled comparison: RMSE, right/strong-turn MAE, std ratio, and direction error improved versus Local V3; overall MAE and zero-baseline comparison regressed slightly.
+- Verdict: KJM3, useful offline improvement.
+- Promotion/release: no; checkpoint retained only as an ignored local research artifact because Session C2 is repeatedly reused and Kaggle licensing is unresolved.
+- Control status: no simulator control was implemented or authorized.
+
+Status: one controlled local experiment completed, but the checkpoint is not approved for release or promotion. The K2 `make` track and prior straight-heavy external Udacity source remain excluded. Independent Session E2 evaluation and license resolution remain open gates.

@@ -128,7 +128,13 @@ EXP-017 built a center-camera-only jungle candidate under ignored processed stor
 
 EXP-018 built the controlled Kaggle Jungle Mix V1 candidate without modifying Local V3. It preserves all 10,657 Local V3 training rows and all 3,404 Jungle rows for 14,061 total and a 24.21% external share. Its 33.15% near-zero, 33.45% left, 33.40% right, and 27.00% strong-turn distribution keeps curve strength close to Local V3 while adding external visual diversity. It also avoids the prior external source's 0.55% strong-turn weakness.
 
-Full validation found 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, K2 `make` rows, Session C2/E/E2 rows, or non-center rows. Verdict KM1 means ready for human review, not training authorization. The next external-data step is mix and license review followed by exactly one controlled training experiment in a later task if approved. No Kaggle model was trained or evaluated. The separate model-selection next step remains Session E2 collection because Session C2 has been reused repeatedly.
+Full validation found 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, K2 `make` rows, Session C2/E/E2 rows, or non-center rows. Verdict KM1 made the mix ready for human review but did not itself authorize training. At the end of EXP-018 no Kaggle model had been trained or evaluated; Session E2 collection remained the separate model-selection priority because Session C2 had already been reused repeatedly.
+
+EXP-019 subsequently trained Kaggle Jungle Mix V1 exactly once with the Local V3 baseline configuration. The 14,061-row training manifest and complete 4,163-row Session C2 validation manifest had 0 image-path or source-session overlap. Training took 493.691 seconds; best epoch/loss were 5/0.095746.
+
+On Session C2, the new checkpoint recorded MAE/RMSE 0.216064/0.309429, right MAE 0.242521, strong-turn MAE 0.559137, std ratio 0.711011, zero-baseline comparison -0.93%, and direction error 16.17%. Compared with Local V3, RMSE, right/strong-turn MAE, std ratio, and direction error improved; MAE regressed by 0.000446 and zero-baseline comparison worsened by 0.21 percentage points. Verdict KJM3: useful offline Kaggle Jungle improvement, not a strong release candidate.
+
+The checkpoint remains an ignored local research artifact. Kaggle licensing is unresolved, Session C2 is not an independent final benchmark, and no model is promoted or released. The next single step is Session E2 collection and validation; no further Kaggle tuning should occur before independent evaluation.
 
 ## Recommended Commit Message
 

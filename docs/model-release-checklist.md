@@ -123,6 +123,8 @@ Blocking issues:
 - EXP-008 zero-baseline improvement is too small for release consideration.
 - EXP-009 cnn_v2 regressed MAE, right MAE, strong-turn MAE, std ratio, zero-baseline improvement, and direction error versus the Local V3 baseline.
 - EXP-014 External Mix V1 improved strong-turn MAE and std ratio but regressed overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error versus Local V3.
+- EXP-019 Kaggle Jungle Mix V1 improved RMSE, right/strong-turn MAE, std ratio, and direction error, but overall MAE and zero-baseline comparison regressed slightly.
+- Kaggle licensing is unresolved, so the EXP-019 checkpoint cannot be released or publicly promoted.
 - Local V3 strong-turn error remains high.
 - The Session C2 holdout has now been used for multiple model-selection decisions; further tuning should wait for an independent Session E test set.
 - Current Session E candidate is too straight-heavy and has too little strong-turn coverage for final frozen-test status.
@@ -145,10 +147,12 @@ Blocking issues:
 - [x] Kaggle tracks received separate distribution verdicts: jungle K1, `make` K2.
 - [x] A center-only jungle candidate manifest is built and passed J1 integrity/provenance checks.
 - [x] Kaggle Jungle Mix V1 is built and passed KM1 integrity, preservation, balance, and exclusion checks.
+- [x] Kaggle Jungle Mix V1 received controlled local research training approval for EXP-019.
+- [x] EXP-019 used the fixed baseline configuration and complete Session C2 manifest without leakage.
 - [ ] Kaggle dataset-specific license/terms are resolved.
-- [ ] Kaggle Jungle Mix V1 receives human review and controlled-training approval.
+- [ ] EXP-019 is evaluated on a future frozen independent Session E2 test set.
 - [ ] An external-data checkpoint passes model-promotion gates.
 
 The source retains X2 status: 60.74% near-zero steering and 0.55% strong turns. EXP-014 trained the ignored 13,657-row External Mix V1 candidate once and received EM2, valid experiment with no meaningful improvement. Session C2 MAE/RMSE were 0.216895/0.319567; strong-turn MAE improved, but overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error regressed versus Local V3. The checkpoint is not promoted, no release decision changes, and simulator control remains blocked.
 
-EXP-016 manually ingested and validated the Kaggle source. EXP-017 built its J1 center-only manifest. EXP-018 then combined all 10,657 Local V3 rows with all 3,404 Jungle rows: 14,061 total, 24.21% external, 33.15% near-zero, balanced 33.45%/33.40% directions, and 27.00% strong turns. KM1 makes the mix ready for review only. Licensing is unresolved, no training was run, and no release gate changes.
+EXP-016 manually ingested and validated the Kaggle source; EXP-017/018 built J1/KM1 candidates. EXP-019 then trained the mix once. Its KJM3 result improved RMSE, right/strong-turn error, variance ratio, and direction error, but overall MAE and zero-baseline comparison regressed slightly. Session C2 is repeatedly reused, licensing is unresolved, the checkpoint is not promoted, and no release/control gate changes.

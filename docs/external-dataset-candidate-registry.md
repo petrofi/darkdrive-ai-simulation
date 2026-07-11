@@ -20,13 +20,13 @@ Priority scores:
 
 | Priority | Dataset ID | Immediate decision |
 | ---: | --- | --- |
-| 5 | `kaggle_udacity_behavioral_cloning_lake_jungle` | Jungle passed K1/J1 and the all-Jungle Local V3 mix passed KM1; `make` remains excluded. Human review is required before training. |
+| 5 | `kaggle_udacity_behavioral_cloning_lake_jungle` | K1/J1/KM1 validation and one KJM3 local run completed; `make` remains excluded. No further training or release before Session E2/license review. |
 | 3 | `donkeycar_tubs_public` | Potential image/control source, but Kaggle access, tub conversion, steering scale, domain, and license require review. |
 | 3 | `donkeycar_autorope_datasets` | Public Git LFS tub repository with known DonkeyCar 4.x format; conversion and license review required. |
 | 3 | `carla_generated_future` | Best controlled generation route later, but too heavy for the current external-download task. |
 | 2 | `comma2k19_real_world` | Valuable domain-adaptation research source, not an immediate simulator behavior-cloning dataset. |
 
-The Kaggle source remains score 5 because it contains a verified K1 track, a J1 candidate manifest, and a KM1 mix candidate. Training approval, human review, evaluation independence, and license resolution remain separate gates.
+The Kaggle source remains score 5 because it contains a verified K1 track, J1/KM1 candidates, and useful KJM3 curve/right-turn improvements. Further training, promotion, independent evaluation, and license resolution remain separate gates.
 
 ## `kaggle_udacity_behavioral_cloning_lake_jungle`
 
@@ -44,7 +44,7 @@ The Kaggle source remains score 5 because it contains a verified K1 track, a J1 
 | Expected curve/strong-turn usefulness | Jungle: 26.38% strong turns with balanced directions; `make`: only 1.88% strong and 2.72% right |
 | Download difficulty | Completed manually; ZIP is 294,399,633 bytes with recorded SHA-256 |
 | Conversion difficulty | Low; EXP-017 normalized producer Windows paths into a center-camera manifest while preserving original references |
-| Direct training suitability | No. The Jungle mix is KM1 for review only; `make` must not be used wholesale |
+| Direct training suitability | One controlled local EXP-019 run completed with KJM3; no further training or release is approved, and `make` must not be used wholesale |
 | Risk notes | License unresolved; manual extraction safety cannot be verified retroactively; tracks have sharply different quality |
 | Priority score | 5 |
 
@@ -68,6 +68,14 @@ EXP-018 mix candidate result:
 - Distribution: 33.15% near-zero, 33.45% left, 33.40% right, and 27.00% strong turns.
 - Integrity: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, `make` rows, Session C2/E/E2 rows, or non-center rows.
 - Preservation: all Local V3 and Jungle rows/order retained exactly. Verdict KM1; no training, checkpoint evaluation, or model promotion was performed.
+
+EXP-019 controlled training result:
+
+- Exactly one fixed-baseline, 15-epoch CPU run used the 14,061-row mix and complete Session C2 validation manifest.
+- Leakage: 0 image-path/source-session overlap and 0 Session C2/E/E2 or `make` training rows.
+- Session C2: MAE/RMSE 0.216064/0.309429, right MAE 0.242521, strong-turn MAE 0.559137, std ratio 0.711011, zero-baseline comparison -0.93%, direction error 16.17%.
+- Verdict KJM3: RMSE, right/strong-turn MAE, variance ratio, and direction error improved versus Local V3; overall MAE and zero-baseline comparison regressed slightly.
+- Checkpoint status: ignored local research artifact only, not promoted or released. Session C2 is not an independent final benchmark, and licensing remains unresolved.
 
 ## `donkeycar_tubs_public`
 
@@ -151,4 +159,4 @@ EXP-018 mix candidate result:
 
 ## Governance Decision
 
-The Kaggle Udacity source completed access, per-track validation, a jungle-only J1 manifest, and a KM1 Local V3 mix candidate. Its score 5 reflects verified K1 steering coverage, not training approval. License terms remain unresolved, `make` remains excluded, and the next governed action is human mix review followed by one separately authorized controlled training experiment if approved. No dataset should enter training until provenance, license notes, composition, leakage, distribution, and evaluation-independence gates pass review.
+The Kaggle Udacity source completed access, per-track validation, J1/KM1 candidate builds, and one controlled EXP-019 run. Its score 5 reflects verified K1 steering coverage and useful KJM3 curve/right-turn improvements, not release approval. License terms remain unresolved, `make` remains excluded, and Session C2 is repeatedly reused. The next governed action is Session E2 collection/validation; no further Kaggle training, promotion, or release should occur before independent evaluation and license review.
