@@ -1262,3 +1262,18 @@ Built and validated an ignored center-camera-only candidate from the complete `s
 - Tests: script compilation passed and the complete suite passed 78 tests.
 
 Generated manifest/summary/distribution files remain ignored. Licensing remains unresolved. No model was trained, no checkpoint was evaluated, no training mix was built, and Local V3 was not modified. The next external-data step is human review followed by a separately governed Kaggle Jungle Mix V1 candidate task.
+
+## Day 37: Kaggle Jungle Mix V1 Training Candidate
+
+Built and validated an ignored, deterministic mix containing 100% of Local V3 training rows and 100% of the reviewed Kaggle Jungle center-camera candidate. Local V3 `train.csv` and `validation.csv` were not modified, and the validation manifest was not copied into training.
+
+- Output: `data/processed/kaggle_jungle_mix_v1_training/`.
+- Composition: 10,657 Local V3 rows plus 3,404 Jungle rows, 14,061 total and 24.21% external.
+- Distribution: 33.15% near-zero, 33.45% left, 33.40% right, and 27.00% strong turns.
+- Preservation: every Local V3 and Jungle row and its source order retained exactly.
+- Integrity: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, `make` rows, Session C2/E/E2 rows, or non-center rows.
+- Sources: prior straight-heavy external Udacity data and the K2 `make` track are absent.
+- Verdict: KM1, Kaggle Jungle Mix V1 candidate ready for review.
+- Tests: script compilation passed, 10 focused tests passed, and the complete suite passed 88 tests.
+
+Generated CSV/JSON artifacts remain ignored and Kaggle licensing remains unresolved. No model was trained, no checkpoint was evaluated, and no model was promoted. The next external-data action is human mix review followed by exactly one separately authorized controlled training experiment in a later task.

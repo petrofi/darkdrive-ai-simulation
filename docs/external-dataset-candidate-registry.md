@@ -20,13 +20,13 @@ Priority scores:
 
 | Priority | Dataset ID | Immediate decision |
 | ---: | --- | --- |
-| 5 | `kaggle_udacity_behavioral_cloning_lake_jungle` | Manually ingested and validated; the jungle-only center manifest passed J1, while `make` remains excluded. Review before any controlled mix. |
+| 5 | `kaggle_udacity_behavioral_cloning_lake_jungle` | Jungle passed K1/J1 and the all-Jungle Local V3 mix passed KM1; `make` remains excluded. Human review is required before training. |
 | 3 | `donkeycar_tubs_public` | Potential image/control source, but Kaggle access, tub conversion, steering scale, domain, and license require review. |
 | 3 | `donkeycar_autorope_datasets` | Public Git LFS tub repository with known DonkeyCar 4.x format; conversion and license review required. |
 | 3 | `carla_generated_future` | Best controlled generation route later, but too heavy for the current external-download task. |
 | 2 | `comma2k19_real_world` | Valuable domain-adaptation research source, not an immediate simulator behavior-cloning dataset. |
 
-The Kaggle source remains score 5 because it contains a verified K1 track and a J1 candidate manifest. Training approval, controlled mix design, human review, and license resolution remain separate gates.
+The Kaggle source remains score 5 because it contains a verified K1 track, a J1 candidate manifest, and a KM1 mix candidate. Training approval, human review, evaluation independence, and license resolution remain separate gates.
 
 ## `kaggle_udacity_behavioral_cloning_lake_jungle`
 
@@ -44,7 +44,7 @@ The Kaggle source remains score 5 because it contains a verified K1 track and a 
 | Expected curve/strong-turn usefulness | Jungle: 26.38% strong turns with balanced directions; `make`: only 1.88% strong and 2.72% right |
 | Download difficulty | Completed manually; ZIP is 294,399,633 bytes with recorded SHA-256 |
 | Conversion difficulty | Low; EXP-017 normalized producer Windows paths into a center-camera manifest while preserving original references |
-| Direct training suitability | No. The jungle manifest is J1 for review only; `make` must not be used wholesale |
+| Direct training suitability | No. The Jungle mix is KM1 for review only; `make` must not be used wholesale |
 | Risk notes | License unresolved; manual extraction safety cannot be verified retroactively; tracks have sharply different quality |
 | Priority score | 5 |
 
@@ -60,6 +60,14 @@ EXP-017 candidate result:
 - 3,404 center-camera jungle rows; `make` rows: 0; Session C2/E/E2 rows: 0.
 - 0 missing/corrupt images, duplicate rows/paths/filenames, or invalid/out-of-range labels.
 - Distribution matches EXP-016 exactly. Verdict J1, ready for review; no training or Local V3 merge was performed.
+
+EXP-018 mix candidate result:
+
+- `data/processed/kaggle_jungle_mix_v1_training/` contains ignored training-candidate, summary, and source-distribution outputs.
+- Composition: all 10,657 Local V3 training rows plus all 3,404 Jungle rows, 14,061 total and 24.21% external.
+- Distribution: 33.15% near-zero, 33.45% left, 33.40% right, and 27.00% strong turns.
+- Integrity: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, `make` rows, Session C2/E/E2 rows, or non-center rows.
+- Preservation: all Local V3 and Jungle rows/order retained exactly. Verdict KM1; no training, checkpoint evaluation, or model promotion was performed.
 
 ## `donkeycar_tubs_public`
 
@@ -143,4 +151,4 @@ EXP-017 candidate result:
 
 ## Governance Decision
 
-The Kaggle Udacity source completed access, per-track validation, and a jungle-only J1 candidate build. Its score 5 reflects verified K1 steering coverage, not training approval. License terms remain unresolved, `make` remains excluded, and the next governed action is human manifest review followed by a separately specified controlled mix candidate. No dataset should enter training until provenance, license notes, composition, leakage, and distribution gates pass review.
+The Kaggle Udacity source completed access, per-track validation, a jungle-only J1 manifest, and a KM1 Local V3 mix candidate. Its score 5 reflects verified K1 steering coverage, not training approval. License terms remain unresolved, `make` remains excluded, and the next governed action is human mix review followed by one separately authorized controlled training experiment if approved. No dataset should enter training until provenance, license notes, composition, leakage, distribution, and evaluation-independence gates pass review.

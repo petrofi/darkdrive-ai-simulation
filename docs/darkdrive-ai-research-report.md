@@ -126,7 +126,9 @@ The jungle track is genuinely better than the first external Udacity source for 
 
 EXP-017 built a center-camera-only jungle candidate under ignored processed storage. It retains all 3,404 source rows in order, preserves original left/right references as provenance without using them for training labels, and exactly matches the EXP-016 distribution. Full manifest validation found 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, `make` rows, or Session C2/E/E2 rows. Throttle, brake, and speed are available for every row. Verdict J1 means ready for human review, not training authorization.
 
-The next external-data step is to review the manifest and later design a controlled Kaggle Jungle Mix V1 candidate with explicit composition, leakage, and license gates. No Kaggle model was trained or evaluated, and Local V3 was not modified. The separate model-selection next step remains Session E2 collection because Session C2 has been reused repeatedly.
+EXP-018 built the controlled Kaggle Jungle Mix V1 candidate without modifying Local V3. It preserves all 10,657 Local V3 training rows and all 3,404 Jungle rows for 14,061 total and a 24.21% external share. Its 33.15% near-zero, 33.45% left, 33.40% right, and 27.00% strong-turn distribution keeps curve strength close to Local V3 while adding external visual diversity. It also avoids the prior external source's 0.55% strong-turn weakness.
+
+Full validation found 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, K2 `make` rows, Session C2/E/E2 rows, or non-center rows. Verdict KM1 means ready for human review, not training authorization. The next external-data step is mix and license review followed by exactly one controlled training experiment in a later task if approved. No Kaggle model was trained or evaluated. The separate model-selection next step remains Session E2 collection because Session C2 has been reused repeatedly.
 
 ## Recommended Commit Message
 

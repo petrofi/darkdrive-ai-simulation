@@ -51,7 +51,7 @@ Governance notes:
 
 EXP-015 scored five initially un-ingested sources in `docs/external-dataset-candidate-registry.md`:
 
-- `kaggle_udacity_behavioral_cloning_lake_jungle`: originally 4/5; now 5/5 after EXP-016 found one K1 track and EXP-017 built its J1 candidate manifest.
+- `kaggle_udacity_behavioral_cloning_lake_jungle`: originally 4/5; now 5/5 after EXP-016 found one K1 track, EXP-017 built its J1 manifest, and EXP-018 built a KM1 mix candidate.
 - `donkeycar_tubs_public`: 3/5, Kaggle tub source requiring access, conversion, scale, and license review.
 - `donkeycar_autorope_datasets`: 3/5, DonkeyCar 4.x Git LFS tubs requiring conversion and license clarification.
 - `carla_generated_future`: 3/5, future controlled-generation pipeline rather than an immediate download.
@@ -85,4 +85,14 @@ Candidate manifest record:
 - Controls: throttle, brake, and speed preserved for every row.
 - Verdict: J1, jungle candidate manifest ready for review.
 
-Status: manifest built and technically validated, but not approved for training. Human review, a controlled mix plan, and license resolution remain separate gates. The K2 `make` track remains excluded by default.
+Kaggle Jungle Mix V1 candidate record:
+
+- Output: `data/processed/kaggle_jungle_mix_v1_training/` (ignored).
+- Policy: retain all 10,657 Local V3 training rows and all 3,404 Jungle rows in source order; no sampling, shuffling, image copying, side-camera offsets, or Local V3 manifest modification.
+- Composition: 14,061 rows and 24.21% external.
+- Distribution: 33.15% near-zero, 33.45% left, 33.40% right, and 27.00% strong turns.
+- Validation: 0 missing/corrupt images, duplicate rows/paths/filenames, invalid/out-of-range labels, `make` rows, Session C2/E/E2 rows, or non-center rows.
+- Preservation: all Local V3 and Jungle rows and source order retained exactly.
+- Verdict: KM1, Kaggle Jungle Mix V1 candidate ready for review.
+
+Status: mix candidate built and technically validated, but not approved for training. Human review and license resolution remain separate gates. The K2 `make` track and prior straight-heavy external Udacity source remain excluded.
