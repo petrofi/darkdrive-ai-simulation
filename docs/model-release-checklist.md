@@ -156,3 +156,19 @@ Blocking issues:
 The source retains X2 status: 60.74% near-zero steering and 0.55% strong turns. EXP-014 trained the ignored 13,657-row External Mix V1 candidate once and received EM2, valid experiment with no meaningful improvement. Session C2 MAE/RMSE were 0.216895/0.319567; strong-turn MAE improved, but overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error regressed versus Local V3. The checkpoint is not promoted, no release decision changes, and simulator control remains blocked.
 
 EXP-016 manually ingested and validated the Kaggle source; EXP-017/018 built J1/KM1 candidates. EXP-019 then trained the mix once. Its KJM3 result improved RMSE, right/strong-turn error, variance ratio, and direction error, but overall MAE and zero-baseline comparison regressed slightly. Session C2 is repeatedly reused, licensing is unresolved, the checkpoint is not promoted, and no release/control gate changes.
+
+## Udacity CH2_002 Gate
+
+- [x] Archive size and SHA-256 verified.
+- [x] TAR structure received A1 safety verdict.
+- [x] Five ROS1 bags are readable with 0 skipped messages.
+- [x] Center/left/right cameras decode as 640 x 480 JPEG/BGR8.
+- [x] Measured steering-wheel angle and radian unit are identified from the ROS schema.
+- [x] Camera/steering synchronization received S1 in every bag.
+- [x] A 500-frame ignored sample passed image, provenance, raw-steering, and timestamp validation.
+- [ ] Dataset license and redistribution terms are resolved.
+- [ ] Full conversion receives separate approval and full-output validation.
+- [ ] Any simulator target mapping from physical radians is documented and validated.
+- [ ] Real-world domain data receives a separate training and evaluation protocol.
+
+EXP-020 verdict C2A1 is a conversion-research result only. It does not promote any checkpoint, satisfy an independent Session E2 model test, authorize training, or change the current no-control release decision.

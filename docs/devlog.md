@@ -1299,3 +1299,18 @@ Ran exactly one EXP-019 training command with Kaggle Jungle Mix V1 as the only i
 Compared with Local V3, RMSE, right MAE, strong-turn MAE, prediction variance, and direction error improved. Overall MAE regressed by 0.000446 and zero-baseline comparison worsened by 0.21 percentage points, so this is not KJM4 and is not promoted. Session C2 is repeatedly reused and not a final independent benchmark.
 
 The checkpoint, loss chart, evaluation plots, and metrics JSON remain ignored. Kaggle licensing remains unresolved, so the checkpoint is retained only as a local offline research artifact and is not released. No simulator control was implemented. The next single step is to collect and validate Session E2 as an independent test candidate.
+
+## Day 39: Udacity CH2_002 Phase-A Ingestion
+
+Completed EXP-020 as an offline external-data ingestion task. The 4,716,005,956-byte TAR.GZ matched its recorded SHA-256 and received A1 archive-safety status. A pre-existing six-file extraction was verified without overwrite against all TAR names and 6,236,839,127 expected bytes.
+
+- Bags: five ROS1 v2.0 files, all readable, 6,985,240 messages, 0 skipped.
+- Topics: 36 unique topic/type pairs in each bag.
+- Cameras: center/left/right 640 x 480 JPEG/BGR8 streams, all inspected samples decoded.
+- Steering: measured `steering_wheel_angle` in radians, high-confidence semantics from the ROS message definition and separate command field.
+- Synchronization: S1 for every camera/bag pair; center global 100% match, 4.995 ms median, 9.519 ms p95.
+- Sample: 500 ignored center-camera rows, 500 readable images, 0 integrity failures, raw radians preserved.
+- Tests: three scripts compiled and the full repository suite passed 103 tests.
+- Verdict: C2A1, strong candidate for a later full-conversion task.
+
+No full conversion was performed, no research model was trained, no checkpoint was evaluated, no data was merged into Local V3 or Kaggle Jungle Mix V1, and no simulator or real-vehicle control was implemented. License and redistribution remain unresolved. Session E2 remains the next model-evaluation priority; the next CH2_002-specific step is a separate full-conversion and normalization-governance task.

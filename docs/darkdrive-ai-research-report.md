@@ -136,6 +136,16 @@ On Session C2, the new checkpoint recorded MAE/RMSE 0.216064/0.309429, right MAE
 
 The checkpoint remains an ignored local research artifact. Kaggle licensing is unresolved, Session C2 is not an independent final benchmark, and no model is promoted or released. The next single step is Session E2 collection and validation; no further Kaggle tuning should occur before independent evaluation.
 
+## Udacity CH2_002 Phase-A Result
+
+EXP-020 ingested the real-world `udacity_ch2_002` archive for offline dataset research. Its SHA-256 matched, TAR structure was A1-safe, and all five ROS1 v2.0 bags were readable with 6,985,240 total messages and 0 skipped messages. The three 640 x 480 compressed camera streams decode successfully.
+
+The source schema identifies `/vehicle/steering_report.steering_wheel_angle` as a measured steering-wheel angle in radians and exposes a separate command field. This resolves the raw signal semantics but does not define a DarkDrive simulator normalization. Every camera/steering pair received S1 synchronization; center-camera global matching was 33,808/33,808 with 4.995 ms median and 9.519 ms p95 absolute delta.
+
+A bounded 500-frame center-camera sample retained raw radians and passed with 500 readable images and 0 missing files, unreadable images, duplicate paths, or invalid steering values. The C2A1 verdict means a separate full conversion is technically justified. It does not authorize training, mixing, checkpoint evaluation, release, or control. License/redistribution remains unresolved, and the real-world domain gap requires an explicit future policy.
+
+Session E2 remains the highest-impact next model-evaluation task. The exact CH2_002 next step is a separate full-conversion and normalization-governance task.
+
 ## Recommended Commit Message
 
 ```text

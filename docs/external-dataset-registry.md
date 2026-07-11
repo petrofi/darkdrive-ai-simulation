@@ -106,3 +106,22 @@ EXP-019 controlled-use record:
 - Control status: no simulator control was implemented or authorized.
 
 Status: one controlled local experiment completed, but the checkpoint is not approved for release or promotion. The K2 `make` track and prior straight-heavy external Udacity source remain excluded. Independent Session E2 evaluation and license resolution remain open gates.
+
+## udacity_ch2_002
+
+- Dataset ID: `udacity_ch2_002`.
+- Source type: real-world Udacity Challenge 2 ROS1 driving records.
+- Archive: `data/external/udacity_ch2_002/raw/Ch2_002.tar.gz`, 4,716,005,956 bytes.
+- SHA-256: `E7FB718AA2646F40FAF9E194E715551FFCEDCD729FA1C5CA2F428E197098743D`.
+- Archive verdict: A1, six regular members and no unsafe paths, links, collisions, or special files.
+- Bags: five ROS1 v2.0 files, all readable, 6,985,240 total messages, 0 skipped.
+- Camera: center/left/right `sensor_msgs/msg/CompressedImage`, 640 x 480 JPEG/BGR8, successful decoding.
+- Steering: `/vehicle/steering_report.steering_wheel_angle`, measured steering-wheel angle in documented radians, not a normalized simulator command.
+- Synchronization: S1 for every bag and camera; center global match 33,808/33,808, median 4.995 ms, p95 9.519 ms.
+- Sample: 500 ignored center-camera rows, 500 readable images, 0 missing/unreadable/duplicates/invalid raw steering values.
+- Phase-A verdict: C2A1, strong full-conversion candidate.
+- License and redistribution: unresolved; local offline research only.
+- Domain: `real_world_offline_dataset`, not equivalent to simulator data.
+- Governance: C2A1 does not authorize full conversion, normalization, mixing, training, checkpoint evaluation, release, or control.
+
+Exact next external-data step: a separate full-conversion and normalization-governance task that preserves raw steering radians and resolves licensing before any training proposal.

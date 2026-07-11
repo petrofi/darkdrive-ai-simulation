@@ -40,9 +40,10 @@ Each future experiment must record:
 | EXP-017-kaggle-jungle-candidate-manifest | Complete `self_driving_car_dataset_jungle`, 3,404 center-camera rows; generated outputs ignored under `data/processed/external/kaggle_jungle_candidate/` | N/A | N/A | Dataset manifest build and validation only | N/A | N/A | N/A | All source rows retained in order with original camera references as provenance. Full center-image scan and manifest checks found 0 missing/corrupt images, duplicate rows/paths/filenames, invalid labels, `make` rows, or Session C2/E/E2 rows. Distribution exactly preserves EXP-016: 47.00% near-zero, 25.88% left, 27.12% right, 26.38% strong. Verdict J1, ready for review. No training, evaluation, or Local V3 merge. | Review the manifest, then design a controlled Kaggle Jungle Mix V1 candidate in a later task; resolve licensing and keep `make` excluded. |
 | EXP-018-kaggle-jungle-mix-v1-training-candidate | All 10,657 Local V3 training rows plus all 3,404 Kaggle Jungle center-camera rows; ignored output `data/processed/kaggle_jungle_mix_v1_training/` | N/A | N/A | Dataset mix build and validation only | N/A | N/A | N/A | Hypothesis: the strong Jungle distribution can add external visual diversity without diluting Local V3 curve strength. Final 14,061 rows are 24.21% external, 33.15% near-zero, 33.45% left, 33.40% right, and 27.00% strong. All source rows/order preserved; 0 missing/corrupt images, duplicate paths, invalid labels, `make` rows, or Session C2/E/E2 rows. Verdict KM1. No training or checkpoint evaluation. | Human reviews the mix and unresolved license gate before one later controlled training experiment. |
 | EXP-019-kaggle-jungle-mix-v1-training | Kaggle Jungle Mix V1 train, 14,061 rows, versus complete 4,163-row Session C2 validation manifest | 15 | 0.001 | Baseline `SteeringModel`, 188,219 parameters | 0.095746 best | 0.216064 | 0.309429 | One-variable data experiment: baseline/MSE/AdamW/weight decay/batch/seed/CPU/augmentation fixed. Right MAE 0.242521, strong-turn MAE 0.559137, std ratio 0.711011, zero-baseline comparison -0.93%, direction error 16.17%. Versus Local V3, RMSE, right/strong MAE, std ratio, and direction error improved; MAE and zero-baseline comparison regressed slightly. Verdict KJM3, useful offline improvement. Licensing unresolved; checkpoint not promoted. | Collect and validate Session E2 before further model-selection or Kaggle-training decisions. |
-| EXP-020-left-right-camera-correction | Planned: Local V3 plus side-camera correction | TBD | 0.001 initial | Same as EXP-001 | TBD | TBD | TBD | Test correction magnitude around 0.15 to 0.25 after verifying steering sign convention. | Compare against Local V3 center-only result after a fresh independent test set is available. |
-| EXP-021-nvidia-bc-cnn | Planned: fixed Local V3 split | TBD | TBD | NVIDIA Behavioral Cloning style CNN | TBD | TBD | TBD | Architecture comparison after data improvement and a fresh independent test set. | Compare against same-data compact CNN. |
-| EXP-022-temporal-stability | Planned: held-out validation videos | TBD | TBD | Best single-frame model plus smoothing/frame stacking candidate | TBD | TBD | TBD | Measure oscillation, steering delta, and lag. | Decide if model can enter simulator-only closed-loop test. |
+| EXP-020-udacity-ch2-002-phase-a-ingestion | `udacity_ch2_002`, five ROS1 bags, bounded 500-frame sample | N/A | N/A | Archive, bag, semantics, and synchronization inspection only | N/A | N/A | N/A | A1 archive; 5/5 bags and 6,985,240 messages readable; measured steering-wheel radians; S1 camera/steering sync; 500/500 sample images readable. Verdict C2A1. No full conversion, training, or evaluation. | Run a separately governed full-conversion and normalization task; do not train yet. |
+| EXP-021-left-right-camera-correction | Planned: Local V3 plus side-camera correction | TBD | 0.001 initial | Same as EXP-001 | TBD | TBD | TBD | Test correction magnitude around 0.15 to 0.25 after verifying steering sign convention. | Compare against Local V3 center-only result after a fresh independent test set is available. |
+| EXP-022-nvidia-bc-cnn | Planned: fixed Local V3 split | TBD | TBD | NVIDIA Behavioral Cloning style CNN | TBD | TBD | TBD | Architecture comparison after data improvement and a fresh independent test set. | Compare against same-data compact CNN. |
+| EXP-023-temporal-stability | Planned: held-out validation videos | TBD | TBD | Best single-frame model plus smoothing/frame stacking candidate | TBD | TBD | TBD | Measure oscillation, steering delta, and lag. | Decide if model can enter simulator-only closed-loop test. |
 
 ## Experiment Template
 
@@ -92,3 +93,22 @@ Reasons:
 - It does not have recovery-heavy training data.
 - It does not have session-level validation.
 - It does not have temporal stability evaluation.
+
+## EXP-020 - Udacity CH2_002 Phase-A Ingestion
+
+Status: complete, C2A1.
+
+Changed factor: ingest and inspect one external real-world ROS1 archive without full conversion or training.
+
+- Archive: 4,716,005,956 bytes; SHA-256 matched `E7FB718AA2646F40FAF9E194E715551FFCEDCD729FA1C5CA2F428E197098743D`.
+- TAR: A1, 6 regular members and 6,236,839,127 extracted bytes.
+- Bags: 5/5 ROS1 v2.0 readable; 6,985,240 messages; 0 skipped.
+- Camera: center/left/right 640 x 480 compressed JPEG streams decode successfully.
+- Steering: measured `/vehicle/steering_report.steering_wheel_angle` in documented radians; no simulator normalization.
+- Synchronization: S1 in all bag/camera pairs; center global match 100%, median 4.995 ms, p95 9.519 ms.
+- Sample: 500 center frames, 500 readable, 0 missing/unreadable/duplicates/invalid raw steering.
+- Verdict: C2A1, strong full-conversion candidate only.
+- Training/evaluation: none; no dataset merge, checkpoint comparison, or control implementation.
+- License/domain: unresolved license; real-world offline data, not simulator data.
+
+Next step: run a separate full conversion and normalization-governance task before any training proposal.

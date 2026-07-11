@@ -21,6 +21,7 @@ Priority scores:
 | Priority | Dataset ID | Immediate decision |
 | ---: | --- | --- |
 | 5 | `kaggle_udacity_behavioral_cloning_lake_jungle` | K1/J1/KM1 validation and one KJM3 local run completed; `make` remains excluded. No further training or release before Session E2/license review. |
+| 3 | `udacity_ch2_002` | C2A1 Phase-A result: ROS1 camera and measured steering-wheel radians are readable and S1 synchronized. Full conversion, normalization governance, licensing, and training remain separate gates. |
 | 3 | `donkeycar_tubs_public` | Potential image/control source, but Kaggle access, tub conversion, steering scale, domain, and license require review. |
 | 3 | `donkeycar_autorope_datasets` | Public Git LFS tub repository with known DonkeyCar 4.x format; conversion and license review required. |
 | 3 | `carla_generated_future` | Best controlled generation route later, but too heavy for the current external-download task. |
@@ -156,6 +157,26 @@ EXP-019 controlled training result:
 | Direct training suitability | Not yet. Suitable only after a separate controlled collection and conversion project |
 | Risk notes | Heavy setup, domain shift, simulator-version complexity, and risk of synthetic scenario bias |
 | Priority score | 3 |
+
+## `udacity_ch2_002`
+
+| Field | Assessment |
+| --- | --- |
+| Dataset ID | `udacity_ch2_002` |
+| Source name | Udacity Challenge 2 CH2_002 driving bags |
+| Access method | Local 4,716,005,956-byte TAR.GZ with verified SHA-256 |
+| Actual format | Five ROS1 v2.0 bags plus `HMB.txt`; 6,985,240 indexed messages |
+| Camera labels | Center/left/right 640 x 480 JPEG streams at about 20 Hz |
+| Steering label | Measured `steering_wheel_angle` in radians at about 49.92 Hz |
+| Synchronization | S1; all 101,396 camera frames matched within 100 ms across three cameras |
+| Sample result | 500 center frames, 500 readable, 0 missing/unreadable/duplicates/invalid steering |
+| License/terms status | Unresolved; local offline research only, no redistribution |
+| Domain similarity | Low-medium: real-world vehicle data, not simulator control data |
+| Conversion difficulty | Medium; technical conversion is feasible but target normalization and domain policy are unresolved |
+| Direct training suitability | No. C2A1 permits only a separately governed full-conversion task |
+| Priority score | 3 |
+
+EXP-020 verified archive safety, every bag and topic, measured steering semantics, camera decoding, and nearest-neighbor timestamp synchronization. Steering was preserved in physical radians; no `[-1, 1]` mapping was invented. The bounded sample remains ignored and was not mixed with Local V3 or Kaggle Jungle Mix V1.
 
 ## Governance Decision
 

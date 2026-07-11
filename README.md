@@ -1005,6 +1005,7 @@ First real simulator training workflow verified:
 - EXP-017 built the ignored 3,404-row jungle center-camera manifest; it passed J1 with `make` and Session C2/E/E2 excluded, and no model was trained.
 - EXP-018 built the ignored 14,061-row Kaggle Jungle Mix V1 candidate; all Local V3 and Jungle rows were preserved, KM1 passed, and no model was trained.
 - EXP-019 trained Kaggle Jungle Mix V1 once with the fixed baseline configuration; KJM3 improved curve/right-turn metrics but did not improve overall MAE or the zero baseline, so the checkpoint was not promoted.
+- EXP-020 completed Udacity CH2_002 Phase-A ingestion: five ROS1 bags were readable, measured steering-wheel radians were S1-synchronized with all three cameras, and a 500-frame ignored sample passed. C2A1 permits only a later governed full conversion; no CH2_002 training or model evaluation was run.
 - Session E was validated as E2, valid but not ideal, and is not frozen as the final independent test set.
 - Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
 - Simulator autonomous driving integration is not implemented yet.
@@ -1032,6 +1033,7 @@ Research artifacts:
 - [External Mix V1 Dataset Build Report](docs/external-mix-v1-dataset-build-report.md)
 - [External Mix V1 Model Evaluation Report](docs/model-external-mix-v1-evaluation-report.md)
 - [External Dataset Candidate Registry](docs/external-dataset-candidate-registry.md)
+- [Udacity CH2_002 Phase-A Ingestion Report](docs/udacity-ch2-002-phase-a-ingestion-report.md)
 - [Better External Data Scout Report](docs/better-external-data-scout-report.md)
 - [Kaggle Udacity Manual Download](docs/kaggle-udacity-dataset-manual-download.md)
 - [Kaggle Udacity Dataset Validation Report](docs/kaggle-udacity-dataset-validation-report.md)
