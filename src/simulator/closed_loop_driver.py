@@ -11,6 +11,7 @@ import os
 import statistics
 import threading
 import time
+from urllib.parse import parse_qs, urlencode
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,7 @@ DEFAULT_FAILURE_THRESHOLD = 3
 MIN_FRAME_WIDTH = 160
 MIN_FRAME_HEIGHT = 80
 MAX_FRAME_PIXELS = 4096 * 4096
+PROTOCOL_DEBUG_EVENT_LIMIT = 100
 TELEMETRY_COLUMNS = (
     "timestamp",
     "simulator_speed",
@@ -69,6 +71,270 @@ class InferenceRuntime(Protocol):
 class PredictionResult:
     steering: float
     inference_latency_ms: float
+
+
+class ProtocolDiagnostics:
+    """Thread-safe, bounded Socket.IO diagnostics without payload contents."""
+
+    COUNTER_NAMES = (
+        "engineio_connections",
+        "socketio_connections",
+        "raw_events_received",
+        "telemetry_events_received",
+        "unknown_events_received",
+        "steer_events_sent",
+        "connect_failures",
+        "namespace_failures",
+    )
+
+    def __init__(
+        self,
+        enabled: bool = False,
+        *,
+        event_log_limit: int = PROTOCOL_DEBUG_EVENT_LIMIT,
+    ) -> None:
+        if event_log_limit < 0:
+            raise ValueError("event_log_limit must be non-negative")
+        self.enabled = enabled
+        self.event_log_limit = event_log_limit
+        self._counters = {name: 0 for name in self.COUNTER_NAMES}
+        self._eio_versions: set[str] = set()
+        self._transports: set[str] = set()
+        self._successful_transports: set[str] = set()
+        self._namespaces: set[str] = set()
+        self._last_query_string = ""
+        self._last_disconnect_reason: str | None = None
+        self._transport_failures = 0
+        self._event_logs_written = 0
+        self._event_limit_reported = False
+        self._lock = threading.Lock()
+
+    def _debug(self, message: str) -> None:
+        if self.enabled:
+            print(f"[protocol-debug] {message}", flush=True)
+
+    @staticmethod
+    def _request_metadata(environ: dict[str, Any]) -> tuple[str, str, str]:
+        raw_query = str(environ.get("QUERY_STRING", ""))
+        query = parse_qs(raw_query, keep_blank_values=True)
+        eio = query.get("EIO", [""])[0]
+        transport = query.get("transport", [""])[0]
+        sid = query.get("sid", [""])[0]
+        safe_query = urlencode(
+            [(key, value) for key in ("EIO", "transport", "sid") for value in query.get(key, [])]
+        )
+        return eio, transport, safe_query or "(none)"
+
+    def record_request(self, environ: dict[str, Any]) -> None:
+        eio, transport, safe_query = self._request_metadata(environ)
+        with self._lock:
+            if eio:
+                self._eio_versions.add(eio)
+            if transport:
+                self._transports.add(transport)
+            self._last_query_string = safe_query
+        self._debug(
+            f"request method={environ.get('REQUEST_METHOD', '')} "
+            f"path={environ.get('PATH_INFO', '')} query_string={safe_query} "
+            f"EIO={eio or '(missing)'} transport={transport or '(missing)'}"
+        )
+
+    def record_request_result(self, status: str, transport: str) -> None:
+        try:
+            status_code = int(status.split(" ", 1)[0])
+        except (ValueError, IndexError):
+            status_code = 500
+        with self._lock:
+            if status_code < 400:
+                if transport:
+                    self._successful_transports.add(transport)
+                return
+            self._transport_failures += 1
+            self._counters["connect_failures"] += 1
+        self._debug(f"request_failure status={status} transport={transport or '(missing)'}")
+
+    def record_engineio_connect(self, eio_sid: str, environ: dict[str, Any]) -> None:
+        eio, transport, safe_query = self._request_metadata(environ)
+        with self._lock:
+            self._counters["engineio_connections"] += 1
+            if eio:
+                self._eio_versions.add(eio)
+            if transport:
+                self._transports.add(transport)
+                self._successful_transports.add(transport)
+            self._last_query_string = safe_query
+        self._debug(
+            f"engineio_connect sid={eio_sid} query_string={safe_query} "
+            f"EIO={eio or '(missing)'} transport={transport or '(missing)'}"
+        )
+
+    def record_namespace_connect(self, namespace: str, sid: str | None, success: bool) -> None:
+        namespace = namespace or "/"
+        with self._lock:
+            self._namespaces.add(namespace)
+            if success:
+                self._counters["socketio_connections"] += 1
+            else:
+                self._counters["connect_failures"] += 1
+                self._counters["namespace_failures"] += 1
+        outcome = "connected" if success else "failed"
+        self._debug(f"socketio_namespace {outcome} namespace={namespace} sid={sid or '(none)'}")
+
+    @staticmethod
+    def payload_summary(payload: Any) -> str:
+        payload_type = type(payload).__name__
+        if not isinstance(payload, dict):
+            return f"payload_type={payload_type}"
+        keys = sorted(str(key) for key in payload.keys())
+        image_present = "image" in payload
+        image = payload.get("image")
+        image_length = len(image) if isinstance(image, (str, bytes)) else None
+        return (
+            f"payload_type={payload_type} dict_keys={keys} "
+            f"image_present={str(image_present).lower()} "
+            f"image_string_length={image_length if image_length is not None else '(not-string)'}"
+        )
+
+    def record_event(
+        self,
+        event: str,
+        namespace: str,
+        sid: str,
+        payload: Any,
+        *,
+        telemetry: bool,
+    ) -> None:
+        should_log = False
+        report_limit = False
+        with self._lock:
+            self._counters["raw_events_received"] += 1
+            counter = "telemetry_events_received" if telemetry else "unknown_events_received"
+            self._counters[counter] += 1
+            self._namespaces.add(namespace or "/")
+            if self.enabled and self._event_logs_written < self.event_log_limit:
+                self._event_logs_written += 1
+                should_log = True
+            elif self.enabled and not self._event_limit_reported:
+                self._event_limit_reported = True
+                report_limit = True
+        if should_log:
+            self._debug(
+                f"event={event} namespace={namespace or '/'} sid={sid} "
+                f"{self.payload_summary(payload)}"
+            )
+        elif report_limit:
+            self._debug(f"event log limit reached ({self.event_log_limit}); further events suppressed")
+
+    def record_steer_sent(self, sid: str, steering: float, throttle: float) -> None:
+        with self._lock:
+            self._counters["steer_events_sent"] += 1
+        self._debug(
+            f"steer_sent namespace=/ sid={sid} steering={steering:g} throttle={throttle:g}"
+        )
+
+    def record_disconnect(self, eio_sid: str, reason: Any) -> None:
+        reason_text = str(reason) if reason is not None else "(none)"
+        with self._lock:
+            self._last_disconnect_reason = reason_text[:200]
+        self._debug(f"engineio_disconnect sid={eio_sid} reason={reason_text[:200]}")
+
+    def _verdict(self) -> tuple[str, str]:
+        counters = self._counters
+        if counters["telemetry_events_received"]:
+            return "P1", "telemetry received"
+        if any(version != "4" for version in self._eio_versions):
+            return "P3", "Engine.IO version mismatch or missing EIO4 request"
+        if counters["namespace_failures"] or any(ns != "/" for ns in self._namespaces):
+            return "P4", "namespace mismatch"
+        if counters["unknown_events_received"]:
+            return "P4", "event-name or payload-contract mismatch"
+        if self._transport_failures:
+            return "P5", "transport or handshake failure"
+        if counters["socketio_connections"]:
+            return "P2", "Socket.IO connected but telemetry was not emitted"
+        return "P6", "no complete Socket.IO namespace connection observed"
+
+    def snapshot(self) -> dict[str, object]:
+        with self._lock:
+            verdict, explanation = self._verdict()
+            eio_versions = sorted(self._eio_versions)
+            transports = sorted(self._transports)
+            namespaces = sorted(self._namespaces)
+            negotiated_transport = (
+                "websocket"
+                if "websocket" in self._successful_transports
+                else "polling" if "polling" in self._successful_transports else None
+            )
+            return {
+                "protocol_debug": self.enabled,
+                **self._counters,
+                "requested_eio_version": eio_versions[0] if len(eio_versions) == 1 else None,
+                "requested_eio_versions": eio_versions,
+                "negotiated_transport": negotiated_transport,
+                "requested_transports": transports,
+                "namespace": namespaces[0] if len(namespaces) == 1 else None,
+                "namespaces_observed": namespaces,
+                "last_query_string": self._last_query_string,
+                "last_disconnect_reason": self._last_disconnect_reason,
+                "transport_failures": self._transport_failures,
+                "protocol_diagnostic_verdict": verdict,
+                "protocol_verdict": verdict,
+                "protocol_verdict_explanation": explanation,
+            }
+
+
+class ProtocolSafeLogger:
+    """Logger facade that keeps protocol logs useful without packet contents."""
+
+    def __init__(self, diagnostics: ProtocolDiagnostics, component: str) -> None:
+        self.diagnostics = diagnostics
+        self.component = component
+
+    @staticmethod
+    def _safe_argument(value: Any) -> str:
+        text = str(value)
+        if len(text) > 160:
+            return f"<{type(value).__name__} length={len(text)}>"
+        return text.replace("\r", "\\r").replace("\n", "\\n")
+
+    def _log(self, level: str, message: Any, *args: Any, **kwargs: Any) -> None:
+        del kwargs
+        template = str(message)
+        if " data %s" in template.lower() and args:
+            data = args[-1]
+            prefix_template = template.rsplit(" data %s", 1)[0]
+            prefix_args = tuple(self._safe_argument(value) for value in args[:-1])
+            try:
+                rendered = prefix_template % prefix_args
+            except (TypeError, ValueError):
+                rendered = prefix_template
+            rendered = f"{rendered} data=<redacted> data_length={len(str(data))}"
+        else:
+            safe_args = tuple(self._safe_argument(value) for value in args)
+            try:
+                rendered = template % safe_args if safe_args else template
+            except (TypeError, ValueError):
+                rendered = f"{template} args={list(safe_args)}"
+        self.diagnostics._debug(
+            f"{self.component} level={level} message={rendered[:500]}"
+        )
+
+    def debug(self, message: Any, *args: Any, **kwargs: Any) -> None:
+        self._log("debug", message, *args, **kwargs)
+
+    def info(self, message: Any, *args: Any, **kwargs: Any) -> None:
+        self._log("info", message, *args, **kwargs)
+
+    def warning(self, message: Any, *args: Any, **kwargs: Any) -> None:
+        self._log("warning", message, *args, **kwargs)
+
+    warn = warning
+
+    def error(self, message: Any, *args: Any, **kwargs: Any) -> None:
+        self._log("error", message, *args, **kwargs)
+
+    def exception(self, message: Any, *args: Any, **kwargs: Any) -> None:
+        self._log("exception", message, *args, **kwargs)
 
 
 @dataclass(frozen=True)
@@ -241,6 +507,7 @@ class TelemetrySessionLogger:
         dry_run: bool,
         *,
         session_id: str | None = None,
+        protocol_diagnostics: ProtocolDiagnostics | None = None,
     ) -> None:
         self.log_dir = log_dir.resolve()
         self.log_dir.mkdir(parents=True, exist_ok=True)
@@ -252,6 +519,7 @@ class TelemetrySessionLogger:
         self.model_name = model_name
         self.device_name = device_name
         self.dry_run = dry_run
+        self.protocol_diagnostics = protocol_diagnostics or ProtocolDiagnostics()
         self.started_monotonic = time.monotonic()
         self.total_frames = 0
         self.successful_predictions = 0
@@ -315,6 +583,7 @@ class TelemetrySessionLogger:
             "emergency_stop": emergency_stop,
             "emergency_stop_reason": emergency_reason,
             "telemetry_csv": str(self.csv_path),
+            **self.protocol_diagnostics.snapshot(),
         }
 
     def close(self, emergency_stop: bool, emergency_reason: str | None) -> dict[str, object]:
@@ -512,13 +781,38 @@ class ClosedLoopDriver:
 
 
 def socketio_control_payload(steering: float, throttle: float) -> dict[str, str]:
+    def format_value(value: float) -> str:
+        if value == 0:
+            return "0"
+        return f"{value:.8f}"
+
     return {
-        "steering_angle": f"{steering:.8f}",
-        "throttle": f"{throttle:.8f}",
+        "steering_angle": format_value(steering),
+        "throttle": format_value(throttle),
     }
 
 
-def build_socketio_app(driver: ClosedLoopDriver) -> tuple[Any, Any]:
+class ProtocolDebugWSGIMiddleware:
+    def __init__(self, app: Any, diagnostics: ProtocolDiagnostics) -> None:
+        self.app = app
+        self.diagnostics = diagnostics
+
+    def __call__(self, environ: dict[str, Any], start_response: Callable[..., Any]) -> Any:
+        self.diagnostics.record_request(environ)
+        _, transport, _ = self.diagnostics._request_metadata(environ)
+
+        def diagnostic_start_response(
+            status: str,
+            headers: list[tuple[str, str]],
+            exc_info: Any = None,
+        ) -> Any:
+            self.diagnostics.record_request_result(status, transport)
+            return start_response(status, headers, exc_info)
+
+        return self.app(environ, diagnostic_start_response)
+
+
+def build_socketio_app(driver: ClosedLoopDriver, protocol_debug: bool = False) -> tuple[Any, Any]:
     try:
         import socketio
     except ImportError as exc:
@@ -526,36 +820,114 @@ def build_socketio_app(driver: ClosedLoopDriver) -> tuple[Any, Any]:
             "Simulator dependencies are missing; install requirements-simulator.txt"
         ) from exc
 
-    sio = socketio.Server(
+    diagnostics = driver.telemetry_logger.protocol_diagnostics
+    diagnostics.enabled = protocol_debug
+
+    class DiagnosticSocketIOServer(socketio.Server):
+        def _handle_eio_connect(self, eio_sid: str, environ: dict[str, Any]) -> Any:
+            diagnostics.record_engineio_connect(eio_sid, environ)
+            return super()._handle_eio_connect(eio_sid, environ)
+
+        def _handle_connect(self, eio_sid: str, namespace: str | None, data: Any) -> Any:
+            resolved_namespace = namespace or "/"
+            try:
+                return super()._handle_connect(eio_sid, namespace, data)
+            finally:
+                sid = self.manager.sid_from_eio_sid(eio_sid, resolved_namespace)
+                success = bool(sid and self.manager.is_connected(sid, resolved_namespace))
+                diagnostics.record_namespace_connect(resolved_namespace, sid, success)
+
+        def _handle_eio_disconnect(self, eio_sid: str, reason: Any) -> Any:
+            diagnostics.record_disconnect(eio_sid, reason)
+            return super()._handle_eio_disconnect(eio_sid, reason)
+
+    socketio_logger: Any = False
+    engineio_logger: Any = False
+    if protocol_debug:
+        socketio_logger = ProtocolSafeLogger(diagnostics, "socketio")
+        engineio_logger = ProtocolSafeLogger(diagnostics, "engineio")
+
+    sio = DiagnosticSocketIOServer(
         async_mode="threading",
         cors_allowed_origins=[],
-        logger=False,
-        engineio_logger=False,
+        logger=socketio_logger,
+        engineio_logger=engineio_logger,
+        namespaces="*" if protocol_debug else None,
     )
-    driver.set_control_emitter(
-        lambda sid, steering, throttle: sio.emit(
+    def emit_control(sid: str, steering: float, throttle: float) -> None:
+        sio.emit(
             "steer",
             data=socketio_control_payload(steering, throttle),
             to=sid,
+            namespace="/",
         )
-    )
+        diagnostics.record_steer_sent(sid, steering, throttle)
 
-    @sio.event
+    driver.set_control_emitter(emit_control)
+
+    @sio.on("connect", namespace="/")
     def connect(sid: str, environ: dict[str, Any], auth: Any = None) -> bool:
-        del environ, auth
-        driver.on_connect(sid)
+        del auth
+        if protocol_debug:
+            _, _, safe_query = diagnostics._request_metadata(environ)
+            diagnostics._debug(f"connect_handler namespace=/ sid={sid} query_string={safe_query}")
+        try:
+            steering, throttle = driver.on_connect(sid)
+        except Exception as exc:
+            driver.connected_sids.discard(sid)
+            diagnostics._debug(
+                f"initial_neutral failed namespace=/ sid={sid} "
+                f"error={type(exc).__name__}:{str(exc)[:160]}"
+            )
+            return False
+        diagnostics._debug(
+            f"initial_neutral success namespace=/ sid={sid} steering={steering:g} throttle={throttle:g}"
+        )
         return True
 
-    @sio.on("telemetry")
-    def telemetry(sid: str, data: dict[str, Any] | None) -> None:
+    @sio.on("telemetry", namespace="/")
+    def telemetry(sid: str, data: Any) -> None:
+        diagnostics.record_event("telemetry", "/", sid, data, telemetry=True)
         driver.handle_telemetry(sid, data)
 
-    @sio.event
+    @sio.on("disconnect", namespace="/")
     def disconnect(sid: str, reason: str | None = None) -> None:
-        del reason
+        diagnostics._debug(f"disconnect_handler namespace=/ sid={sid} reason={reason or '(none)'}")
         driver.on_disconnect(sid)
 
-    return sio, socketio.WSGIApp(sio)
+    if protocol_debug:
+        @sio.on("connect", namespace="*")
+        def connect_other(
+            namespace: str,
+            sid: str,
+            environ: dict[str, Any],
+            auth: Any = None,
+        ) -> bool:
+            del environ, auth
+            diagnostics._debug(f"connect_handler alternate_namespace={namespace} sid={sid}")
+            return True
+
+        @sio.on("disconnect", namespace="*")
+        def disconnect_other(namespace: str, sid: str, reason: Any = None) -> None:
+            diagnostics._debug(
+                f"disconnect_handler alternate_namespace={namespace} sid={sid} "
+                f"reason={reason or '(none)'}"
+            )
+
+        @sio.on("*", namespace="/")
+        def unknown_default(event: str, sid: str, *data: Any) -> None:
+            payload = data[0] if len(data) == 1 else list(data)
+            diagnostics.record_event(event, "/", sid, payload, telemetry=False)
+
+        @sio.on("*", namespace="*")
+        def unknown_other(event: str, namespace: str, sid: str, *data: Any) -> None:
+            payload = data[0] if len(data) == 1 else list(data)
+            diagnostics.record_event(event, namespace, sid, payload, telemetry=False)
+
+    app: Any = socketio.WSGIApp(sio)
+    if protocol_debug:
+        app = ProtocolDebugWSGIMiddleware(app, diagnostics)
+    return sio, app
 
 
 def run_socketio_server(
@@ -565,6 +937,7 @@ def run_socketio_server(
     *,
     emergency_stop_file: Path,
     max_runtime_seconds: float | None,
+    protocol_debug: bool = False,
 ) -> dict[str, object]:
     try:
         from werkzeug.serving import make_server
@@ -583,7 +956,7 @@ def run_socketio_server(
             f"Emergency-stop file already exists; remove it before startup: {emergency_stop_file}"
         )
 
-    _, app = build_socketio_app(driver)
+    _, app = build_socketio_app(driver, protocol_debug=protocol_debug)
     server = make_server(host, port, app, threaded=True)
     driver.set_shutdown_callback(server.shutdown)
     monitor_stop = threading.Event()

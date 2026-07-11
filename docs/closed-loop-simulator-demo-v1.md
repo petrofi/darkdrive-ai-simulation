@@ -112,6 +112,31 @@ Ignored per-frame CSV files are written under `runtime_logs/closed_loop_v1/` wit
 
 The ignored JSON summary records total/successful/failed frames, average and p95 inference latency, steering mean/std/min/max, runtime, disconnect count, and emergency-stop status/reason.
 
+## Protocol Diagnostic Mode
+
+The first human integration attempt established a TCP connection to port 4567, but the newest CSV remained header-only and the summary reported zero total, successful, and failed frames. No inference was attempted. The checkpoint self-test still passes, so this is an Engine.IO/Socket.IO/Unity integration failure rather than a model-training failure.
+
+Add `--protocol-debug` to enable bounded diagnostics. The mode:
+
+- enables redacting Socket.IO and Engine.IO loggers;
+- records Engine.IO requests, EIO version, requested transport, SID, namespace lifecycle, and disconnect reason;
+- handles `connect`, `telemetry`, and `disconnect` explicitly on `/`;
+- emits exactly one initial neutral `steer` event with string values `"0"` and `"0"`;
+- catches otherwise unhandled events on the default and alternate namespaces;
+- logs event name, namespace, SID, payload type, dictionary keys, image presence, and image string length only;
+- limits event metadata output to 100 events and never prints complete image data.
+
+The ignored JSON summary includes protocol counters and one verdict:
+
+- `P1`: telemetry flow confirmed.
+- `P2`: Socket.IO connected but telemetry absent.
+- `P3`: Engine.IO/Socket.IO protocol mismatch.
+- `P4`: namespace or event-name mismatch.
+- `P5`: transport or handshake failure.
+- `P6`: unresolved; additional Unity-side inspection required.
+
+The installed Unity assembly declares `EIO=4`. Do not downgrade the current environment unless a live request explicitly proves `EIO=3`. If that occurs, preserve the EIO4 environment and plan an isolated `C:\venvs\darkdrive-sim-eio3` environment.
+
 ## Local Self-Test
 
 Run this before opening Unity:
@@ -132,13 +157,26 @@ Verified local result on 2026-07-11:
 
 ## Human Dry-Run Command
 
-Ensure the stop file does not already exist. Start the Python server first:
+The package metadata in `C:\venvs\darkdrive-sim` records Python 3.10.11, `python-socketio==5.16.3`, `python-engineio==4.13.3`, `simple-websocket==1.1.0`, and `Werkzeug==3.1.8`. WebSocket is supplied by `simple-websocket`; polling is built into Engine.IO; the server uses Werkzeug with Socket.IO threading mode.
+
+The environment launcher currently points to a missing base interpreter at `C:\Users\tarik\AppData\Local\Programs\Python\Python310\python.exe`. Repair or recreate that environment before using this exact command. Ensure the stop file does not already exist, then start the diagnostic server first:
 
 ```powershell
-python scripts/run_closed_loop_simulator.py --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt --device cpu --throttle 0.10 --max-steering 1.0 --steering-smoothing 0.35 --dry-run --max-runtime-seconds 120
+& "C:\venvs\darkdrive-sim\Scripts\python.exe" `
+  ".\scripts\run_closed_loop_simulator.py" `
+  --checkpoint ".\models\steering_model_kaggle_jungle_mix_v1.pt" `
+  --host 0.0.0.0 `
+  --port 4567 `
+  --device cpu `
+  --throttle 0.10 `
+  --max-steering 1.0 `
+  --steering-smoothing 0.35 `
+  --dry-run `
+  --protocol-debug `
+  --max-runtime-seconds 120
 ```
 
-Then open `Default Windows desktop 64-bit.exe` and select an Autonomous track. Dry-run receives camera telemetry and logs inference, but always returns neutral steering and zero throttle.
+Then open `Default Windows desktop 64-bit.exe`, select the first track, enter Autonomous Mode, wait 20-30 seconds, and stop with Ctrl+C. Dry-run always returns neutral steering and zero throttle. Preserve the console protocol log and ignored JSON session summary for diagnosis.
 
 Do not proceed to active control unless live dry-run confirms telemetry reception, successful frame decoding, finite predictions, runtime logs, clean disconnect, and emergency-stop behavior.
 

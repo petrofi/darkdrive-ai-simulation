@@ -1329,3 +1329,17 @@ Implemented EXP-021 as a simulation-only camera-to-steering diagnostic using the
 - Dry-run server bind: local port 4568 opened and stopped cleanly after one second with no simulator connected.
 
 The Unity simulator was not launched automatically. Live telemetry, visible vehicle movement, and emergency-stop behavior in Unity remain pending a human dry-run. No model was trained or modified, CH2_002 was not used, no checkpoint was promoted, and no real-vehicle code was added.
+
+## Day 41: Bounded Simulator Protocol Diagnostics
+
+Investigated the established-TCP/zero-telemetry failure from the first Unity dry-run. The latest runtime CSV was header-only and its summary contained zero total, successful, and failed frames, so inference never ran. The checkpoint self-test remained valid; this is an integration-level protocol/event issue, not a training failure.
+
+- Added opt-in `--protocol-debug`; normal mode remains quiet.
+- Added redacting Socket.IO and Engine.IO loggers, request/EIO/transport/SID lifecycle diagnostics, explicit `/` handlers, alternate-namespace inspection, and a 100-event metadata limit.
+- Added eight protocol counters and P1-P6 summary verdicts.
+- Initial connect now emits one neutral `steer` event using exact string values `"0"` and `"0"`.
+- Full image/base64 data is excluded from both catch-all and Engine.IO logs.
+- Installed metadata: Socket.IO 5.16.3, Engine.IO 4.13.3, simple-websocket 1.1.0, Werkzeug 3.1.8; Unity declares EIO4.
+- The requested `C:\venvs\darkdrive-sim` launcher is currently broken because its Python 3.10 base interpreter path is missing. Tests used the existing ignored tooling environment with the same protocol stack, and the target environment must be repaired before the human command.
+
+No simulator was launched, no active throttle was used, no model was trained or changed, and no checkpoint was modified. The exact next step is one 20-30 second Unity dry-run with protocol diagnostics, followed by review of the console output and ignored JSON summary.

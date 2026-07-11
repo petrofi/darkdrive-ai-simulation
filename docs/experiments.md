@@ -42,6 +42,7 @@ Each future experiment must record:
 | EXP-019-kaggle-jungle-mix-v1-training | Kaggle Jungle Mix V1 train, 14,061 rows, versus complete 4,163-row Session C2 validation manifest | 15 | 0.001 | Baseline `SteeringModel`, 188,219 parameters | 0.095746 best | 0.216064 | 0.309429 | One-variable data experiment: baseline/MSE/AdamW/weight decay/batch/seed/CPU/augmentation fixed. Right MAE 0.242521, strong-turn MAE 0.559137, std ratio 0.711011, zero-baseline comparison -0.93%, direction error 16.17%. Versus Local V3, RMSE, right/strong MAE, std ratio, and direction error improved; MAE and zero-baseline comparison regressed slightly. Verdict KJM3, useful offline improvement. Licensing unresolved; checkpoint not promoted. | Collect and validate Session E2 before further model-selection or Kaggle-training decisions. |
 | EXP-020-udacity-ch2-002-phase-a-ingestion | `udacity_ch2_002`, five ROS1 bags, bounded 500-frame sample | N/A | N/A | Archive, bag, semantics, and synchronization inspection only | N/A | N/A | N/A | A1 archive; 5/5 bags and 6,985,240 messages readable; measured steering-wheel radians; S1 camera/steering sync; 500/500 sample images readable. Verdict C2A1. No full conversion, training, or evaluation. | Run a separately governed full-conversion and normalization task; do not train yet. |
 | EXP-021-closed-loop-simulator-demo-v1 | Live Udacity Behavioral Cloning center-camera telemetry with ignored KJM3 checkpoint | N/A | N/A | EIO4 Socket.IO + baseline SteeringModel inference runtime | N/A | N/A | N/A | Implemented checkpoint-aware center-camera inference, clipping, EMA smoothing, low throttle, dry-run neutral commands, emergency stop, reconnect handling, and CSV/JSON telemetry. Local self-test: finite -0.110780 prediction at 4.886 ms CPU. Server bind test passed. Live Unity telemetry and movement not yet tested. | Human runs live dry-run, verifies emergency stop and logs, then performs at most one supervised 60-second active diagnostic. |
+| EXP-025-simulator-protocol-diagnostics | Established Unity TCP connection with zero telemetry frames; no dataset used | N/A | N/A | EIO4 Socket.IO protocol diagnostics only | N/A | N/A | N/A | Added bounded, image-redacting Engine.IO/Socket.IO diagnostics, explicit `/` handlers, protocol counters, and P1-P6 verdicts. No Unity session, inference experiment, training, checkpoint change, or active control was run. | Repair `C:\venvs\darkdrive-sim`, run the documented 20-30 second dry-run, and inspect the protocol log plus ignored JSON summary. |
 | EXP-022-left-right-camera-correction | Planned: Local V3 plus side-camera correction | TBD | 0.001 initial | Same as EXP-001 | TBD | TBD | TBD | Test correction magnitude around 0.15 to 0.25 after verifying steering sign convention. | Compare against Local V3 center-only result after a fresh independent test set is available. |
 | EXP-023-nvidia-bc-cnn | Planned: fixed Local V3 split | TBD | TBD | NVIDIA Behavioral Cloning style CNN | TBD | TBD | TBD | Architecture comparison after data improvement and a fresh independent test set. | Compare against same-data compact CNN. |
 | EXP-024-temporal-stability | Planned: held-out validation videos | TBD | TBD | Best single-frame model plus smoothing/frame stacking candidate | TBD | TBD | TBD | Measure oscillation, steering delta, and lag. | Decide if model can enter simulator-only closed-loop test. |
@@ -130,3 +131,18 @@ Status: implementation and local dry-run preparation complete; live Unity diagno
 - Active driving: not tested; no lap claim.
 
 Next step: human starts Unity Autonomous mode and completes dry-run acceptance before any supervised active command.
+
+## EXP-025 - Simulator Protocol Diagnostics
+
+Status: implementation and local tests complete; live Unity evidence pending.
+
+Failure reproduced from existing artifacts: TCP established on port 4567 while the latest telemetry CSV remained header-only and all frame counters stayed at zero. This proves no inference attempt occurred and keeps the issue at the simulator integration layer.
+
+- Changed factor: protocol visibility only.
+- Protocol: Unity assembly declares EIO4; current package metadata is Socket.IO 5.16.3 and Engine.IO 4.13.3.
+- Diagnostics: redacted low-level loggers, query/EIO/transport/SID lifecycle, explicit `/` events, alternate namespace/event capture, eight counters, and P1-P6 verdict.
+- Safety: dry-run command only; initial and subsequent controls remain neutral; no active test was performed.
+- Data/model: no dataset, training, evaluation, checkpoint update, or promotion.
+- Environment limitation: `C:\venvs\darkdrive-sim` cannot currently launch because its recorded base Python executable is missing.
+
+Next step: repair the target environment, run the exact documented dry-run for 20-30 seconds with Unity Autonomous Mode, then classify the result using P1-P6 from the protocol log and ignored summary.

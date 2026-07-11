@@ -22,6 +22,7 @@ from src.simulator.closed_loop_driver import (
     ClosedLoopDriver,
     DriverConfig,
     ModelRuntime,
+    ProtocolDiagnostics,
     TelemetrySessionLogger,
     default_emergency_stop_file,
     protocol_environment,
@@ -52,6 +53,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="EMA weight for the newest prediction; 1.0 disables smoothing.",
     )
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--protocol-debug",
+        action="store_true",
+        help="Enable bounded Engine.IO/Socket.IO lifecycle and event diagnostics.",
+    )
     parser.add_argument("--log-dir", default=str(DEFAULT_LOG_DIR))
     parser.add_argument("--max-runtime-seconds", type=float, default=None)
     parser.add_argument(
@@ -109,11 +115,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"- Summary: {summary['session_id']}")
             return 0
 
+        diagnostics = ProtocolDiagnostics(enabled=args.protocol_debug)
         logger = TelemetrySessionLogger(
             log_dir,
             runtime.model_name,
             runtime.device_name,
             config.dry_run,
+            protocol_diagnostics=diagnostics,
         )
         driver = ClosedLoopDriver(runtime, config, logger)
         stop_file = (
@@ -123,6 +131,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"- Listening: http://{args.host}:{args.port}")
         print(f"- Dry run: {config.dry_run}")
+        print(f"- Protocol debug: {args.protocol_debug}")
         print(f"- Throttle: {config.throttle:.3f}")
         print(f"- Max steering: {config.max_steering:.3f}")
         print(f"- EMA newest-prediction weight: {config.steering_smoothing:.3f}")
@@ -134,11 +143,16 @@ def main(argv: list[str] | None = None) -> int:
             args.port,
             emergency_stop_file=stop_file,
             max_runtime_seconds=args.max_runtime_seconds,
+            protocol_debug=args.protocol_debug,
         )
         print("Closed-loop session ended")
         print(f"- Frames: {summary['total_frames']}")
         print(f"- Successful/failed: {summary['successful_predictions']}/{summary['failed_frames']}")
         print(f"- Emergency stop: {summary['emergency_stop']}")
+        print(
+            f"- Protocol: {summary['protocol_verdict']} "
+            f"({summary['protocol_verdict_explanation']})"
+        )
         print(f"- Summary: {logger.summary_path}")
         return 0
     except (FileNotFoundError, FileExistsError, RuntimeError, ValueError, OSError) as exc:
