@@ -710,7 +710,7 @@ Local V3 improved over v1 on this holdout but did not improve over Local V2's Se
 
 Verdict: R2, valid offline experiment, not promoted.
 
-Training and evaluation completed without leakage, but the model does not beat the zero-steering MAE baseline. Simulator control remains blocked.
+Training and evaluation completed without leakage, but the model did not beat the zero-steering MAE baseline. Simulator control remained blocked at this historical milestone.
 
 ### Git Safety
 
@@ -1356,4 +1356,17 @@ Live protocol evidence resolved the previous P2/P4 ambiguity. Unity completed EI
 - Added bounded compatibility diagnostics, implicit namespace counters, and UC1-UC6 verdicts without logging complete base64 images.
 - Verified actual Engine.IO polling behavior locally: one implicit connection, one telemetry frame, one successful fake inference, and neutral-only steer framing.
 
-No Unity process was launched during implementation, no active command was sent, no model was trained, and no checkpoint or dependency version was changed. Live telemetry remains unconfirmed until the human dry-run reports `total_frames > 0` and `UC1`.
+No Unity process was launched during implementation, no active command was sent, no model was trained, and no checkpoint or dependency version was changed. At the end of this implementation milestone, live telemetry still required a human `total_frames > 0` and `UC1` dry-run; Day 43 records its later completion.
+
+## Day 43: Verified Unity Dry-Run And Active Closed Loop
+
+Completed the human Unity acceptance sequence after the implicit-namespace compatibility backend was merged.
+
+- Dry-run session `20260712T080331_847997Z`: 6,259/6,259 successful frames, 0 failed frames, 14.937 ms average and 33.045 ms P95 inference latency, all controls zero, UC1.
+- Active session `20260712T080700_749131Z`: 20.328 seconds, 1,725 recorded frames, 1,724 successful predictions, 7.958 ms average and 10.178 ms P95 CPU inference latency.
+- Active protocol: EIO4 WebSocket through `unity_engineio_compat`; 1,725 telemetry events, 1,729 steer events, 0 malformed messages, 0 steer failures, UC1.
+- Safety: throttle 0.05, maximum steering 0.50, EMA alpha 0.35, bounded 20-second runtime, neutral command on `max_runtime` shutdown.
+- Operational inference failures: 0. The single unsuccessful record was the controlled shutdown row.
+- Qualitative observation: during the controlled simulator run, the vehicle progressed while following the lane.
+
+No lap completion, lane-departure rate, intervention count, collision metric, repeated-run stability, real-vehicle behavior, or safety certification was measured. No model was trained or promoted, and the local checkpoint remains ignored.

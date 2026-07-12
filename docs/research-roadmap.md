@@ -215,7 +215,7 @@ EXP-021 implementation status:
 - EIO4 Socket.IO center-camera runtime is implemented with the ignored KJM3 checkpoint.
 - Local checkpoint self-test and neutral-control logging passed.
 - Dry-run server bind and bounded shutdown passed without Unity connected.
-- Live Unity dry-run, active command transmission, visible movement, and emergency-stop acceptance remain pending human verification.
+- Live Unity dry-run and one bounded 20-second active diagnostic are verified under EXP-027; repeatable multi-run metrics, quantitative lane tracking, and a completed-lap benchmark remain pending.
 - The active diagnostic is limited to throttle 0.10, 60 seconds, continuous observation, and immediate Ctrl+C/stop-file access.
 - This does not satisfy release, independent evaluation, or temporal-stability gates.
 

@@ -1,1066 +1,381 @@
 # DarkDrive AI Simulation
 
-![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.12-ee4c2c?logo=pytorch&logoColor=white)
-![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5C3EE8?logo=opencv&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Stars](https://img.shields.io/github/stars/petrofi/darkdrive-ai-simulation?style=social)
+[![Python](https://img.shields.io/badge/Python-research_runtime-3776AB?logo=python&logoColor=white)](requirements.txt)
+[![PyTorch](https://img.shields.io/badge/PyTorch-behavior_cloning-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Unity demo](https://img.shields.io/badge/Unity-active_demo_verified-222222?logo=unity&logoColor=white)](#verified-result)
+[![Scope](https://img.shields.io/badge/scope-simulation_only-0072B2)](#limitations)
+[![Tests](https://img.shields.io/badge/tests-141_passing-009E73)](#tests)
+[![License](https://img.shields.io/badge/license-MIT-6B7280)](LICENSE)
 
-> 🚗 Simulation-based autonomous driving AI — Computer vision, lane detection, and behavior cloning.
+A simulation-only behavior-cloning research project that trains and evaluates steering models and now includes a verified active closed-loop Unity simulator demo.
 
-A simulation-based autonomous driving AI project focused on computer vision, data collection, lane detection, and behavior cloning.
+DarkDrive began with classical lane-detection experiments, then progressed through simulator data collection, session-aware dataset design, PyTorch steering regression, controlled offline evaluation, protocol debugging, and bounded closed-loop control.
 
-## 🏗️ Architecture
+## Verified Result
+
+On 2026-07-12, the current runtime completed a controlled active test in the Unity/Udacity Behavioral Cloning simulator.
+
+| Result | Verified value |
+| --- | ---: |
+| Active simulator control | **Verified** |
+| Runtime | **20.328 s** |
+| Recorded frames | **1,725** |
+| Successful model predictions | **1,724** |
+| Operational inference failures | **0** |
+| Average CPU inference latency | **7.958 ms** |
+| P95 CPU inference latency | **10.178 ms** |
+| Protocol | **EIO4 / WebSocket / Unity compatibility backend** |
+| Protocol verdict | **UC1** |
+| Shutdown | **Controlled `max_runtime` stop** |
+
+![Closed-loop runtime summary](docs/assets/readme/closed_loop_runtime_v1.png)
+
+The one unsuccessful record was generated during the controlled max-runtime shutdown. It was not an inference failure during active operation. The runtime sent neutral steering and throttle when the time limit expired.
+
+## Demo Status
+
+> During a controlled 20-second Unity simulator run, the vehicle was observed progressing while following the lane.
+
+That observation is qualitative. The run did not measure lap completion, lane-departure rate, intervention count, collision rate, or repeatability across tracks and seeds.
+
+**This is a Unity simulator demonstration, not a real-vehicle autonomy system.**
+
+A separate verified dry-run processed 6,259 telemetry frames with 6,259 successful predictions, zero failed frames, and a UC1 protocol verdict. Average and P95 inference latency were 14.937 ms and 33.045 ms. All applied control commands remained zero.
+
+## System Architecture
 
 ```mermaid
-graph TD
-    A[Simulator Camera] --> B[Computer Vision / OpenCV]
-    B --> C[Lane Detection Pipeline]
-    
-    A --> D[Data Collection]
-    D --> E[Behavior Cloning CNN]
-    
-    E --> F[Steering Angle Prediction]
-    F --> G[Autonomous Mode in Simulator]
-```
-## Safety Notice
+flowchart LR
+    subgraph Offline["Offline research path"]
+        D["Simulator recordings"] --> V["Dataset validation"]
+        V --> M["Session-aware manifests"]
+        M --> T["PyTorch training"]
+        T --> E["Session C2 evaluation"]
+        E --> C["Local checkpoint selection"]
+    end
 
-This project does not control a real vehicle. It is developed only for simulation, education, and portfolio purposes.
-No public road testing, real vehicle control, or unsafe deployment is part of this repository.
+    subgraph Runtime["Closed-loop simulation path"]
+        U["Unity center camera"] --> P["EIO4 / WebSocket telemetry"]
+        P --> B["Opt-in Unity compatibility backend"]
+        B --> I["JPEG decode and preprocessing"]
+        I --> N["PyTorch steering CNN"]
+        N --> S["Finite check, clipping, EMA smoothing"]
+        S --> O["Socket.IO steer / throttle event"]
+        O --> U
+    end
 
-## Project Goals
-
-- Learn autonomous driving basics in simulation
-- Collect driving data
-- Process camera frames
-- Build a lane detection prototype
-- Train a simple steering prediction model
-- Evaluate model behavior in simulation
-
-## Tech Stack
-
-- Python
-- OpenCV
-- NumPy
-- Pandas
-- Matplotlib
-- PyTorch
-- Jupyter
-- Optional later: DonkeyCar simulator integration
-- Optional later: CARLA Python API
-
-## Folder Structure
-
-```text
-darkdrive-ai-simulation/
-|-- README.md
-|-- requirements.txt
-|-- .gitignore
-|-- docs/
-|   |-- roadmap.md
-|   |-- devlog.md
-|   |-- safety-notes.md
-|   |-- model-notes.md
-|   |-- dataset-format.md
-|   |-- data-collection-plan.md
-|   |-- simulator-setup.md
-|   |-- udacity-simulator-notes.md
-|   |-- simulation-roadmap.md
-|   `-- reels-plan.md
-|-- simulator/
-|   |-- donkeycar/
-|   |   `-- README.md
-|   `-- carla/
-|       `-- README.md
-|-- data/
-|   |-- raw/
-|   |-- processed/
-|   `-- samples/
-|-- src/
-|   |-- data_collection/
-|   |-- lane_detection/
-|   |-- models/
-|   |-- training/
-|   |-- inference/
-|   `-- simulator/
-|-- notebooks/
-|-- models/
-|-- screenshots/
-`-- videos/
+    C -. "loaded once" .-> N
 ```
 
-## First Demo: Lane Detection with Sample Road Image
+OpenCV lane detection remains a historical perception experiment. It is not part of the current behavior-cloning control loop.
 
-The first working demo runs a simple OpenCV lane detection pipeline on the included sample image. This is a computer vision experiment only and does not control any real vehicle.
+## Engineering Progression
 
-The default demo input is:
+![DarkDrive engineering progression](docs/assets/readme/project_progression.png)
 
-```text
-data/samples/road_sample.jpg
-```
+The progression is evidence-driven rather than a product-readiness ladder. Each stage introduced a narrower technical question: image processing, dataset quality, split leakage, model calibration, protocol compatibility, and finally bounded simulator control.
 
-`road_sample.jpg` is only a demo/test image for computer vision experiments. It exists so the lane detection script can produce a visible output quickly in a simulation-focused portfolio workflow.
+## Dataset Development
 
-### Windows PowerShell Setup
+DarkDrive separates raw recording sessions from generated manifests and evaluation holdouts. Large images, generated CSV files, and external archives are intentionally excluded from Git.
 
-Create a virtual environment:
+| Dataset or session | Type / role | Rows | Near-zero | Left | Right | Strong turns |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Dataset v1 | Raw historical training source | 3,706 | 55.42% | 22.26% | 22.32% | 14.87% |
+| Session A | Raw local training source | 2,400 | 57.42% | 28.17% | 14.42% | 14.12% |
+| Session B | Raw local training source | 1,126 | 55.24% | 25.84% | 18.92% | 8.17% |
+| Session C2 | Raw validation holdout | 4,163 | 41.32% | 30.22% | 28.47% | 14.89% |
+| Session D | Raw curve-focused source | 7,721 | 22.00% | 47.07% | 30.93% | 24.83% |
+| Local V3 train | Generated training manifest | 10,657 | 28.72% | 35.86% | 35.41% | 27.20% |
+| Kaggle Jungle | External candidate | 3,404 | 47.00% | 25.88% | 27.12% | 26.38% |
+| Kaggle Jungle Mix V1 | Generated training manifest | 14,061 | 33.15% | 33.45% | 33.40% | 27.00% |
 
-```powershell
-python -m venv .venv
-```
+![Steering distribution across selected datasets](docs/assets/readme/dataset_distribution.png)
 
-Activate the virtual environment:
+Near-zero, left, and right are mutually exclusive direction buckets. Strong-turn coverage uses `abs(steering) >= 0.5` and overlaps the left/right categories, so it is plotted separately.
 
-```powershell
-.\.venv\Scripts\activate
-```
+### Dataset strategy
 
-Install project requirements:
+- Dataset v1 established the first real simulator baseline but was 55.42% near-zero.
+- Sessions C2 and D added recovery and curve-heavy states.
+- Local V3 retained source-session identity, excluded Session C2 from training, and reduced near-zero concentration to 28.72%.
+- Local V3 balanced left/right coverage at 35.86% / 35.41%.
+- Kaggle Jungle Mix V1 combined all 10,657 Local V3 rows with 3,404 Jungle rows, giving a 24.21% external share.
+- Side-camera correction is not part of the main training manifest because no correction magnitude has been validated.
 
-```powershell
-pip install -r requirements.txt
-```
+The Kaggle dataset-specific license remains unresolved. External images and archives are not distributed by this repository.
 
-Run the lane detection demo:
+## Model Experiments
 
-```powershell
-python src/lane_detection/basic_lane_detection.py --image data/samples/road_sample.jpg --output screenshots/lane_detection_result.png
-```
+The comparison below includes only models evaluated on the same complete 4,163-row Session C2 holdout. Results from other validation sets are not mixed into this table.
 
-If the input image is found and OpenCV can process it, the output image will be saved to:
+| Experiment | MAE | RMSE | Right-turn MAE | Strong-turn MAE | Pred./actual std ratio | Verdict |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Local V3 baseline | 0.215618 | 0.316627 | 0.249182 | 0.598862 | 0.656937 | Valid baseline; not promoted |
+| Road Crop V1 | 0.215280 | 0.307111 | 0.249969 | 0.574012 | 0.670205 | No meaningful improvement |
+| Huber loss | **0.213646** | 0.320153 | 0.276358 | 0.575495 | 0.705915 | No meaningful improvement |
+| CNN V2 | 0.217054 | 0.313915 | 0.261968 | 0.612222 | 0.599089 | No improvement |
+| External Mix V1 | 0.216895 | 0.319567 | 0.251651 | 0.579000 | 0.700562 | No meaningful improvement |
+| Kaggle Jungle Mix V1 | 0.216064 | **0.309429** | **0.242521** | **0.559137** | **0.711011** | Useful offline improvement; not promoted |
 
-```text
-screenshots/lane_detection_result.png
-```
+![Session C2 model evaluation comparison](docs/assets/readme/model_evaluation_session_c2.png)
 
-## Web Lane Demo Images
+Kaggle Jungle Mix V1 did not achieve the best overall MAE. It did improve RMSE, right-turn error, strong-turn error, prediction variance, and direction error relative to Local V3. That tradeoff made it useful for the local simulator diagnostic, not universally superior.
 
-Additional road and lane images downloaded from open web sources are stored in:
+The demo checkpoint is a local research artifact. It is ignored by Git and is not released because model promotion gates and Kaggle licensing remain unresolved.
 
-```text
-data/samples/web_lane_images/
-```
+## Closed-Loop Runtime
 
-Small hand-picked files:
+### Protocol backends
 
-```text
-data/samples/web_lane_images/andre_branco_unsplash_road.jpg
-data/samples/web_lane_images/approaching_morrisons_roundabout.jpg
-data/samples/web_lane_images/bike_lane_painted_buffer.jpg
-data/samples/web_lane_images/SOURCES.md
-```
+DarkDrive retains two isolated server paths:
 
-These images are for OpenCV lane detection experiments only. They do not include steering labels, throttle, brake, or speed values, so they are not suitable for behavior cloning training.
+- **Standard backend:** the default standards-compliant `python-socketio` server, which requires a Socket.IO namespace CONNECT packet.
+- **Unity compatibility backend:** enabled only with `--unity-compat-mode`; it handles the verified Unity client that sends default-namespace events without first sending CONNECT.
 
-Example lane detection test with a web image:
+The compatibility parser accepts only the verified callback-level `2["telemetry", ...]` and wire-level `42["telemetry", ...]` forms. Outgoing control remains a Socket.IO EVENT encoded through Engine.IO, producing `42["steer", ...]` on the wire.
 
-```powershell
-python src/lane_detection/basic_lane_detection.py --image data/samples/web_lane_images/andre_branco_unsplash_road.jpg --output screenshots/lane_detection_web_result.png
-```
+### Runtime safety behavior
 
-Source and license notes are listed in:
+- The model loads before the server binds.
+- Frames are decoded and validated before inference.
+- Non-finite predictions are rejected.
+- Steering is symmetrically clipped and EMA-smoothed.
+- Dry-run forces steering and throttle to zero.
+- Corrupt frames and repeated inference failures command neutral control.
+- Ctrl+C, `EMERGENCY_STOP`, and max-runtime shutdown paths send neutral control when possible.
+- Protocol logs are bounded and redact complete image/base64 payloads.
+- Per-frame CSV and session JSON artifacts remain ignored.
 
-```text
-data/samples/web_lane_images/SOURCES.md
-```
+The verified active run used CPU inference, throttle `0.05`, maximum steering `0.50`, EMA alpha `0.35`, and a 20-second maximum runtime.
 
-## 500-Image Web Lane Batch
+## Quick Start
 
-The repository also includes a larger open-license web image batch for lane detection experiments:
-
-```text
-data/samples/web_lane_images/wikimedia_batch/
-```
-
-Current batch status:
-
-```text
-Downloaded source images: 500
-Total processed web images: 503
-Failed processed images: 0
-Detected line segments in batch: 76467
-```
-
-Source and license metadata for the 500-image batch is tracked in:
-
-```text
-data/samples/web_lane_images/wikimedia_batch_manifest.csv
-```
-
-The batch processing report is tracked in:
-
-```text
-data/samples/web_lane_images/processing_report.csv
-```
-
-Processed visual outputs are generated locally in:
-
-```text
-screenshots/web_lane_batch/
-```
-
-That output folder is ignored by Git because it contains hundreds of generated result images. The source images and CSV reports are tracked.
-
-Download or refresh the 500-image batch:
-
-```powershell
-python scripts/download_web_lane_images.py --limit 500 --output-dir data/samples/web_lane_images/wikimedia_batch --manifest data/samples/web_lane_images/wikimedia_batch_manifest.csv --thumb-width 640 --delay 0.6
-```
-
-Process all web lane images:
-
-```powershell
-python scripts/process_web_lane_images.py --input-dir data/samples/web_lane_images --output-dir screenshots/web_lane_batch --report data/samples/web_lane_images/processing_report.csv --recursive
-```
-
-Important: these web images are useful for OpenCV experiments, but they are not driving training data. Behavior cloning still requires simulator frames with steering labels.
-
-See [docs/web-lane-image-dataset.md](docs/web-lane-image-dataset.md) for details about the 500-image batch.
-
-## How to Install
-
-From Windows PowerShell:
+### 1. Clone and install
 
 ```powershell
 git clone https://github.com/petrofi/darkdrive-ai-simulation.git
 cd darkdrive-ai-simulation
 python -m venv .venv
-.\.venv\Scripts\activate
-python -m pip install -r requirements.txt
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt -r requirements-simulator.txt
 ```
 
-Run the basic test helper:
+The repository has been exercised in local Python 3.10 and 3.12 research environments. Core dependency versions are not fully locked, so use an isolated environment.
+
+### 2. Run the tests
 
 ```powershell
-python scripts/run_basic_tests.py
+python -m unittest discover -s tests
 ```
 
-The helper checks the included sample files, runs lane detection, runs one baseline training epoch, and runs steering prediction. It does not require `pytest`.
-
-## First Working Pipeline
-
-The first local pipeline has been tested end to end with the included demo image, a sample driving log, and a baseline PyTorch steering model.
-
-This is only a baseline test pipeline. The current model is not a real driving model yet, and it must not be used for real vehicle control. Real learning will require simulated driving data collected across different tracks, turns, speeds, and recovery situations.
-
-The tested commands are:
+### 3. Regenerate README charts
 
 ```powershell
-python src/lane_detection/basic_lane_detection.py --image data/samples/road_sample.jpg --output screenshots/lane_detection_result.png
-python src/training/train_behavior_cloning.py --csv data/samples/sample_driving_log.csv --format simple --epochs 1 --batch-size 1 --output models/steering_model_v1.pt
-python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/samples/road_sample.jpg
+python scripts/generate_readme_assets.py
 ```
 
-## How to Run Lane Detection
+### 4. Run a local checkpoint self-test
 
-This command uses the included test image and writes the visual result to `screenshots/lane_detection_result.png`.
-
-![Lane Detection Result](screenshots/lane_detection_result.png)
+The checkpoint is not distributed. Supply a locally trained compatible `.pt` file:
 
 ```powershell
-python src/lane_detection/basic_lane_detection.py --image data/samples/road_sample.jpg --output screenshots/lane_detection_result.png
+python scripts/run_closed_loop_simulator.py `
+  --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt `
+  --device cpu `
+  --dry-run `
+  --self-test-only `
+  --self-test-image data/samples/road_sample.jpg
 ```
 
-Expected output example:
+### 5. Connect Unity in dry-run mode
+
+Start the server before entering Autonomous Mode in the Udacity Behavioral Cloning simulator:
+
+```powershell
+python scripts/run_closed_loop_simulator.py `
+  --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt `
+  --host 0.0.0.0 `
+  --port 4567 `
+  --device cpu `
+  --throttle 0.05 `
+  --max-steering 0.50 `
+  --steering-smoothing 0.35 `
+  --dry-run `
+  --protocol-debug `
+  --unity-compat-mode `
+  --max-runtime-seconds 120
+```
+
+Accept the connection only after the summary reports telemetry, successful predictions, zero applied controls, and `UC1`.
+
+### 6. Active simulator diagnostic
+
+> **Warning:** simulation only. Complete dry-run acceptance first, supervise the entire test, and keep the run bounded. This command does not authorize real-vehicle use.
+
+```powershell
+python scripts/run_closed_loop_simulator.py `
+  --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt `
+  --host 0.0.0.0 `
+  --port 4567 `
+  --device cpu `
+  --throttle 0.05 `
+  --max-steering 0.50 `
+  --steering-smoothing 0.35 `
+  --unity-compat-mode `
+  --max-runtime-seconds 20
+```
+
+Emergency-stop file from another PowerShell window:
+
+```powershell
+New-Item -ItemType File -Force runtime_logs\closed_loop_v1\EMERGENCY_STOP
+```
+
+### Offline evaluation
+
+Evaluation also requires a local checkpoint and the ignored Session C2 manifest:
+
+```powershell
+python scripts/evaluate_steering_model.py `
+  --model models/steering_model_kaggle_jungle_mix_v1.pt `
+  --csv data/processed/local_v3_training/validation.csv `
+  --validation-csv data/processed/local_v3_training/validation.csv `
+  --format simple `
+  --device cpu `
+  --preprocessing-profile checkpoint `
+  --model-arch checkpoint
+```
+
+## Project Structure
 
 ```text
-Loaded image: data\samples\road_sample.jpg
-Processing size: 960x540
-Detected 13 lane-like line segment(s).
-Success: lane detection result saved to screenshots\lane_detection_result.png
+darkdrive-ai-simulation/
+|-- data/                         # ignored recordings, manifests, and external data
+|-- docs/
+|   |-- assets/readme/            # generated README charts
+|   |-- metrics/                  # sanitized aggregate chart source
+|   `-- ...                       # experiment and engineering reports
+|-- models/                       # local ignored checkpoints
+|-- scripts/
+|   |-- generate_readme_assets.py
+|   |-- run_closed_loop_simulator.py
+|   `-- evaluate_steering_model.py
+|-- src/
+|   |-- models/                   # steering CNN architectures
+|   |-- training/                 # behavior-cloning training
+|   |-- inference/                # checkpoint inference
+|   |-- simulator/                # guarded closed-loop runtime
+|   `-- utils/                    # shared preprocessing
+|-- tests/                        # unit and protocol integration tests
+|-- requirements.txt
+`-- requirements-simulator.txt
 ```
 
-## How to Test Baseline Training
+## Reproducibility
 
-The sample CSV is only for pipeline testing. It repeats the same demo image and is not enough for real model learning.
+- Training CLIs expose deterministic seeds; controlled experiments use seed `42` unless documented otherwise.
+- Local V3 preserves `source_session` and holds the complete Session C2 recording outside training.
+- Model comparisons in this README use only the same Session C2 evaluation split.
+- Data distributions and model results are stored in [`docs/metrics/readme_metrics.json`](docs/metrics/readme_metrics.json).
+- Provenance and comparability rules are documented in [`docs/metrics/README.md`](docs/metrics/README.md).
+- README charts are regenerated only from the committed aggregate source.
+- Generated datasets, raw images, runtime telemetry, plots outside the README set, and checkpoints remain ignored.
+- External archives and Kaggle data are not committed.
 
-```powershell
-python src/training/train_behavior_cloning.py --csv data/samples/sample_driving_log.csv --format simple --epochs 1 --batch-size 1 --output models/steering_model_v1.pt
-```
-
-Expected output example:
-
-```text
-Simulation-only training mode.
-Dataset format: simple
-Training rows: 2
-Validation rows: 1
-Device: cuda
-Augmentation: on
-Starting behavior cloning training...
-Epoch 1/1 - training loss: 0.037552 - validation loss: 0.003665 - training MAE: 0.1422 - validation MAE: 0.0605
-Model checkpoint saved to models\steering_model_v1.pt
-Training loss chart saved to screenshots\training_loss.png
-```
-
-`models/steering_model_v1.pt` is generated locally and ignored by Git.
-
-## How to Test Steering Prediction
-
-Run this after the baseline training command has created a local model file:
-
-```powershell
-python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/samples/road_sample.jpg
-```
-
-Expected output example:
-
-```text
-Loaded simulation-only steering checkpoint.
-Predicted steering angle: 0.0605
-```
-
-## AI Training Direction: Behavior Cloning
-
-DarkDrive AI Simulation is evolving toward a baseline behavior cloning workflow for simulated driving data.
-
-- The model learns from simulated driving data.
-- Input: front camera image.
-- Output: one continuous steering angle.
-- Training data format: `image_path, steering, throttle, brake, speed`.
-- Evaluation stays inside simulation.
-- This is not real vehicle control.
-- This is a portfolio and education project.
-
-The first AI model is a small PyTorch CNN. It is intentionally simple so the data flow is easy to understand before adding larger datasets, better preprocessing, or simulator integration.
-
-## How to Run AI Skeleton
-
-The training script expects a simulated driving log at:
-
-```text
-data/processed/driving_log.csv
-```
-
-The CSV should use this format:
-
-```text
-image_path,steering,throttle,brake,speed
-data/samples/road_sample.jpg,0.0,0.3,0.0,10.0
-```
-
-`data/samples/sample_driving_log.csv` is included only to demonstrate the expected format. It is not real training data.
-
-Run the training skeleton:
+The chart generator is deterministic, validates required fields, closes figures, and writes optimized PNG files:
 
 ```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/driving_log.csv --format simple --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
+python scripts/generate_readme_assets.py
 ```
 
-Run single-image inference after a model has been trained:
+A synthetic training-loss graphic is intentionally not used here. The compared experiments do not share one complete committed per-epoch source suitable for a fair combined curve.
 
-```powershell
-python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/samples/road_sample.jpg
-```
+## Tests
 
-Trained `.pt` and `.pth` model files are ignored by Git so large experiment artifacts do not get committed by accident.
+The current suite contains **141 passing tests** covering:
 
-## Synthetic Steering Training Demo
+- preprocessing contracts;
+- model architecture and loss configuration;
+- session-aware train/evaluation manifests;
+- dataset conversion and validation;
+- Socket.IO and Engine.IO framing;
+- Unity implicit-namespace compatibility;
+- dry-run and emergency-stop behavior;
+- malformed payload and base64 redaction safeguards.
 
-The 500 web lane images are useful for OpenCV lane detection, but they do not have steering labels. To improve and test the steering model before real simulator data is collected, the project includes a simulation-only synthetic steering dataset generator.
-
-Generate a local synthetic dataset:
-
-```powershell
-python scripts/create_synthetic_steering_dataset.py --output-dir data/processed/synthetic_steering --samples 1000 --width 320 --height 160 --seed 42
-```
-
-Train the improved steering model:
+Reproduce the count from the repository root:
 
 ```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/synthetic_steering/driving_log.csv --format simple --epochs 8 --batch-size 64 --output models/steering_model_v2_synthetic.pt --chart-output screenshots/synthetic_training_loss.png --loss huber --augment --device cpu --seed 42
+python -m unittest discover -s tests
 ```
 
-Run inference on one synthetic frame:
+## Limitations
 
-```powershell
-python src/inference/predict_steering.py --model models/steering_model_v2_synthetic.pt --image data/processed/synthetic_steering/IMG/synthetic_00001.jpg
-```
+- Simulation-only; no physical vehicle control or public-road testing.
+- No safety certification or production-readiness claim.
+- The active run lasted 20 seconds and is not a completed-lap benchmark.
+- Lane-following behavior was observed qualitatively, not scored with lane geometry.
+- No intervention, lane-departure, collision, or multi-run stability metric is available yet.
+- Session C2 has been reused across experiments and is not a final independent frozen benchmark.
+- Session E2 remains uncollected as the intended independent test candidate.
+- Model predictions still compress steering variance and under-predict some strong steering magnitudes.
+- Side-camera correction is not part of the main training pipeline.
+- The model is single-frame; EMA smoothing is a runtime filter, not learned temporal reasoning.
+- The demo checkpoint is not committed or promoted.
+- Kaggle Jungle licensing remains unresolved.
+- Results do not establish real-world autonomy, guaranteed safety, or generalization to other simulators.
 
-Generated synthetic images and model checkpoint files are ignored by Git. The training chart can be tracked as a small visual artifact:
+## Roadmap
 
-```text
-screenshots/synthetic_training_loss.png
-```
+1. Record and publish a clean, clearly labeled simulator demo video.
+2. Audit frame-index updates for thread safety under concurrent telemetry callbacks.
+3. Collect and freeze an independent Session E2 test recording.
+4. Add closed-loop intervention and lane-departure measurement.
+5. Run a repeatable multi-run, multi-track simulator protocol.
+6. Improve steering calibration, strong-turn response, and recovery behavior.
+7. Explore CARLA or DonkeyCar only as separate future research tracks.
 
-This synthetic dataset is only for pipeline development. Real model learning still requires simulator driving data with camera frames and steering labels.
+## Documentation
 
-Latest local synthetic training run:
+### Getting started
 
-```text
-Generated frames: 1000
-Training rows: 800
-Validation rows: 200
-Epochs: 8
-Final training loss: 0.000789
-Final validation loss: 0.000405
-Final validation MAE: 0.0208
-Example predicted steering: 0.0125
-```
+- [Simulator setup](docs/simulator-setup.md)
+- [Udacity simulator notes](docs/udacity-simulator-notes.md)
+- [Dataset format](docs/dataset-format.md)
 
-![Synthetic Training Loss](screenshots/synthetic_training_loss.png)
+### Data
 
-## Training with Simulated Driving Data
+- [Dataset collection strategy](docs/dataset-collection-strategy-v1.md)
+- [Local V3 dataset build](docs/local-v3-dataset-build-report.md)
+- [Session C2 report](docs/dataset-v2-session-c2-right-recovery-report.md)
+- [Session D report](docs/dataset-v2-session-d-curve-focused-report.md)
+- [Kaggle Jungle Mix V1 build](docs/kaggle-jungle-mix-v1-dataset-build-report.md)
 
-The sample CSV is only for pipeline testing. Real model learning requires many simulated driving frames collected from a simulator such as DonkeyCar Simulator or CARLA.
+### Training and evaluation
 
-Two dataset formats are supported:
+- [Model analysis V1](docs/model-analysis-v1.md)
+- [Local V3 evaluation](docs/model-local-v3-evaluation-report.md)
+- [Kaggle Jungle Mix V1 evaluation](docs/model-kaggle-jungle-mix-v1-evaluation-report.md)
+- [CNN architecture review](docs/cnn-architecture-review-v1.md)
 
-- Simple format: `image_path,steering,throttle,brake,speed`
-- Udacity-style format: `center,left,right,steering,throttle,brake,speed`
+### Closed-loop runtime
 
-For the Udacity-style format, the current baseline trainer uses only the `center` camera image. Left and right camera images are reserved for future data augmentation work.
+- [Closed-loop simulator demo](docs/closed-loop-simulator-demo-v1.md)
+- [Safety notes](docs/safety-notes.md)
+- [Model release checklist](docs/model-release-checklist.md)
 
-Train with the simple format:
+### Research and experiments
 
-```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/driving_log.csv --format simple --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
-```
+- [Experiment ledger](docs/experiments.md)
+- [Development log](docs/devlog.md)
+- [Research roadmap](docs/research-roadmap.md)
+- [External dataset research](docs/external-dataset-research.md)
 
-Train with the Udacity-style format:
+## License and Author
 
-```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/driving_log.csv --format udacity --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
-```
+DarkDrive is released under the [MIT License](LICENSE).
 
-The training script prints training and validation loss for each epoch and saves a loss chart to:
-
-```text
-screenshots/training_loss.png
-```
-
-## Phase 2: Simulator Data Collection
-
-The current sample road image and sample CSV were only created for pipeline testing. The project now also supports a real local simulator dataset recorded from the Udacity simulator.
-
-In this phase, the model will learn from simulator camera images and steering values. This remains simulation-only: no real vehicle control, no public road testing, and no unsafe deployment.
-
-Expected simulator data folder:
-
-```text
-data/processed/simulator/
-|-- IMG/
-|   `-- .gitkeep
-`-- driving_log.csv
-```
-
-Generated simulator images and `driving_log.csv` are ignored by Git because they can become large. The folder placeholders are tracked so the expected structure is visible.
-
-Validate the simulator dataset:
-
-```powershell
-python scripts/validate_simulator_dataset.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
-```
-
-Train with simulator data:
-
-```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
-```
-
-Predict with a trained model:
-
-```powershell
-python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/processed/simulator/IMG/example.jpg
-```
-
-## Using the Local Udacity Simulator
-
-Download the [Udacity Self-Driving Car Simulator](https://github.com/udacity/self-driving-car-sim) and extract it outside this repository.
-
-Prepare the project output folder:
-
-```powershell
-python scripts/prepare_simulator_output.py
-```
-
-Expected output folder for simulator recordings:
-`data/processed/simulator/`
-
-If the simulator asks for a recording/output folder, select the absolute path to this folder.
-
-Validate dataset:
-
-```powershell
-python scripts/validate_simulator_dataset.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
-```
-
-Train model:
-
-```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity --epochs 5 --batch-size 32 --output models/steering_model_v1.pt
-```
-
-Prediction example:
-
-```powershell
-python src/inference/predict_steering.py --model models/steering_model_v1.pt --image data/processed/simulator/IMG/example.jpg
-```
-
-Important: the local folder name `win_sys_int` and executable `sys_int.exe` suggest this may be the Udacity System Integration simulator, not the behavior cloning training simulator. If it does not create `IMG` frames and `driving_log.csv`, use it only for visual/manual testing and collect behavior cloning data with another simulator later.
-
-## First Real Simulator Dataset
-
-A first real simulator driving dataset has been recorded from the Udacity simulator. This is no longer only sample or synthetic data: it contains simulator camera frames and steering labels.
-
-The generated dataset is local and ignored by Git:
-
-```text
-data/processed/simulator/
-|-- IMG/
-`-- driving_log.csv
-```
-
-The current simulator log uses Udacity-style columns:
-
-```text
-center,left,right,steering,throttle,brake,speed
-```
-
-The project reads only the `center` camera for the first baseline training run. Left and right camera images are available for future augmentation work.
-
-Latest local dataset summary:
-
-```text
-Rows: 3706
-Center images: 3706 found, 0 missing
-Left images: 3706 found, 0 missing
-Right images: 3706 found, 0 missing
-Steering range: -1.000000 to 1.000000
-Steering mean/std: -0.013526 / 0.350406
-Speed range: 0.000037 to 30.489510
-Speed mean/std: 23.557869 / 9.844598
-```
-
-Validate the simulator dataset:
-
-```powershell
-python scripts/validate_simulator_dataset.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
-```
-
-Analyze the driving log and generate small report screenshots:
-
-```powershell
-python scripts/analyze_driving_log.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
-```
-
-Train the baseline model on real simulator data:
-
-```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity --epochs 10 --batch-size 32 --output models/steering_model_sim_v1.pt
-```
-
-Evaluate the trained model:
-
-```powershell
-python scripts/evaluate_steering_model.py --model models/steering_model_sim_v1.pt --csv data/processed/simulator/driving_log.csv --images-dir data/processed/simulator/IMG --format udacity
-```
-
-Latest local training result:
-
-```text
-Training rows: 2965
-Validation rows: 741
-Best epoch: 10
-Best validation loss: 0.060776
-Validation MAE during training: 0.1740
-Evaluation MAE: 0.174045
-Evaluation RMSE: 0.246529
-```
-
-Generated local artifacts:
-
-```text
-screenshots/steering_distribution.png
-screenshots/speed_distribution.png
-screenshots/simulator_sample_frames.png
-screenshots/training_loss_sim_v1.png
-screenshots/prediction_vs_actual.png
-screenshots/prediction_samples.png
-```
-
-The trained checkpoint is generated locally and ignored by Git:
-
-```text
-models/steering_model_sim_v1.pt
-```
-
-This is a first simulator training baseline. It does not mean the model already drives in the simulator. Simulator autonomous driving integration remains future work.
-
-## Udacity Behavioral Cloning Reference
-
-DarkDrive uses the official Udacity Behavioral Cloning project only as an educational reference:
-
-```text
-https://github.com/udacity/CarND-Behavioral-Cloning-P3
-```
-
-The shared concept is:
-
-```text
-camera image -> steering angle
-```
-
-Udacity's original project used a Keras model, `model.h5`, and a simulator `drive.py` loop. DarkDrive keeps the same learning idea but uses a PyTorch implementation:
-
-- PyTorch `SteeringModel`
-- `.pt` checkpoints
-- `src/training/train_behavior_cloning.py`
-- `src/inference/predict_steering.py`
-- simulator-only closed-loop runtime under `src/simulator/closed_loop_driver.py`
-
-Closed-Loop Simulator Demo V1 is implemented with EIO4 Socket.IO telemetry, checkpoint-aware preprocessing, bounded steering, low throttle, dry-run, emergency stop, and ignored runtime logging. Live tracing confirmed that this Unity build omits the Socket.IO `/` CONNECT packet before sending telemetry. The standard backend remains available; an isolated compatibility backend is opt-in:
-
-```powershell
-python scripts/run_closed_loop_simulator.py --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt --device cpu --dry-run --protocol-debug --unity-compat-mode
-```
-
-DarkDrive does not copy the old Keras code, does not convert the project to Keras, and does not add real vehicle control. Compatibility framing passed synthetic Engine.IO tests, but live telemetry remains unconfirmed until the human dry-run produces `total_frames > 0`; active simulator driving is not yet verified.
-
-See:
-
-- [docs/behavioral-cloning-reference.md](docs/behavioral-cloning-reference.md)
-- [docs/udacity-to-darkdrive-adaptation-plan.md](docs/udacity-to-darkdrive-adaptation-plan.md)
-
-## Data Collection Plan
-
-The missing piece is no longer just more road or lane images. For behavior cloning, every training image needs a steering label. A useful training row connects a camera frame with `steering`, `throttle`, `brake`, and `speed`.
-
-Lane detection images and steering model data are different:
-
-- Lane detection can use public road/lane image datasets for computer vision experiments.
-- Steering prediction needs simulator frames with matching steering angles.
-
-Recommended source order:
-
-1. Try a Udacity Term 1 behavior cloning simulator if available.
-2. Use the current `win_sys_int` simulator only if it can export `IMG` frames and `driving_log.csv`.
-3. If it cannot export behavior cloning data, move data collection to DonkeyCar Simulator.
-4. Use CARLA later for a more professional camera sensor workflow.
-
-Useful references:
-
-- TuSimple benchmark: https://github.com/TuSimple/tusimple-benchmark
-- BDD100K dataset information: https://arxiv.org/abs/1805.04687
-- DonkeyCar simulator docs: https://docs.donkeycar.com/guide/deep_learning/simulator/
-- CARLA docs: https://carla.readthedocs.io/en/latest/
-
-See [docs/data-collection-plan.md](docs/data-collection-plan.md) for the detailed plan.
-
-## Dataset Formats
-
-See [docs/dataset-format.md](docs/dataset-format.md) for the full dataset guide.
-
-Supported formats:
-
-```text
-image_path,steering,throttle,brake,speed
-center,left,right,steering,throttle,brake,speed
-```
-
-For Udacity-style datasets, the current baseline uses only the `center` camera image. Left and right camera images are future work.
-
-## External Dataset Workflow
-
-External datasets are used only to improve steering-label diversity for offline simulator-model research. Real-time simulator control is not implemented yet.
-
-External Udacity-format dataset ingestion workflow added. The public `udacity_behavioral_cloning_public` source was downloaded, checksummed, safely extracted, and validated before any training use. It is X2 (valid but requiring balancing): its 60.74% near-zero steering and 0.55% strong-turn coverage make it unsuitable for direct unbalanced augmentation. That full unbalanced source was not trained directly.
-
-External Mix V1 candidate workflow added. It preserves all 10,657 Local V3 training rows and adds a deterministic, capped 3,000-row center-camera external subset. The 13,657-row candidate is 21.97% external, with 27.91% near-zero and 21.55% strong-turn steering overall. External Udacity data is capped and validated before any training use. The candidate passed automated M1 gates before EXP-014 review and training.
-
-External Mix V1 was trained as a controlled offline experiment. Results are offline simulator evaluation only: Session C2 MAE/RMSE were 0.216895/0.319567, producing EM2, valid experiment with no meaningful improvement over Local V3. The checkpoint was not promoted. Closed-loop simulator control remains unimplemented.
-
-Better external dataset scouting now prioritizes steering-label quality and curve/recovery distribution over dataset size. The Kaggle Udacity dataset was manually ingested and validated as an external candidate. Jungle is K1 with balanced left/right steering and 26.38% strong turns; `make` is K2 with 80.41% near-zero and only 2.72% right steering. No model has been trained from Kaggle data yet. DonkeyCar requires conversion and scale validation, comma2k19 is research-only for the current simulator goal, and CARLA is a separate future controlled-generation path.
-
-Kaggle jungle candidate manifest workflow added. It preserves all 3,404 K1 rows in source order as center-camera-only records, retains side-camera references only as provenance, and passes J1 integrity/distribution checks. The weak `make` track is excluded by default. Generated outputs remain ignored and licensing remains unresolved.
-
-Kaggle Jungle Mix V1 candidate workflow was added. It preserves all 10,657 Local V3 training rows and all 3,404 Jungle center-camera rows, producing an ignored 14,061-row candidate with a 24.21% external share, 33.15% near-zero steering, balanced 33.45%/33.40% left/right steering, and 27.00% strong turns. It passed KM1 validation, and the weak `make` track is excluded by default.
-
-Kaggle Jungle Mix V1 was trained exactly once as a controlled offline experiment. On Session C2 it improved RMSE, right/strong-turn MAE, prediction variance, and direction error versus Local V3, while overall MAE and zero-baseline comparison regressed slightly. Verdict KJM3: useful offline improvement, not promoted. Results are offline simulator evaluation only. Closed-loop simulator control remains unimplemented. Kaggle licensing remains unresolved, so the checkpoint is not released.
-
-Research datasets:
-
-```text
-docs/external-dataset-research.md
-```
-
-Dry run download:
-
-```powershell
-python scripts/download_external_dataset.py --dataset <dataset_name> --dry-run
-```
-
-Download, only when license and size are acceptable:
-
-```powershell
-python scripts/download_external_dataset.py --dataset <dataset_name> --output-dir data/external
-```
-
-Convert:
-
-```powershell
-python scripts/convert_external_dataset.py --dataset <dataset_name> --input-dir data/external/<dataset_name> --output-dir data/processed/external/<dataset_name>
-```
-
-Validate:
-
-```powershell
-python scripts/validate_darkdrive_dataset.py --csv data/processed/external/<dataset_name>/driving_log.csv
-```
-
-Analyze:
-
-```powershell
-python scripts/analyze_dataset_balance.py --csv data/processed/external/<dataset_name>/driving_log.csv
-```
-
-### DonkeyCar Dataset Integration (Experimental)
-
-DonkeyCar tub integration is experimental and offline-only. Source tubs are placed manually, generated conversion outputs are ignored, and training is not done until conversion validation and source-specific metrics pass review.
-
-Manual DonkeyCar tub placement:
-
-```text
-data/external/donkeycar/<tub_name>/
-```
-
-Convert a tub to DarkDrive's unified CSV format:
-
-```powershell
-python scripts/convert_donkey_tub_to_darkdrive.py --input data/external/donkeycar/sample_tub --output data/processed/donkeycar/donkeycar_unified.csv --images-output data/processed/donkeycar/IMG --source-name donkeycar_sample
-```
-
-Validate the converted DonkeyCar dataset:
-
-```powershell
-python scripts/validate_donkeycar_conversion.py --csv data/processed/donkeycar/donkeycar_unified.csv --images-dir data/processed/donkeycar/IMG
-```
-
-See [docs/donkeycar-dataset-integration.md](docs/donkeycar-dataset-integration.md) and [docs/external-dataset-plan.md](docs/external-dataset-plan.md).
-
-DonkeyCar data acquisition is planned as a manual, license-aware step. Source tubs should be collected or obtained outside the DarkDrive training environment, placed under `data/external/donkeycar/sample_tub/`, and kept ignored by Git. The DonkeyCar WSL environment is installed separately from DarkDrive under `~/donkeycar-workspace/donkey-env`; DarkDrive's Windows `.venv` must stay separate. See [docs/donkeycar-data-acquisition-plan.md](docs/donkeycar-data-acquisition-plan.md), [docs/donkeycar-manual-checklist.md](docs/donkeycar-manual-checklist.md), [docs/donkeycar-wsl-setup-plan.md](docs/donkeycar-wsl-setup-plan.md), [docs/donkeycar-wsl-setup-status.md](docs/donkeycar-wsl-setup-status.md), [docs/donkeycar-install-attempt.md](docs/donkeycar-install-attempt.md), [docs/donkeycar-install-success.md](docs/donkeycar-install-success.md), [docs/donkeycar-next-data-collection-step.md](docs/donkeycar-next-data-collection-step.md), and [docs/donkeycar-wsl-manual-checklist.md](docs/donkeycar-wsl-manual-checklist.md).
-
-Build merged dataset:
-
-```powershell
-python scripts/build_merged_training_dataset.py --local-csv data/processed/simulator/driving_log.csv --local-images-dir data/processed/simulator/IMG --external-csv data/processed/external/<dataset_name>/driving_log.csv --output-csv data/processed/merged_training/driving_log.csv --max-near-zero-ratio 0.35
-```
-
-Training on external or merged data remains gated by validation, distribution review, and the model release checklist.
-
-Train:
-
-```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/merged_training/driving_log.csv --format simple --epochs 15 --batch-size 32 --output models/steering_model_merged_v1.pt
-```
-
-Evaluate:
-
-```powershell
-python scripts/evaluate_steering_model.py --model models/steering_model_merged_v1.pt --csv data/processed/merged_training/driving_log.csv --format simple
-```
-
-The current model has been trained offline on simulator data. External datasets are not committed and trained model files remain ignored.
-
-## Dataset v2: Recovery Driving Plan
-
-External datasets were not automatically downloaded because license and usage terms were not clear enough for safe automated download. The next dataset improvement will come from locally collected simulator data.
-
-Dataset v2 focuses on recovery driving and steering balance:
-
-- Session A: normal lane following, target 2000 frames.
-- Session B: left recovery driving, target 2000 frames.
-- Session C: right recovery driving, target 2000 frames.
-- Session D: curve-focused driving, target 3000 frames.
-- Session E: sharp turns and correction, target 2000 frames.
-
-Real-time simulator control is still not implemented. Dataset v2 is only for offline model-quality research.
-
-Dataset v2 collection has started. Session A normal driving was organized under:
-
-```text
-data/processed/simulator_v2/session_a_normal/
-```
-
-Session A is valid, but it does not improve the near-zero steering imbalance by itself.
-
-A second local recording was organized under:
-
-```text
-data/processed/simulator_v2/session_b_new_training/
-```
-
-This session is valid for offline analysis, but it also remains near-zero heavy. Re-analysis classified it as weak mixed/normal training data, not Session C Right Recovery. It should be treated as additional local simulator data, not as proof of model improvement.
-
-A deliberate right-recovery recording was then collected under:
-
-```text
-data/processed/simulator_v2/session_c2_right_recovery/
-```
-
-Session C2 is valid and useful, but imperfect: 4163 rows, 0 missing images, 41.32% near-zero steering, 28.47% right steering, and 14.89% strong turns. It was included in the merged local Dataset v2.
-
-The merged local Dataset v2 was built under:
-
-```text
-data/processed/local_v2_training/driving_log.csv
-```
-
-It contains 8647 rows after near-zero balancing: 34.99% near-zero steering, 29.73% right steering, and 18.53% strong turns, with 0 missing images. A new behavior-cloning model was trained and evaluated offline as `models/steering_model_local_v2.pt`; the checkpoint remains ignored by Git.
-
-Offline evaluation did not improve over v1:
-
-```text
-V1 MAE/RMSE: 0.174045 / 0.246529
-Local v2 MAE/RMSE: 0.211307 / 0.303382
-```
-
-The local v2 model is not release-ready and is not approved for closed-loop simulator testing.
-
-Read the full plan:
-
-```text
-docs/dataset-v2-collection-plan.md
-```
-
-Analyze one recording session:
-
-```powershell
-python scripts/session_dataset_report.py --csv data/processed/simulator_v2/session_a_normal/driving_log.csv --images-dir data/processed/simulator_v2/session_a_normal/IMG --format udacity --session-name session_a_normal
-```
-
-Compare Dataset v1 and Dataset v2:
-
-```powershell
-python scripts/compare_datasets.py --csv-a data/processed/simulator/driving_log.csv --images-dir-a data/processed/simulator/IMG --name-a dataset_v1 --csv-b data/processed/simulator_v2/session_a_normal/driving_log.csv --images-dir-b data/processed/simulator_v2/session_a_normal/IMG --name-b dataset_v2_session_a --format-a udacity --format-b udacity
-```
-
-Build local v2 training dataset:
-
-```powershell
-python scripts/build_local_v2_training_dataset.py --output-csv data/processed/local_v2_training/driving_log.csv --max-near-zero-ratio 0.35 --seed 42 --session v1,data/processed/simulator/driving_log.csv,data/processed/simulator/IMG --session session_a_normal,data/processed/simulator_v2/session_a_normal/driving_log.csv,data/processed/simulator_v2/session_a_normal/IMG --session session_b_new_training,data/processed/simulator_v2/session_b_new_training/driving_log.csv,data/processed/simulator_v2/session_b_new_training/IMG --session session_c2_right_recovery,data/processed/simulator_v2/session_c2_right_recovery/driving_log.csv,data/processed/simulator_v2/session_c2_right_recovery/IMG
-```
-
-Train local v2 model:
-
-```powershell
-python src/training/train_behavior_cloning.py --csv data/processed/local_v2_training/driving_log.csv --format simple --epochs 15 --batch-size 32 --output models/steering_model_local_v2.pt
-```
-
-Evaluate local v2 model:
-
-```powershell
-python scripts/evaluate_steering_model.py --model models/steering_model_local_v2.pt --csv data/processed/local_v2_training/driving_log.csv --format simple
-```
-
-## Local V3 Session-Aware Training Result
-
-Local V3 adds explicit session-aware manifests:
-
-```text
-data/processed/local_v3_training/train.csv
-data/processed/local_v3_training/validation.csv
-```
-
-The generated CSV and JSON files are ignored by Git.
-
-Training split:
-
-```text
-Rows: 10657
-Sources: v1, session_a_normal, session_b_new_training, session_d_curve_focused
-Near-zero / left / right / strong: 28.72% / 35.86% / 35.41% / 27.20%
-```
-
-Validation holdout:
-
-```text
-Rows: 4163
-Source: session_c2_right_recovery only
-Near-zero / left / right / strong: 41.32% / 30.22% / 28.47% / 14.89%
-```
-
-The trainer now supports explicit manifests:
-
-```powershell
-python src/training/train_behavior_cloning.py --train-csv data/processed/local_v3_training/train.csv --validation-csv data/processed/local_v3_training/validation.csv --format simple --epochs 15 --batch-size 32 --seed 42 --output models/steering_model_local_v3.pt --chart-output screenshots/training_loss_local_v3.png
-```
-
-The first Local V3 model trained successfully and was evaluated offline against the complete Session C2 simulator session:
-
-```text
-Best validation loss: 0.100252
-Session C2 MAE/RMSE: 0.215618 / 0.316627
-Right MAE: 0.249182
-Strong-turn MAE: 0.598862
-Prediction/actual std ratio: 0.656937
-Release verdict: R2, valid offline experiment, not promoted
-```
-
-Historical note: Local V2's Session C2 score is not considered an independent holdout result because Session C2 contributed to the Local V2 training dataset. It is kept only as historical context:
-
-```text
-Local V2 Session C2 MAE/RMSE: 0.193998 / 0.267838
-Local V3 Session C2 MAE/RMSE: 0.215618 / 0.316627
-```
-
-EXP-007 tested one controlled preprocessing change on the same fixed Local V3 split:
-
-```text
-Preprocessing: road_crop_v1, crop y=[55,150) before resize
-Checkpoint: models/steering_model_local_v3_crop_v1.pt
-Best validation loss: 0.094317
-Session C2 MAE/RMSE: 0.215280 / 0.307111
-Right MAE: 0.249969
-Strong-turn MAE: 0.574012
-Prediction/actual std ratio: 0.670205
-Zero-steering baseline improvement: -0.56%
-Verdict: P2, valid experiment with no meaningful improvement
-```
-
-The crop improved RMSE, strong-turn MAE, and prediction variance slightly, but it did not materially improve MAE, it slightly worsened right MAE, and it still did not beat the zero-steering baseline.
-
-EXP-008 tested one controlled loss-function change on the same fixed Local V3 split:
-
-```text
-Loss: SmoothL1Loss / Huber, beta=1.0
-Preprocessing: baseline
-Checkpoint: models/steering_model_local_v3_huber.pt
-Best validation loss: 0.049741
-Session C2 MAE/RMSE: 0.213646 / 0.320153
-Right MAE: 0.276358
-Strong-turn MAE: 0.575495
-Prediction/actual std ratio: 0.705915
-Zero-steering baseline improvement: 0.20%
-Direction error: 17.44%
-Verdict: H2, valid experiment with no meaningful improvement
-```
-
-Huber improved MAE slightly, made the zero-baseline comparison barely positive, and improved prediction variance, but RMSE, right MAE, and direction error regressed.
-
-EXP-009 tested one controlled architecture change on the same fixed Local V3 split:
-
-```text
-Architecture: cnn_v2 / SteeringModelV2
-Parameters: 726103
-Preprocessing: baseline
-Loss: MSELoss
-Checkpoint: models/steering_model_local_v3_cnn_v2.pt
-Best validation loss: 0.098543
-Session C2 MAE/RMSE: 0.217054 / 0.313915
-Right MAE: 0.261968
-Strong-turn MAE: 0.612222
-Prediction/actual std ratio: 0.599089
-Zero-steering baseline improvement: -1.39%
-Direction error: 19.03%
-Verdict: A2, valid experiment with no meaningful improvement
-```
-
-The stronger CNN improved RMSE slightly, but MAE, right MAE, strong-turn MAE, prediction variance compression, zero-baseline comparison, and direction error regressed. It is not a release or simulator-control candidate.
-
-Session E was recorded as a candidate independent test set and validated without training or evaluating any model:
-
-```text
-Rows: 6379
-Total images: 19137
-Missing/corrupt images: 0 / 0
-Near-zero / left / right / strong: 46.59% / 26.09% / 27.32% / 9.72%
-Verdict: E2, valid but not ideal
-Freeze decision: not frozen as the final independent test set
-```
-
-Session E is technically clean and left/right balanced, but it is too straight-heavy and has too little strong-turn coverage for final frozen-test status. A Session E2 candidate should be recorded before further model-selection work.
-
-Closed-loop simulator control remains unimplemented and blocked.
-
-## 30-Day Roadmap Summary
-
-- Week 1: Set up the project, connect to DonkeyCar Simulator, collect initial driving data, and build a basic OpenCV lane detection prototype.
-- Week 2: Prepare CARLA workspace notes, explore camera sensors, traffic simulation concepts, and driving log formats.
-- Week 3: Prepare datasets, define a baseline behavior cloning model, run first training experiments, and test predictions in simulation.
-- Week 4: Improve the model, evaluate behavior, polish GitHub documentation, and create a final demo video.
-
-## Current Status
-
-First real simulator training workflow verified:
-
-- OpenCV lane detection works with the sample image.
-- Baseline PyTorch behavior cloning training works with the sample CSV.
-- Steering prediction inference works after local training.
-- Real Udacity simulator dataset validation works.
-- Real simulator driving log analysis works.
-- Baseline PyTorch training runs on 3706 simulator frames.
-- Offline steering model evaluation works on held-out simulator frames.
-- Dataset v2 includes targeted recovery-driving data and can be built as an ignored local training CSV.
-- A local v2 behavior-cloning model was trained and evaluated offline, but it did not improve over v1.
-- Local V3 uses explicit session-aware train/validation manifests with Session C2 held out.
-- A Local V3 model was trained and evaluated offline on the complete Session C2 simulator session, but it did not beat the zero-steering MAE baseline.
-- EXP-007 road-focused crop preprocessing was valid but did not materially improve Local V3.
-- EXP-008 Huber loss was valid but did not materially improve Local V3 because right MAE and direction error regressed.
-- EXP-009 `cnn_v2` architecture was valid but did not materially improve Local V3 because MAE, right MAE, strong-turn MAE, std ratio, zero-baseline comparison, and direction error regressed.
-- External Mix V1 preserves all Local V3 training rows and adds a capped 3,000-row external subset; it passed M1 candidate validation before EXP-014.
-- EXP-014 trained External Mix V1 exactly once offline; strong-turn error improved, but primary error and direction metrics did not, so the EM2 checkpoint was not promoted.
-- EXP-015 scored five better-data candidates; no new data was downloaded, merged, trained, or evaluated because Kaggle access was unavailable.
-- EXP-016 manually ingested the Kaggle source: jungle passed K1 and `make` received K2.
-- EXP-017 built the ignored 3,404-row jungle center-camera manifest; it passed J1 with `make` and Session C2/E/E2 excluded, and no model was trained.
-- EXP-018 built the ignored 14,061-row Kaggle Jungle Mix V1 candidate; all Local V3 and Jungle rows were preserved, KM1 passed, and no model was trained.
-- EXP-019 trained Kaggle Jungle Mix V1 once with the fixed baseline configuration; KJM3 improved curve/right-turn metrics but did not improve overall MAE or the zero baseline, so the checkpoint was not promoted.
-- EXP-020 completed Udacity CH2_002 Phase-A ingestion: five ROS1 bags were readable, measured steering-wheel radians were S1-synchronized with all three cameras, and a 500-frame ignored sample passed. C2A1 permits only a later governed full conversion; no CH2_002 training or model evaluation was run.
-- EXP-021 implemented Closed-Loop Simulator Demo V1. The KJM3 checkpoint passed a neutral-control local self-test and the EIO4 server passed a bounded dry-run bind test; live Unity telemetry and active movement remain pending human verification.
-- Session E was validated as E2, valid but not ideal, and is not frozen as the final independent test set.
-- Local V2 Session C2 metrics are historical context only because Session C2 contributed to Local V2 training data.
-- Simulator closed-loop integration is implemented as a guarded diagnostic, but no successful live lap or release claim exists.
-
-## Future Work
-
-- DonkeyCar simulator integration
-- CARLA simulator integration
-- Lane detection improvements
-- Behavior cloning model training
-- Model evaluation dashboard
-
-## Next Phase
-
-Run the human Unity dry-run and emergency-stop acceptance check before any active simulator diagnostic. Session E2 remains the next model-selection priority; do not treat the closed-loop diagnostic as checkpoint promotion.
-
-## Machine Learning Research Phase
-
-The project is now in model-quality research mode. Simulator control is intentionally blocked until the model release checklist passes.
-
-Research artifacts:
-
-- [External Dataset Research](docs/external-dataset-research.md)
-- [External Dataset Plan](docs/external-dataset-plan.md)
-- [External Mix V1 Dataset Build Report](docs/external-mix-v1-dataset-build-report.md)
-- [External Mix V1 Model Evaluation Report](docs/model-external-mix-v1-evaluation-report.md)
-- [External Dataset Candidate Registry](docs/external-dataset-candidate-registry.md)
-- [Udacity CH2_002 Phase-A Ingestion Report](docs/udacity-ch2-002-phase-a-ingestion-report.md)
-- [Closed-Loop Simulator Demo V1](docs/closed-loop-simulator-demo-v1.md)
-- [Better External Data Scout Report](docs/better-external-data-scout-report.md)
-- [Kaggle Udacity Manual Download](docs/kaggle-udacity-dataset-manual-download.md)
-- [Kaggle Udacity Dataset Validation Report](docs/kaggle-udacity-dataset-validation-report.md)
-- [Kaggle Jungle Candidate Manifest Report](docs/kaggle-jungle-candidate-manifest-report.md)
-- [Kaggle Jungle Mix V1 Dataset Build Report](docs/kaggle-jungle-mix-v1-dataset-build-report.md)
-- [Kaggle Jungle Mix V1 Model Evaluation Report](docs/model-kaggle-jungle-mix-v1-evaluation-report.md)
-- [External Dataset Source Notes](docs/external-dataset-source-notes.md)
-- [DonkeyCar Dataset Integration](docs/donkeycar-dataset-integration.md)
-- [Dataset V2 Collection Plan](docs/dataset-v2-collection-plan.md)
-- [Dataset V2 Session A Report](docs/dataset-v2-session-a-report.md)
-- [Dataset V2 Session B Report](docs/dataset-v2-session-b-report.md)
-- [Dataset V2 Session B New Training Report](docs/dataset-v2-session-b-new-training-report.md)
-- [Dataset V2 Session C2 Right Recovery Report](docs/dataset-v2-session-c2-right-recovery-report.md)
-- [Dataset V2 Merged Training Report](docs/dataset-v2-merged-training-report.md)
-- [Local V2 Model Evaluation Report](docs/model-local-v2-evaluation-report.md)
-- [Local V3 Model Evaluation Report](docs/model-local-v3-evaluation-report.md)
-- [Local V3 Road Crop Evaluation Report](docs/model-local-v3-road-crop-evaluation-report.md)
-- [Local V3 Huber Loss Evaluation Report](docs/model-local-v3-huber-evaluation-report.md)
-- [Local V3 CNN V2 Evaluation Report](docs/model-local-v3-cnn-v2-evaluation-report.md)
-- [Session E Independent Test Report](docs/session-e-independent-test-report.md)
-- [Model Analysis V1](docs/model-analysis-v1.md)
-- [Dataset Collection Strategy V1](docs/dataset-collection-strategy-v1.md)
-- [Research Roadmap](docs/research-roadmap.md)
-- [CNN Architecture Review V1](docs/cnn-architecture-review-v1.md)
-- [Experiment Tracking](docs/experiments.md)
-- [Model Release Checklist](docs/model-release-checklist.md)
-- [Repository Professionalization Review](docs/repository-review.md)
-- [DarkDrive AI Research Report](docs/darkdrive-ai-research-report.md)
+**Tarık Yasin Sağlıcak**<br>
+GitHub: [petrofi](https://github.com/petrofi)

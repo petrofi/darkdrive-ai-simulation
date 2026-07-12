@@ -153,7 +153,7 @@ Blocking issues:
 - [ ] EXP-019 is evaluated on a future frozen independent Session E2 test set.
 - [ ] An external-data checkpoint passes model-promotion gates.
 
-The source retains X2 status: 60.74% near-zero steering and 0.55% strong turns. EXP-014 trained the ignored 13,657-row External Mix V1 candidate once and received EM2, valid experiment with no meaningful improvement. Session C2 MAE/RMSE were 0.216895/0.319567; strong-turn MAE improved, but overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error regressed versus Local V3. The checkpoint is not promoted, no release decision changes, and simulator control remains blocked.
+The source retains X2 status: 60.74% near-zero steering and 0.55% strong turns. EXP-014 trained the ignored 13,657-row External Mix V1 candidate once and received EM2, valid experiment with no meaningful improvement. Session C2 MAE/RMSE were 0.216895/0.319567; strong-turn MAE improved, but overall MAE, RMSE, right MAE, zero-baseline comparison, and direction error regressed versus Local V3. That checkpoint remains unpromoted and was not used for the later EXP-027 simulator run.
 
 EXP-016 manually ingested and validated the Kaggle source; EXP-017/018 built J1/KM1 candidates. EXP-019 then trained the mix once. Its KJM3 result improved RMSE, right/strong-turn error, variance ratio, and direction error, but overall MAE and zero-baseline comparison regressed slightly. Session C2 is repeatedly reused, licensing is unresolved, the checkpoint is not promoted, and no release/control gate changes.
 
@@ -185,9 +185,9 @@ EXP-020 verdict C2A1 is a conversion-research result only. It does not promote a
 - [x] Ctrl+C and an emergency-stop file have neutral-command shutdown paths.
 - [x] Runtime CSV/JSON artifacts are ignored.
 - [x] Local real-checkpoint self-test and server bind passed.
-- [ ] Live Unity dry-run receives and logs center-camera telemetry.
-- [ ] Emergency stop is observed in the connected Unity session.
-- [ ] One supervised 60-second active diagnostic is completed without uncontrolled behavior.
+- [x] Live Unity dry-run receives and logs center-camera telemetry with UC1.
+- [x] Bounded max-runtime shutdown sends neutral control in the connected Unity session.
+- [x] One supervised 20-second active diagnostic completed without an operational inference failure.
 - [ ] Temporal stability and oscillation metrics are reviewed afterward.
 
-The diagnostic gate does not promote KJM3, resolve Kaggle licensing, prove a lap, or approve autonomous simulator operation.
+The diagnostic gate does not promote KJM3, resolve Kaggle licensing, prove a lap, certify safety, or approve real-world autonomous operation.

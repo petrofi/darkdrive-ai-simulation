@@ -189,4 +189,4 @@ Local V3 model promotion will require material improvement over the clean fixed-
 
 ## Safety Boundary
 
-Local V3 remains simulation-only. It must not be presented as real vehicle readiness or public-road capability. Simulator control remains blocked until model evaluation, held-out-session metrics, and prediction stability gates pass.
+At Local V3 planning time, simulator control remained blocked pending evaluation and stability gates. Later EXP-027 simulator control used the separate KJM3 local checkpoint and does not promote Local V3 or imply real-vehicle readiness.

@@ -110,7 +110,7 @@ implementation.
 | Simulator loop | `drive.py` | not implemented yet |
 | Simulator communication | Socket.IO/websocket-style simulator connection | future PyTorch simulator integration |
 | Dataset format | `center,left,right,steering,throttle,brake,speed` | supports Udacity-style format |
-| Driving mode | autonomous mode inside simulator | future simulation-only autonomous mode |
+| Driving mode | autonomous mode inside simulator | verified simulation-only closed loop via opt-in Unity compatibility backend; see EXP-027 |
 | Real vehicle control | not part of this DarkDrive phase | not allowed |
 
 ## What DarkDrive Should Borrow

@@ -243,7 +243,7 @@ Reasons:
 - Prediction variance remains compressed.
 - Temporal stability has not been measured.
 
-Simulator control remains blocked.
+At this evaluation milestone, simulator control remained blocked. The later EXP-027 Unity run used the separate KJM3 checkpoint and does not change the Local V3 non-promotion verdict.
 
 ## Generated Artifacts
 

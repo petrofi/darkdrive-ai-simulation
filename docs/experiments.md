@@ -43,7 +43,8 @@ Each future experiment must record:
 | EXP-020-udacity-ch2-002-phase-a-ingestion | `udacity_ch2_002`, five ROS1 bags, bounded 500-frame sample | N/A | N/A | Archive, bag, semantics, and synchronization inspection only | N/A | N/A | N/A | A1 archive; 5/5 bags and 6,985,240 messages readable; measured steering-wheel radians; S1 camera/steering sync; 500/500 sample images readable. Verdict C2A1. No full conversion, training, or evaluation. | Run a separately governed full-conversion and normalization task; do not train yet. |
 | EXP-021-closed-loop-simulator-demo-v1 | Live Udacity Behavioral Cloning center-camera telemetry with ignored KJM3 checkpoint | N/A | N/A | EIO4 Socket.IO + baseline SteeringModel inference runtime | N/A | N/A | N/A | Implemented checkpoint-aware center-camera inference, clipping, EMA smoothing, low throttle, dry-run neutral commands, emergency stop, reconnect handling, and CSV/JSON telemetry. Local self-test: finite -0.110780 prediction at 4.886 ms CPU. Server bind test passed. Live Unity telemetry and movement not yet tested. | Human runs live dry-run, verifies emergency stop and logs, then performs at most one supervised 60-second active diagnostic. |
 | EXP-025-simulator-protocol-diagnostics | Established Unity TCP connection with zero telemetry frames; no dataset used | N/A | N/A | EIO4 Socket.IO protocol diagnostics only | N/A | N/A | N/A | Added bounded, image-redacting Engine.IO/Socket.IO diagnostics, explicit `/` handlers, protocol counters, and P1-P6 verdicts. No Unity session, inference experiment, training, checkpoint change, or active control was run. | Repair `C:\venvs\darkdrive-sim`, run the documented 20-30 second dry-run, and inspect the protocol log plus ignored JSON summary. |
-| EXP-026-unity-implicit-namespace-compatibility | Confirmed Unity EIO4 telemetry packets without a preceding Socket.IO `/` CONNECT; synthetic frames only for tests | N/A | N/A | Isolated Python Engine.IO compatibility backend reusing `ClosedLoopDriver` | N/A | N/A | N/A | Preserved the standard backend and added opt-in strict `2[...]`/`42[...]` EVENT parsing, compatible steer framing, bounded counters, and UC1-UC6 verdicts. Local raw Engine.IO integration reached one fake inference with neutral-only output. No live Unity run, training, checkpoint change, or active control. | Run the documented Unity compatibility dry-run and require `total_frames > 0`, zero controls, and UC1 before any further simulator claim. |
+| EXP-026-unity-implicit-namespace-compatibility | Confirmed Unity EIO4 telemetry packets without a preceding Socket.IO `/` CONNECT; synthetic frames only for tests | N/A | N/A | Isolated Python Engine.IO compatibility backend reusing `ClosedLoopDriver` | N/A | N/A | N/A | Preserved the standard backend and added opt-in strict `2[...]`/`42[...]` EVENT parsing, compatible steer framing, bounded counters, and UC1-UC6 verdicts. At implementation time, local raw Engine.IO integration reached one fake inference with neutral-only output and no live Unity run had occurred. | Completed by the EXP-027 dry-run and bounded active diagnostic. |
+| EXP-027-verified-unity-closed-loop-run | Unity Behavioral Cloning simulator live telemetry; no training dataset change | N/A | N/A | Local KJM3 baseline checkpoint through `unity_engineio_compat`, CPU | N/A | N/A | N/A | Dry-run: 6,259/6,259 frames, zero controls, UC1. Active: 20.328 seconds, 1,725 frames, 1,724 successful predictions, 0 operational inference failures, 7.958/10.178 ms average/P95 latency, UC1. Vehicle was observed progressing while following the lane; controlled max-runtime neutral shutdown. No lap or quantitative lane metric. | Record a clean demo video, then define repeatable multi-run closed-loop metrics before further control claims. |
 | EXP-022-left-right-camera-correction | Planned: Local V3 plus side-camera correction | TBD | 0.001 initial | Same as EXP-001 | TBD | TBD | TBD | Test correction magnitude around 0.15 to 0.25 after verifying steering sign convention. | Compare against Local V3 center-only result after a fresh independent test set is available. |
 | EXP-023-nvidia-bc-cnn | Planned: fixed Local V3 split | TBD | TBD | NVIDIA Behavioral Cloning style CNN | TBD | TBD | TBD | Architecture comparison after data improvement and a fresh independent test set. | Compare against same-data compact CNN. |
 | EXP-024-temporal-stability | Planned: held-out validation videos | TBD | TBD | Best single-frame model plus smoothing/frame stacking candidate | TBD | TBD | TBD | Measure oscillation, steering delta, and lag. | Decide if model can enter simulator-only closed-loop test. |
@@ -118,7 +119,7 @@ Next step: run a separate full conversion and normalization-governance task befo
 
 ## EXP-021 - Closed-Loop Simulator Demo V1
 
-Status: implementation and local dry-run preparation complete; live Unity diagnostic pending.
+Status at implementation time: local dry-run preparation complete. Live Unity evidence was later recorded under EXP-027.
 
 - Protocol: installed simulator assembly verified as EIO4 WebSocket on port 4567 with `telemetry` and `steer` events.
 - Model: ignored KJM3 baseline checkpoint, loaded once in eval/inference mode.
@@ -135,7 +136,7 @@ Next step: human starts Unity Autonomous mode and completes dry-run acceptance b
 
 ## EXP-025 - Simulator Protocol Diagnostics
 
-Status: implementation and local tests complete; live Unity evidence pending.
+Status at implementation time: local tests complete. Live Unity evidence was later recorded under EXP-027.
 
 Failure reproduced from existing artifacts: TCP established on port 4567 while the latest telemetry CSV remained header-only and all frame counters stayed at zero. This proves no inference attempt occurred and keeps the issue at the simulator integration layer.
 
@@ -162,4 +163,19 @@ Confirmed root cause from live logs: EIO4 OPEN and WebSocket upgrade succeed, bu
 - Diagnostics: compatibility counters and UC1-UC6 final verdict, with bounded redacted logs.
 - Data/model: no training dataset, model training, checkpoint modification, dependency downgrade, or active control.
 
-Next step: run one 20-30 second human Unity dry-run with `--unity-compat-mode`. Live success requires `compat_telemetry_events > 0`, `total_frames > 0`, numeric latency, neutral-only commands, and UC1.
+Next step at implementation time was a human Unity dry-run with `--unity-compat-mode`; EXP-027 subsequently completed that acceptance check and one bounded active diagnostic.
+
+## EXP-027 - Verified Unity Closed-Loop Run
+
+Status: one dry-run and one bounded active Unity diagnostic verified on 2026-07-12.
+
+- Dry-run: 6,259 frames, 6,259 successful predictions, 0 failed frames, 14.937 ms average latency, 33.045 ms P95 latency, all controls zero, UC1.
+- Active configuration: CPU, throttle 0.05, maximum steering 0.50, EMA alpha 0.35, 20-second maximum runtime.
+- Active result: 20.328 seconds, 1,725 frames, 1,724 successful predictions, 0 operational inference failures.
+- Active latency: 7.958 ms average and 10.178 ms P95.
+- Protocol: EIO4 WebSocket, 1,725 compatibility telemetry events, 1,729 steer events, 0 malformed messages, 0 steer failures, UC1.
+- Safety: the one unsuccessful record was the controlled `max_runtime` shutdown row; neutral steering and throttle were sent on stop.
+- Qualitative observation: the vehicle progressed while following the lane during the controlled simulator test.
+- Training/model changes: none; no checkpoint promotion or distribution.
+
+This experiment does not establish lap completion, lane-departure performance, repeatability, real-world transfer, safety certification, or production readiness.

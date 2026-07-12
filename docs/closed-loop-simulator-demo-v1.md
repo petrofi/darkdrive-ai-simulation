@@ -204,16 +204,41 @@ The environment launcher currently points to a missing base interpreter at `C:\U
 
 Then open `Default Windows desktop 64-bit.exe`, select the first track, enter Autonomous Mode, wait 20-30 seconds, and stop with Ctrl+C. Dry-run always returns neutral steering and zero throttle. Preserve the console protocol log and ignored JSON session summary for diagnosis.
 
-Compatibility dry-run acceptance requires `engineio_compat_connections > 0`, `compat_telemetry_events > 0`, `total_frames > 0`, numeric inference latency, zero emitted steering/throttle, and verdict `UC1`. These live criteria have not yet been demonstrated.
+Compatibility dry-run acceptance requires `engineio_compat_connections > 0`, `compat_telemetry_events > 0`, `total_frames > 0`, numeric inference latency, zero emitted steering/throttle, and verdict `UC1`. These criteria were later demonstrated by the verified dry-run below.
+
+## Verified Unity Runs - 2026-07-12
+
+The compatibility backend subsequently passed both human dry-run and bounded active-control checks.
+
+Dry-run session `20260712T080331_847997Z`:
+
+- 6,259 frames and 6,259 successful predictions.
+- 0 failed frames.
+- 14.937 ms average and 33.045 ms P95 CPU inference latency.
+- UC1 final protocol verdict.
+- All applied steering and throttle commands remained zero.
+
+Active session `20260712T080700_749131Z`:
+
+- Configuration: CPU, throttle 0.05, maximum steering 0.50, EMA alpha 0.35, 20-second maximum runtime.
+- 20.328 seconds, 1,725 recorded frames, and 1,724 successful predictions.
+- 0 operational inference failures; the one unsuccessful record was the controlled `emergency_stop:max_runtime` shutdown row.
+- 7.958 ms average and 10.178 ms P95 CPU inference latency.
+- 1,725 compatibility telemetry events, 1,729 steer events, 0 malformed messages, and 0 steer failures.
+- UC1 final protocol verdict.
+- Observed result: during the controlled run, the vehicle progressed while following the lane.
+- The runtime sent neutral steering and throttle when the time limit expired.
+
+This is a short simulation-only result. It is not a completed lap, repeatability benchmark, safety certification, or real-world autonomy claim.
 
 Do not proceed to active control unless live dry-run confirms telemetry reception, successful frame decoding, finite predictions, runtime logs, clean disconnect, and emergency-stop behavior.
 
 ## Human Active Diagnostic Command
 
-For the first supervised movement diagnostic only:
+The verified supervised movement diagnostic used:
 
 ```powershell
-python scripts/run_closed_loop_simulator.py --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt --device cpu --throttle 0.10 --max-steering 1.0 --steering-smoothing 0.35 --max-runtime-seconds 60
+python scripts/run_closed_loop_simulator.py --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt --device cpu --throttle 0.05 --max-steering 0.50 --steering-smoothing 0.35 --unity-compat-mode --max-runtime-seconds 20
 ```
 
 Open the simulator in Autonomous mode, watch the vehicle continuously, and stop immediately with Ctrl+C if behavior is unstable.
@@ -228,8 +253,8 @@ The first objective is telemetry, inference, command transmission, visible movem
 
 ## Known Limitations
 
-- Live Unity telemetry and active vehicle movement were not run automatically in this implementation task.
-- The compatibility backend passed synthetic Engine.IO framing tests, but still requires the human Unity dry-run.
+- Live Unity dry-run and one bounded 20-second active diagnostic are now verified.
+- Repeatable multi-run, multi-track behavior and quantitative lane metrics remain untested.
 - KJM3 is not a promoted checkpoint and Kaggle licensing remains unresolved.
 - Session C2 was reused for model selection; Session E2 remains pending.
 - The model is single-frame and has no proven temporal stability.
@@ -248,4 +273,4 @@ The first objective is telemetry, inference, command transmission, visible movem
 - Disconnect/reconnect does not crash the process.
 - CSV and JSON session artifacts are generated and remain ignored.
 
-Active simulator driving remains pending until a human completes these checks.
+The initial dry-run and bounded active checks are complete. A completed lap, repeatable simulator benchmark, and production-readiness claim remain out of scope.
