@@ -1343,3 +1343,17 @@ Investigated the established-TCP/zero-telemetry failure from the first Unity dry
 - The requested `C:\venvs\darkdrive-sim` launcher is currently broken because its Python 3.10 base interpreter path is missing. Tests used the existing ignored tooling environment with the same protocol stack, and the target environment must be repaired before the human command.
 
 No simulator was launched, no active throttle was used, no model was trained or changed, and no checkpoint was modified. The exact next step is one 20-30 second Unity dry-run with protocol diagnostics, followed by review of the console output and ignored JSON summary.
+
+## Day 42: Unity Implicit Namespace Compatibility
+
+Live protocol evidence resolved the previous P2/P4 ambiguity. Unity completed EIO4 OPEN and WebSocket upgrade, then sent valid `telemetry` EVENT packets of roughly 19 KB without first sending the Socket.IO CONNECT packet for `/`. Python Socket.IO consequently logged a `None` namespace SID and rejected each event before inference.
+
+- Preserved the standards-compliant `python-socketio` backend as the default.
+- Added opt-in `--unity-compat-mode` using `python-engineio` directly at the existing `/socket.io` path.
+- Reused `ClosedLoopDriver` for image decoding, inference, clipping, smoothing, dry-run enforcement, failure handling, emergency stop, and logging.
+- Added strict parsing for callback-level `2["telemetry", ...]` and wire-level `42["telemetry", ...]` only.
+- Encoded steer as Socket.IO EVENT data through Engine.IO, producing wire-level `42["steer", ...]` framing.
+- Added bounded compatibility diagnostics, implicit namespace counters, and UC1-UC6 verdicts without logging complete base64 images.
+- Verified actual Engine.IO polling behavior locally: one implicit connection, one telemetry frame, one successful fake inference, and neutral-only steer framing.
+
+No Unity process was launched during implementation, no active command was sent, no model was trained, and no checkpoint or dependency version was changed. Live telemetry remains unconfirmed until the human dry-run reports `total_frames > 0` and `UC1`.

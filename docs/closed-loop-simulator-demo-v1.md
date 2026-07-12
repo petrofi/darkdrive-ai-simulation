@@ -137,6 +137,31 @@ The ignored JSON summary includes protocol counters and one verdict:
 
 The installed Unity assembly declares `EIO=4`. Do not downgrade the current environment unless a live request explicitly proves `EIO=3`. If that occurs, preserve the EIO4 environment and plan an isolated `C:\venvs\darkdrive-sim-eio3` environment.
 
+## Unity Implicit Namespace Compatibility
+
+The bounded live protocol trace confirmed the precise integration failure:
+
+- Unity opens `/socket.io/?EIO=4&transport=websocket` successfully.
+- Engine.IO OPEN and the WebSocket upgrade succeed.
+- Unity sends valid Socket.IO EVENT packets named `telemetry`.
+- Unity does not first send the Socket.IO CONNECT packet for namespace `/`.
+- The standards-compliant server therefore resolves no Socket.IO SID and rejects telemetry before inference.
+
+The normal `python-socketio` backend remains the default and still requires a valid namespace connection. `--unity-compat-mode` selects a separate, opt-in `python-engineio` backend for this verified Unity behavior. It treats the Engine.IO SID as the runtime SID, reuses `ClosedLoopDriver` for all inference and safety behavior, and does not access private Socket.IO manager dictionaries.
+
+At the WebSocket layer Unity sends `42["telemetry", {...}]`. Python Engine.IO removes the outer MESSAGE packet type and supplies `2["telemetry", {...}]` to the message callback. The compatibility parser accepts only those two explicit forms. Outgoing control is encoded as `2["steer", {...}]` through Engine.IO, which produces Unity's expected wire-level `42["steer", {...}]` packet.
+
+Compatibility summaries include backend/mode fields, implicit connection and message counters, parsed/malformed/unknown event counters, steer counters, and a UC verdict:
+
+- `UC1`: Unity compatibility telemetry confirmed.
+- `UC2`: Engine.IO connected but no compatibility messages arrived.
+- `UC3`: messages arrived but framing or payload was unsupported.
+- `UC4`: telemetry parsed but image decoding or inference failed.
+- `UC5`: outgoing steer framing or emission failed.
+- `UC6`: unresolved.
+
+Both the compatibility metadata logger and the redacted Engine.IO logger are bounded. Complete image/base64 content is never printed.
+
 ## Local Self-Test
 
 Run this before opening Unity:
@@ -173,10 +198,13 @@ The environment launcher currently points to a missing base interpreter at `C:\U
   --steering-smoothing 0.35 `
   --dry-run `
   --protocol-debug `
+  --unity-compat-mode `
   --max-runtime-seconds 120
 ```
 
 Then open `Default Windows desktop 64-bit.exe`, select the first track, enter Autonomous Mode, wait 20-30 seconds, and stop with Ctrl+C. Dry-run always returns neutral steering and zero throttle. Preserve the console protocol log and ignored JSON session summary for diagnosis.
+
+Compatibility dry-run acceptance requires `engineio_compat_connections > 0`, `compat_telemetry_events > 0`, `total_frames > 0`, numeric inference latency, zero emitted steering/throttle, and verdict `UC1`. These live criteria have not yet been demonstrated.
 
 Do not proceed to active control unless live dry-run confirms telemetry reception, successful frame decoding, finite predictions, runtime logs, clean disconnect, and emergency-stop behavior.
 
@@ -201,6 +229,7 @@ The first objective is telemetry, inference, command transmission, visible movem
 ## Known Limitations
 
 - Live Unity telemetry and active vehicle movement were not run automatically in this implementation task.
+- The compatibility backend passed synthetic Engine.IO framing tests, but still requires the human Unity dry-run.
 - KJM3 is not a promoted checkpoint and Kaggle licensing remains unresolved.
 - Session C2 was reused for model selection; Session E2 remains pending.
 - The model is single-frame and has no proven temporal stability.

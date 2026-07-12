@@ -58,6 +58,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Enable bounded Engine.IO/Socket.IO lifecycle and event diagnostics.",
     )
+    parser.add_argument(
+        "--unity-compat-mode",
+        action="store_true",
+        help="Use the isolated Engine.IO backend for Unity's implicit default namespace.",
+    )
     parser.add_argument("--log-dir", default=str(DEFAULT_LOG_DIR))
     parser.add_argument("--max-runtime-seconds", type=float, default=None)
     parser.add_argument(
@@ -132,6 +137,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"- Listening: http://{args.host}:{args.port}")
         print(f"- Dry run: {config.dry_run}")
         print(f"- Protocol debug: {args.protocol_debug}")
+        print(f"- Unity compatibility mode: {args.unity_compat_mode}")
         print(f"- Throttle: {config.throttle:.3f}")
         print(f"- Max steering: {config.max_steering:.3f}")
         print(f"- EMA newest-prediction weight: {config.steering_smoothing:.3f}")
@@ -144,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
             emergency_stop_file=stop_file,
             max_runtime_seconds=args.max_runtime_seconds,
             protocol_debug=args.protocol_debug,
+            unity_compat_mode=args.unity_compat_mode,
         )
         print("Closed-loop session ended")
         print(f"- Frames: {summary['total_frames']}")

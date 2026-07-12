@@ -43,6 +43,7 @@ MIN_FRAME_WIDTH = 160
 MIN_FRAME_HEIGHT = 80
 MAX_FRAME_PIXELS = 4096 * 4096
 PROTOCOL_DEBUG_EVENT_LIMIT = 100
+MAX_UNITY_COMPAT_MESSAGE_CHARS = 2_000_000
 TELEMETRY_COLUMNS = (
     "timestamp",
     "simulator_speed",
@@ -86,6 +87,16 @@ class ProtocolDiagnostics:
         "connect_failures",
         "namespace_failures",
     )
+    COMPAT_COUNTER_NAMES = (
+        "engineio_compat_connections",
+        "compat_messages_received",
+        "compat_socketio_events_parsed",
+        "compat_telemetry_events",
+        "compat_unknown_events",
+        "compat_malformed_messages",
+        "compat_steer_events_sent",
+        "implicit_namespace_connections",
+    )
 
     def __init__(
         self,
@@ -97,7 +108,11 @@ class ProtocolDiagnostics:
             raise ValueError("event_log_limit must be non-negative")
         self.enabled = enabled
         self.event_log_limit = event_log_limit
-        self._counters = {name: 0 for name in self.COUNTER_NAMES}
+        self._counters = {
+            name: 0 for name in (*self.COUNTER_NAMES, *self.COMPAT_COUNTER_NAMES)
+        }
+        self.protocol_backend = "standard_socketio"
+        self.unity_compat_mode = False
         self._eio_versions: set[str] = set()
         self._transports: set[str] = set()
         self._successful_transports: set[str] = set()
@@ -107,11 +122,39 @@ class ProtocolDiagnostics:
         self._transport_failures = 0
         self._event_logs_written = 0
         self._event_limit_reported = False
+        self._compat_successful_telemetry = 0
+        self._compat_steer_failures = 0
+        self._compat_logs_written = 0
+        self._compat_log_limit_reported = False
+        self._protocol_logs_written = 0
+        self._protocol_log_limit_reported = False
         self._lock = threading.Lock()
+
+    def configure_backend(self, backend: str, unity_compat_mode: bool) -> None:
+        with self._lock:
+            self.protocol_backend = backend
+            self.unity_compat_mode = unity_compat_mode
 
     def _debug(self, message: str) -> None:
         if self.enabled:
             print(f"[protocol-debug] {message}", flush=True)
+
+    def _bounded_protocol_debug(self, message: str) -> None:
+        should_log = False
+        report_limit = False
+        with self._lock:
+            if self.enabled and self._protocol_logs_written < self.event_log_limit:
+                self._protocol_logs_written += 1
+                should_log = True
+            elif self.enabled and not self._protocol_log_limit_reported:
+                self._protocol_log_limit_reported = True
+                report_limit = True
+        if should_log:
+            self._debug(message)
+        elif report_limit:
+            self._debug(
+                f"protocol logger limit reached ({self.event_log_limit}); further lines suppressed"
+            )
 
     @staticmethod
     def _request_metadata(environ: dict[str, Any]) -> tuple[str, str, str]:
@@ -133,7 +176,7 @@ class ProtocolDiagnostics:
             if transport:
                 self._transports.add(transport)
             self._last_query_string = safe_query
-        self._debug(
+        self._bounded_protocol_debug(
             f"request method={environ.get('REQUEST_METHOD', '')} "
             f"path={environ.get('PATH_INFO', '')} query_string={safe_query} "
             f"EIO={eio or '(missing)'} transport={transport or '(missing)'}"
@@ -185,14 +228,127 @@ class ProtocolDiagnostics:
         payload_type = type(payload).__name__
         if not isinstance(payload, dict):
             return f"payload_type={payload_type}"
-        keys = sorted(str(key) for key in payload.keys())
+        all_keys = sorted(str(key) for key in payload.keys())
+        keys = [key[:64] for key in all_keys[:30]]
         image_present = "image" in payload
         image = payload.get("image")
         image_length = len(image) if isinstance(image, (str, bytes)) else None
         return (
             f"payload_type={payload_type} dict_keys={keys} "
+            f"dict_key_count={len(all_keys)} "
             f"image_present={str(image_present).lower()} "
             f"image_string_length={image_length if image_length is not None else '(not-string)'}"
+        )
+
+    @staticmethod
+    def compat_payload_summary(payload: Any) -> str:
+        try:
+            payload_length: int | None = len(payload)
+        except TypeError:
+            payload_length = None
+        return (
+            f"{ProtocolDiagnostics.payload_summary(payload)} "
+            f"payload_length={payload_length if payload_length is not None else '(unknown)'}"
+        )
+
+    def _bounded_compat_debug(self, message: str) -> None:
+        should_log = False
+        report_limit = False
+        with self._lock:
+            if self.enabled and self._compat_logs_written < self.event_log_limit:
+                self._compat_logs_written += 1
+                should_log = True
+            elif self.enabled and not self._compat_log_limit_reported:
+                self._compat_log_limit_reported = True
+                report_limit = True
+        if should_log:
+            self._debug(message)
+        elif report_limit:
+            self._debug(
+                f"compat log limit reached ({self.event_log_limit}); further messages suppressed"
+            )
+
+    def record_compat_connection(
+        self,
+        eio_sid: str,
+        environ: dict[str, Any],
+    ) -> None:
+        eio, transport, safe_query = self._request_metadata(environ)
+        with self._lock:
+            self._counters["engineio_compat_connections"] += 1
+            self._counters["implicit_namespace_connections"] += 1
+            self._namespaces.add("/")
+            if eio:
+                self._eio_versions.add(eio)
+            if transport:
+                self._transports.add(transport)
+                self._successful_transports.add(transport)
+            self._last_query_string = safe_query
+        self._debug(
+            f"unity_compat_connect sid={eio_sid} namespace=/ implicit=true "
+            f"query_string={safe_query} EIO={eio or '(missing)'} "
+            f"transport={transport or '(missing)'}"
+        )
+
+    def record_compat_message(self, sid: str, message: Any) -> None:
+        with self._lock:
+            self._counters["compat_messages_received"] += 1
+        try:
+            message_length: int | str = len(message)
+        except TypeError:
+            message_length = "(unknown)"
+        self._bounded_compat_debug(
+            f"unity_compat_message sid={sid} message_type={type(message).__name__} "
+            f"message_length={message_length}"
+        )
+
+    def record_compat_malformed(self, sid: str, message: Any, reason: str) -> None:
+        with self._lock:
+            self._counters["compat_malformed_messages"] += 1
+        try:
+            message_length: int | str = len(message)
+        except TypeError:
+            message_length = "(unknown)"
+        self._bounded_compat_debug(
+            f"unity_compat_malformed sid={sid} reason={reason[:160]} "
+            f"message_type={type(message).__name__} message_length={message_length}"
+        )
+
+    def record_compat_event(self, sid: str, event: str, payload: Any) -> bool:
+        valid_telemetry = event == "telemetry" and isinstance(payload, dict)
+        with self._lock:
+            self._counters["compat_socketio_events_parsed"] += 1
+            if valid_telemetry:
+                self._counters["compat_telemetry_events"] += 1
+            elif event == "telemetry":
+                self._counters["compat_malformed_messages"] += 1
+            else:
+                self._counters["compat_unknown_events"] += 1
+        self._bounded_compat_debug(
+            f"unity_compat_event event={event[:160]} namespace=/ sid={sid} "
+            f"{self.compat_payload_summary(payload)}"
+        )
+        return valid_telemetry
+
+    def record_compat_telemetry_result(self, successful: bool) -> None:
+        if successful:
+            with self._lock:
+                self._compat_successful_telemetry += 1
+
+    def record_compat_steer_sent(self, sid: str, encoded: str) -> None:
+        with self._lock:
+            self._counters["compat_steer_events_sent"] += 1
+        self._bounded_compat_debug(
+            f"unity_compat_steer_sent sid={sid} socketio_packet_type=EVENT "
+            f"encoded_length={len(encoded)}"
+        )
+
+    def record_compat_steer_failure(self, sid: str, exc: Exception) -> None:
+        with self._lock:
+            self._compat_steer_failures += 1
+        self._debug(
+            f"unity_compat_steer_failed sid={sid} "
+            f"error={type(exc).__name__}:{str(exc)[:160]}"
         )
 
     def record_event(
@@ -254,9 +410,28 @@ class ProtocolDiagnostics:
             return "P2", "Socket.IO connected but telemetry was not emitted"
         return "P6", "no complete Socket.IO namespace connection observed"
 
+    def _unity_compat_verdict(self) -> tuple[str, str]:
+        counters = self._counters
+        if self._compat_steer_failures and not counters["compat_steer_events_sent"]:
+            return "UC5", "outgoing steer framing or emission failed"
+        if self._compat_successful_telemetry:
+            return "UC1", "Unity compatibility telemetry confirmed"
+        if counters["compat_telemetry_events"]:
+            return "UC4", "telemetry parsed but image or inference failed"
+        if counters["compat_messages_received"]:
+            return "UC3", "messages received but framing or payload was unsupported"
+        if counters["engineio_compat_connections"]:
+            return "UC2", "Engine.IO connected but compatibility parser received no messages"
+        return "UC6", "Unity compatibility result unresolved"
+
     def snapshot(self) -> dict[str, object]:
         with self._lock:
-            verdict, explanation = self._verdict()
+            standard_verdict, standard_explanation = self._verdict()
+            compat_verdict, compat_explanation = self._unity_compat_verdict()
+            verdict = compat_verdict if self.unity_compat_mode else standard_verdict
+            explanation = (
+                compat_explanation if self.unity_compat_mode else standard_explanation
+            )
             eio_versions = sorted(self._eio_versions)
             transports = sorted(self._transports)
             namespaces = sorted(self._namespaces)
@@ -267,6 +442,8 @@ class ProtocolDiagnostics:
             )
             return {
                 "protocol_debug": self.enabled,
+                "protocol_backend": self.protocol_backend,
+                "unity_compat_mode": self.unity_compat_mode,
                 **self._counters,
                 "requested_eio_version": eio_versions[0] if len(eio_versions) == 1 else None,
                 "requested_eio_versions": eio_versions,
@@ -277,6 +454,10 @@ class ProtocolDiagnostics:
                 "last_query_string": self._last_query_string,
                 "last_disconnect_reason": self._last_disconnect_reason,
                 "transport_failures": self._transport_failures,
+                "compat_successful_telemetry": self._compat_successful_telemetry,
+                "compat_steer_failures": self._compat_steer_failures,
+                "unity_compat_verdict": compat_verdict if self.unity_compat_mode else None,
+                "final_protocol_verdict": verdict,
                 "protocol_diagnostic_verdict": verdict,
                 "protocol_verdict": verdict,
                 "protocol_verdict_explanation": explanation,
@@ -315,7 +496,7 @@ class ProtocolSafeLogger:
                 rendered = template % safe_args if safe_args else template
             except (TypeError, ValueError):
                 rendered = f"{template} args={list(safe_args)}"
-        self.diagnostics._debug(
+        self.diagnostics._bounded_protocol_debug(
             f"{self.component} level={level} message={rendered[:500]}"
         )
 
@@ -670,6 +851,9 @@ class ClosedLoopDriver:
             except Exception:
                 pass
 
+    def send_neutral(self, sid: str) -> tuple[float, float]:
+        return self._send_control(sid, 0.0, 0.0)
+
     def request_emergency_stop(self, reason: str) -> None:
         first_trigger = self.emergency.trigger(reason)
         self.send_neutral_to_all()
@@ -792,6 +976,42 @@ def socketio_control_payload(steering: float, throttle: float) -> dict[str, str]
     }
 
 
+class UnityCompatProtocolError(ValueError):
+    pass
+
+
+def parse_unity_socketio_event(message: Any) -> tuple[str, Any]:
+    """Parse only the two observed Socket.IO EVENT framing forms."""
+    if not isinstance(message, str):
+        raise UnityCompatProtocolError("message must be text")
+    if len(message) > MAX_UNITY_COMPAT_MESSAGE_CHARS:
+        raise UnityCompatProtocolError("message exceeds compatibility size limit")
+    if message.startswith("42"):
+        socketio_message = message[1:]
+    elif message.startswith("2"):
+        socketio_message = message
+    else:
+        raise UnityCompatProtocolError("unsupported Socket.IO packet type")
+    if not socketio_message.startswith("2["):
+        raise UnityCompatProtocolError("unsupported Socket.IO EVENT framing")
+    try:
+        decoded = json.loads(socketio_message[1:])
+    except json.JSONDecodeError as exc:
+        raise UnityCompatProtocolError("malformed Socket.IO EVENT JSON") from exc
+    if not isinstance(decoded, list) or len(decoded) != 2:
+        raise UnityCompatProtocolError("Socket.IO EVENT must contain event and payload")
+    event, payload = decoded
+    if not isinstance(event, str) or not event:
+        raise UnityCompatProtocolError("Socket.IO event name must be non-empty text")
+    return event, payload
+
+
+def encode_unity_socketio_event(event: str, payload: dict[str, str]) -> str:
+    if not isinstance(event, str) or not event:
+        raise ValueError("Socket.IO event name must be non-empty text")
+    return "2" + json.dumps([event, payload], separators=(",", ":"))
+
+
 class ProtocolDebugWSGIMiddleware:
     def __init__(self, app: Any, diagnostics: ProtocolDiagnostics) -> None:
         self.app = app
@@ -822,6 +1042,7 @@ def build_socketio_app(driver: ClosedLoopDriver, protocol_debug: bool = False) -
 
     diagnostics = driver.telemetry_logger.protocol_diagnostics
     diagnostics.enabled = protocol_debug
+    diagnostics.configure_backend("standard_socketio", False)
 
     class DiagnosticSocketIOServer(socketio.Server):
         def _handle_eio_connect(self, eio_sid: str, environ: dict[str, Any]) -> Any:
@@ -930,6 +1151,100 @@ def build_socketio_app(driver: ClosedLoopDriver, protocol_debug: bool = False) -
     return sio, app
 
 
+def build_unity_compat_engineio_app(
+    driver: ClosedLoopDriver,
+    protocol_debug: bool = False,
+) -> tuple[Any, Any]:
+    try:
+        import engineio
+    except ImportError as exc:
+        raise RuntimeError(
+            "Simulator dependencies are missing; install requirements-simulator.txt"
+        ) from exc
+
+    diagnostics = driver.telemetry_logger.protocol_diagnostics
+    diagnostics.enabled = protocol_debug
+    diagnostics.configure_backend("unity_engineio_compat", True)
+    engineio_logger: Any = (
+        ProtocolSafeLogger(diagnostics, "engineio") if protocol_debug else False
+    )
+    eio = engineio.Server(
+        async_mode="threading",
+        cors_allowed_origins=[],
+        logger=engineio_logger,
+    )
+
+    def emit_control(sid: str, steering: float, throttle: float) -> None:
+        encoded = encode_unity_socketio_event(
+            "steer",
+            socketio_control_payload(steering, throttle),
+        )
+        try:
+            eio.send(sid, encoded)
+        except Exception as exc:
+            diagnostics.record_compat_steer_failure(sid, exc)
+            raise
+        diagnostics.record_compat_steer_sent(sid, encoded)
+
+    def send_safe_neutral(sid: str) -> None:
+        try:
+            driver.send_neutral(sid)
+        except Exception:
+            driver.request_emergency_stop("control_emit_failure")
+
+    driver.set_control_emitter(emit_control)
+
+    @eio.on("connect")
+    def connect(sid: str, environ: dict[str, Any]) -> bool:
+        diagnostics.record_compat_connection(sid, environ)
+        try:
+            steering, throttle = driver.on_connect(sid)
+        except Exception as exc:
+            driver.connected_sids.discard(sid)
+            diagnostics._debug(
+                f"unity_compat_initial_neutral failed sid={sid} "
+                f"error={type(exc).__name__}:{str(exc)[:160]}"
+            )
+            return False
+        diagnostics._debug(
+            f"unity_compat_initial_neutral success sid={sid} "
+            f"steering={steering:g} throttle={throttle:g}"
+        )
+        return True
+
+    @eio.on("message")
+    def message(sid: str, raw_message: Any) -> None:
+        diagnostics.record_compat_message(sid, raw_message)
+        try:
+            event, payload = parse_unity_socketio_event(raw_message)
+        except UnityCompatProtocolError as exc:
+            diagnostics.record_compat_malformed(sid, raw_message, str(exc))
+            send_safe_neutral(sid)
+            return
+
+        valid_telemetry = diagnostics.record_compat_event(sid, event, payload)
+        if event != "telemetry" or not valid_telemetry:
+            send_safe_neutral(sid)
+            return
+
+        row = driver.handle_telemetry(sid, payload)
+        diagnostics.record_compat_telemetry_result(row.get("error_state") == "ok")
+
+    @eio.on("disconnect")
+    def disconnect(sid: str, reason: Any = None) -> None:
+        try:
+            driver.send_neutral(sid)
+        except Exception:
+            pass
+        diagnostics.record_disconnect(sid, reason)
+        driver.on_disconnect(sid)
+
+    app: Any = engineio.WSGIApp(eio, engineio_path="socket.io")
+    if protocol_debug:
+        app = ProtocolDebugWSGIMiddleware(app, diagnostics)
+    return eio, app
+
+
 def run_socketio_server(
     driver: ClosedLoopDriver,
     host: str,
@@ -938,6 +1253,7 @@ def run_socketio_server(
     emergency_stop_file: Path,
     max_runtime_seconds: float | None,
     protocol_debug: bool = False,
+    unity_compat_mode: bool = False,
 ) -> dict[str, object]:
     try:
         from werkzeug.serving import make_server
@@ -956,7 +1272,13 @@ def run_socketio_server(
             f"Emergency-stop file already exists; remove it before startup: {emergency_stop_file}"
         )
 
-    _, app = build_socketio_app(driver, protocol_debug=protocol_debug)
+    if unity_compat_mode:
+        _, app = build_unity_compat_engineio_app(
+            driver,
+            protocol_debug=protocol_debug,
+        )
+    else:
+        _, app = build_socketio_app(driver, protocol_debug=protocol_debug)
     server = make_server(host, port, app, threaded=True)
     driver.set_shutdown_callback(server.shutdown)
     monitor_stop = threading.Event()

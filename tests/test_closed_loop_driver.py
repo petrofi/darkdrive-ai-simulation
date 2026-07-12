@@ -6,7 +6,10 @@ import io
 import json
 import math
 import tempfile
+import threading
 import unittest
+import urllib.parse
+import urllib.request
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -22,10 +25,14 @@ from src.simulator.closed_loop_driver import (
     ProtocolDiagnostics,
     ProtocolSafeLogger,
     TelemetrySessionLogger,
+    UnityCompatProtocolError,
     build_socketio_app,
+    build_unity_compat_engineio_app,
     clip_steering,
     decode_telemetry_image,
     frame_to_tensor,
+    encode_unity_socketio_event,
+    parse_unity_socketio_event,
     smooth_steering,
     socketio_control_payload,
 )
@@ -412,6 +419,8 @@ class ProtocolDiagnosticsTests(unittest.TestCase):
         with redirect_stdout(output):
             sio, _ = build_socketio_app(driver, protocol_debug=False)
         self.assertFalse(diagnostics.enabled)
+        self.assertEqual(diagnostics.snapshot()["protocol_backend"], "standard_socketio")
+        self.assertFalse(diagnostics.snapshot()["unity_compat_mode"])
         self.assertNotIn("*", sio.handlers.get("/", {}))
         self.assertEqual(output.getvalue(), "")
         driver.close()
@@ -432,6 +441,317 @@ class ProtocolDiagnosticsTests(unittest.TestCase):
             socketio_control_payload(0.0, -0.0),
             {"steering_angle": "0", "throttle": "0"},
         )
+
+
+class UnityCompatibilityTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def make_driver(
+        self,
+        *,
+        protocol_debug: bool = False,
+        event_log_limit: int = 100,
+    ) -> tuple[ClosedLoopDriver, TelemetrySessionLogger, ProtocolDiagnostics]:
+        runtime = FakeRuntime([0.4])
+        diagnostics = ProtocolDiagnostics(
+            enabled=protocol_debug,
+            event_log_limit=event_log_limit,
+        )
+        logger = TelemetrySessionLogger(
+            self.root,
+            runtime.model_name,
+            runtime.device_name,
+            True,
+            session_id="unity_compat",
+            protocol_diagnostics=diagnostics,
+        )
+        driver = ClosedLoopDriver(runtime, DriverConfig(dry_run=True), logger)
+        return driver, logger, diagnostics
+
+    @staticmethod
+    def environ() -> dict[str, str]:
+        return {
+            "QUERY_STRING": "EIO=4&transport=websocket",
+            "REQUEST_METHOD": "GET",
+            "PATH_INFO": "/socket.io/",
+        }
+
+    def build_with_capture(
+        self,
+        *,
+        protocol_debug: bool = False,
+        event_log_limit: int = 100,
+    ) -> tuple[
+        ClosedLoopDriver,
+        TelemetrySessionLogger,
+        ProtocolDiagnostics,
+        object,
+        list[tuple[str, str]],
+    ]:
+        driver, logger, diagnostics = self.make_driver(
+            protocol_debug=protocol_debug,
+            event_log_limit=event_log_limit,
+        )
+        eio, _ = build_unity_compat_engineio_app(
+            driver,
+            protocol_debug=protocol_debug,
+        )
+        emitted: list[tuple[str, str]] = []
+        eio.send = lambda sid, data: emitted.append((sid, data))
+        return driver, logger, diagnostics, eio, emitted
+
+    def test_cli_unity_compat_mode_is_opt_in(self) -> None:
+        self.assertFalse(parse_args([]).unity_compat_mode)
+        self.assertTrue(parse_args(["--unity-compat-mode"]).unity_compat_mode)
+
+    def test_verified_callback_and_wire_framing_are_parsed(self) -> None:
+        payload = {"image": "abc", "speed": "0"}
+        self.assertEqual(
+            parse_unity_socketio_event('2["telemetry",{"image":"abc","speed":"0"}]'),
+            ("telemetry", payload),
+        )
+        self.assertEqual(
+            parse_unity_socketio_event('42["telemetry",{"image":"abc","speed":"0"}]'),
+            ("telemetry", payload),
+        )
+
+    def test_malformed_json_and_wrong_packet_type_are_rejected(self) -> None:
+        for message in ('2["telemetry",', '3["telemetry",{}]', '40'):
+            with self.subTest(message=message):
+                with self.assertRaises(UnityCompatProtocolError):
+                    parse_unity_socketio_event(message)
+
+    def test_connect_registers_engineio_sid_and_sends_one_neutral(self) -> None:
+        driver, _, diagnostics, eio, emitted = self.build_with_capture()
+        self.assertTrue(eio.handlers["connect"]("engine-sid", self.environ()))
+        self.assertIn("engine-sid", driver.connected_sids)
+        self.assertEqual(
+            emitted,
+            [
+                (
+                    "engine-sid",
+                    '2["steer",{"steering_angle":"0","throttle":"0"}]',
+                )
+            ],
+        )
+        snapshot = diagnostics.snapshot()
+        self.assertEqual(snapshot["protocol_backend"], "unity_engineio_compat")
+        self.assertTrue(snapshot["unity_compat_mode"])
+        self.assertEqual(snapshot["engineio_compat_connections"], 1)
+        self.assertEqual(snapshot["implicit_namespace_connections"], 1)
+        self.assertEqual(snapshot["compat_steer_events_sent"], 1)
+        self.assertEqual(snapshot["unity_compat_verdict"], "UC2")
+        driver.close()
+
+    def test_standard_backend_still_rejects_event_without_namespace_connect(self) -> None:
+        driver, _, _ = self.make_driver()
+        sio, _ = build_socketio_app(driver)
+        sio._handle_eio_connect("engine-sid", self.environ())
+        sio._handle_eio_message(
+            "engine-sid",
+            encode_unity_socketio_event(
+                "telemetry",
+                {"image": image_payload(), "speed": "1"},
+            ),
+        )
+        self.assertEqual(driver.frame_index, 0)
+        self.assertNotIn("engine-sid", driver.connected_sids)
+        driver.close()
+
+    def test_initial_compat_steer_failure_rejects_connection_with_uc5(self) -> None:
+        driver, _, diagnostics = self.make_driver()
+        eio, _ = build_unity_compat_engineio_app(driver)
+
+        def fail_send(sid: str, data: str) -> None:
+            del sid, data
+            raise OSError("closed")
+
+        eio.send = fail_send
+        self.assertFalse(eio.handlers["connect"]("engine-sid", self.environ()))
+        self.assertNotIn("engine-sid", driver.connected_sids)
+        snapshot = diagnostics.snapshot()
+        self.assertEqual(snapshot["compat_steer_events_sent"], 0)
+        self.assertEqual(snapshot["compat_steer_failures"], 1)
+        self.assertEqual(snapshot["unity_compat_verdict"], "UC5")
+        driver.close()
+
+    def test_compat_telemetry_reaches_driver_once_and_stays_neutral(self) -> None:
+        driver, _, diagnostics, eio, emitted = self.build_with_capture()
+        eio.handlers["connect"]("engine-sid", self.environ())
+        emitted.clear()
+        packet = encode_unity_socketio_event(
+            "telemetry",
+            {"image": image_payload(), "speed": "3"},
+        )
+        eio.handlers["message"]("engine-sid", packet)
+        self.assertEqual(driver.frame_index, 1)
+        self.assertEqual(emitted[-1][0], "engine-sid")
+        self.assertEqual(
+            parse_unity_socketio_event(emitted[-1][1]),
+            ("steer", {"steering_angle": "0", "throttle": "0"}),
+        )
+        snapshot = diagnostics.snapshot()
+        self.assertEqual(snapshot["compat_messages_received"], 1)
+        self.assertEqual(snapshot["compat_socketio_events_parsed"], 1)
+        self.assertEqual(snapshot["compat_telemetry_events"], 1)
+        self.assertEqual(snapshot["telemetry_events_received"], 0)
+        self.assertEqual(snapshot["compat_successful_telemetry"], 1)
+        self.assertEqual(snapshot["unity_compat_verdict"], "UC1")
+        driver.close()
+
+    def test_unknown_and_non_dictionary_telemetry_are_safe(self) -> None:
+        driver, _, diagnostics, eio, emitted = self.build_with_capture()
+        eio.handlers["connect"]("engine-sid", self.environ())
+        emitted.clear()
+        eio.handlers["message"]("engine-sid", '2["manual",[1,2]]')
+        eio.handlers["message"]("engine-sid", '2["telemetry",["not-a-dict"]]')
+        snapshot = diagnostics.snapshot()
+        self.assertEqual(snapshot["compat_unknown_events"], 1)
+        self.assertEqual(snapshot["compat_malformed_messages"], 1)
+        self.assertEqual(snapshot["compat_telemetry_events"], 0)
+        self.assertEqual(driver.frame_index, 0)
+        self.assertEqual(len(emitted), 2)
+        for _, encoded in emitted:
+            self.assertEqual(
+                parse_unity_socketio_event(encoded),
+                ("steer", {"steering_angle": "0", "throttle": "0"}),
+            )
+        self.assertEqual(snapshot["unity_compat_verdict"], "UC3")
+        driver.close()
+
+    def test_malformed_message_is_bounded_and_never_prints_image(self) -> None:
+        driver, _, diagnostics, eio, _ = self.build_with_capture(
+            protocol_debug=True,
+            event_log_limit=2,
+        )
+        image = "private-base64" * 100
+        output = io.StringIO()
+        with redirect_stdout(output):
+            eio.handlers["connect"]("engine-sid", self.environ())
+            eio.handlers["message"](
+                "engine-sid",
+                f'2["telemetry",{{"image":"{image}"}}',
+            )
+        rendered = output.getvalue()
+        self.assertNotIn(image, rendered)
+        self.assertIn("message_length=", rendered)
+        self.assertEqual(diagnostics.snapshot()["compat_malformed_messages"], 1)
+        driver.close()
+
+    def test_bad_image_produces_uc4_and_zero_control(self) -> None:
+        driver, _, diagnostics, eio, emitted = self.build_with_capture()
+        eio.handlers["connect"]("engine-sid", self.environ())
+        emitted.clear()
+        eio.handlers["message"](
+            "engine-sid",
+            '2["telemetry",{"image":"not-base64","speed":"0"}]',
+        )
+        self.assertEqual(len(emitted), 1)
+        self.assertEqual(
+            parse_unity_socketio_event(emitted[0][1]),
+            ("steer", {"steering_angle": "0", "throttle": "0"}),
+        )
+        snapshot = diagnostics.snapshot()
+        self.assertEqual(snapshot["compat_telemetry_events"], 1)
+        self.assertEqual(snapshot["compat_successful_telemetry"], 0)
+        self.assertEqual(snapshot["unity_compat_verdict"], "UC4")
+        driver.close()
+
+    def test_disconnect_sends_neutral_and_clears_driver_state(self) -> None:
+        driver, _, diagnostics, eio, emitted = self.build_with_capture()
+        eio.handlers["connect"]("engine-sid", self.environ())
+        emitted.clear()
+        driver.previous_steering = 0.5
+        eio.handlers["disconnect"]("engine-sid", "client disconnect")
+        self.assertEqual(len(emitted), 1)
+        self.assertNotIn("engine-sid", driver.connected_sids)
+        self.assertIsNone(driver.previous_steering)
+        self.assertEqual(driver.telemetry_logger.disconnect_count, 1)
+        self.assertEqual(
+            diagnostics.snapshot()["last_disconnect_reason"],
+            "client disconnect",
+        )
+        driver.close()
+
+    def test_summary_contains_compatibility_fields_and_uc1(self) -> None:
+        driver, logger, _, eio, _ = self.build_with_capture()
+        eio.handlers["connect"]("engine-sid", self.environ())
+        eio.handlers["message"](
+            "engine-sid",
+            encode_unity_socketio_event(
+                "telemetry",
+                {"image": image_payload(), "speed": "1"},
+            ),
+        )
+        summary = driver.close()
+        self.assertEqual(summary["final_protocol_verdict"], "UC1")
+        self.assertEqual(summary["protocol_diagnostic_verdict"], "UC1")
+        self.assertEqual(summary["engineio_compat_connections"], 1)
+        self.assertEqual(summary["compat_telemetry_events"], 1)
+        written = json.loads(logger.summary_path.read_text(encoding="utf-8"))
+        self.assertEqual(written["unity_compat_verdict"], "UC1")
+
+    def test_engineio_wraps_callback_and_outgoing_socketio_event_correctly(self) -> None:
+        from werkzeug.serving import make_server
+
+        driver, _, diagnostics = self.make_driver()
+        _, app = build_unity_compat_engineio_app(driver)
+        server = make_server("127.0.0.1", 0, app, threaded=True)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        def request(url: str, data: bytes | None = None) -> str:
+            http_request = urllib.request.Request(
+                url,
+                data=data,
+                method="POST" if data is not None else "GET",
+            )
+            if data is not None:
+                http_request.add_header("Content-Type", "text/plain;charset=UTF-8")
+            with urllib.request.urlopen(http_request, timeout=3) as response:
+                return response.read().decode("utf-8")
+
+        try:
+            base = (
+                f"http://127.0.0.1:{server.server_port}/socket.io/"
+                "?EIO=4&transport=polling"
+            )
+            opened = request(base)
+            packets = opened.split("\x1e")
+            open_packet = next(packet for packet in packets if packet.startswith("0"))
+            sid = json.loads(open_packet[1:])["sid"]
+            self.assertIn(
+                '42["steer",{"steering_angle":"0","throttle":"0"}]',
+                packets,
+            )
+            session_url = base + "&sid=" + urllib.parse.quote(sid)
+            wire_packet = "4" + encode_unity_socketio_event(
+                "telemetry",
+                {"image": image_payload(), "speed": "2"},
+            )
+            self.assertEqual(request(session_url, wire_packet.encode("utf-8")), "OK")
+            response_packets = request(session_url).split("\x1e")
+            self.assertIn(
+                '42["steer",{"steering_angle":"0","throttle":"0"}]',
+                response_packets,
+            )
+            request(session_url, b"1")
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+            summary = driver.close()
+
+        self.assertEqual(summary["total_frames"], 1)
+        self.assertEqual(summary["successful_predictions"], 1)
+        self.assertEqual(summary["compat_messages_received"], 1)
+        self.assertEqual(summary["compat_telemetry_events"], 1)
+        self.assertEqual(summary["unity_compat_verdict"], "UC1")
 
 
 if __name__ == "__main__":

@@ -609,13 +609,13 @@ Udacity's original project used a Keras model, `model.h5`, and a simulator `driv
 - `src/inference/predict_steering.py`
 - simulator-only closed-loop runtime under `src/simulator/closed_loop_driver.py`
 
-Closed-Loop Simulator Demo V1 is implemented with EIO4 Socket.IO telemetry, checkpoint-aware preprocessing, bounded steering, low throttle, dry-run, emergency stop, and ignored runtime logging. Local checkpoint inference and server binding passed, but live Unity driving has not yet been performed:
+Closed-Loop Simulator Demo V1 is implemented with EIO4 Socket.IO telemetry, checkpoint-aware preprocessing, bounded steering, low throttle, dry-run, emergency stop, and ignored runtime logging. Live tracing confirmed that this Unity build omits the Socket.IO `/` CONNECT packet before sending telemetry. The standard backend remains available; an isolated compatibility backend is opt-in:
 
 ```powershell
-python scripts/run_closed_loop_simulator.py --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt --device cpu --dry-run
+python scripts/run_closed_loop_simulator.py --checkpoint models/steering_model_kaggle_jungle_mix_v1.pt --device cpu --dry-run --protocol-debug --unity-compat-mode
 ```
 
-DarkDrive does not copy the old Keras code, does not convert the project to Keras, and does not add real vehicle control. Active simulator use is a supervised low-throttle diagnostic, not a model-release or autonomy claim.
+DarkDrive does not copy the old Keras code, does not convert the project to Keras, and does not add real vehicle control. Compatibility framing passed synthetic Engine.IO tests, but live telemetry remains unconfirmed until the human dry-run produces `total_frames > 0`; active simulator driving is not yet verified.
 
 See:
 
