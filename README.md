@@ -15,6 +15,10 @@ DarkDrive began with classical lane-detection experiments, then progressed throu
 
 On 2026-07-12, the current runtime completed a controlled active test in the Unity/Udacity Behavioral Cloning simulator.
 
+![DarkDrive active closed-loop Unity simulator demo](docs/assets/readme/darkdrive_closed_loop_demo.gif)
+
+*Real footage from the verified 20-second active Unity simulator run. This GIF shows a shortened 2.5-11.5 second segment from the 14-second recording; the metrics below refer to the complete verified run.*
+
 | Result | Verified value |
 | --- | ---: |
 | Active simulator control | **Verified** |
